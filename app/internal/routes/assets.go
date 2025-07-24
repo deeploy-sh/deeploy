@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/axzilla/deeploy/assets"
-	"github.com/axzilla/deeploy/internal/deeploy"
+	"github.com/axadrn/deeploy/assets"
+	"github.com/axadrn/deeploy/internal/deeploy"
 )
 
 func Assets(app deeploy.App) {

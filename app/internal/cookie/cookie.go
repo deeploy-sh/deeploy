@@ -3,7 +3,7 @@ package cookie
 import (
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/config"
+	"github.com/axadrn/deeploy/internal/config"
 )
 
 func SetCookie(w http.ResponseWriter, token string) {

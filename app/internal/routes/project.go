@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"github.com/axzilla/deeploy/internal/data"
-	"github.com/axzilla/deeploy/internal/deeploy"
-	apihandler "github.com/axzilla/deeploy/internal/handlers/api"
-	mw "github.com/axzilla/deeploy/internal/middleware"
-	"github.com/axzilla/deeploy/internal/services"
+	"github.com/axadrn/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/deeploy"
+	apihandler "github.com/axadrn/deeploy/internal/handlers/api"
+	mw "github.com/axadrn/deeploy/internal/middleware"
+	"github.com/axadrn/deeploy/internal/services"
 )
 
 func Project(app deeploy.App) {

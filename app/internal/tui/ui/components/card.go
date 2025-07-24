@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/axzilla/deeploy/internal/tui/ui/styles"
+	"github.com/axadrn/deeploy/internal/tui/ui/styles"
 	"github.com/charmbracelet/lipgloss"
 )
 

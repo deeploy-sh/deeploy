@@ -5,7 +5,7 @@ const config = {
     "./**/*.html",
     "./**/*.templ",
     "./**/*.go",
-    "/Users/axeladrian/go/pkg/mod/github.com/axzilla/templui@*/**/*.{go,templ}",
+    "/Users/axeladrian/go/pkg/mod/github.com/axadrn/templui@*/**/*.{go,templ}",
   ],
   safelist: ["dark"],
   theme: {

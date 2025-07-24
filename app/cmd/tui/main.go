@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/axzilla/deeploy/internal/tui/ui/pages"
+	"github.com/axadrn/deeploy/internal/tui/ui/pages"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

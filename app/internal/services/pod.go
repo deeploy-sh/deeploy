@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/axzilla/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/data"
 )
 
 type PodServiceInterface interface {

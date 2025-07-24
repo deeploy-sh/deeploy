@@ -3,11 +3,11 @@ package pages
 import (
 	"log"
 
-	"github.com/axzilla/deeploy/internal/data"
-	"github.com/axzilla/deeploy/internal/tui/messages"
-	"github.com/axzilla/deeploy/internal/tui/ui/components"
-	"github.com/axzilla/deeploy/internal/tui/ui/styles"
-	"github.com/axzilla/deeploy/internal/tui/utils"
+	"github.com/axadrn/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/tui/messages"
+	"github.com/axadrn/deeploy/internal/tui/ui/components"
+	"github.com/axadrn/deeploy/internal/tui/ui/styles"
+	"github.com/axadrn/deeploy/internal/tui/utils"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"

@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/auth"
-	"github.com/axzilla/deeploy/internal/data"
-	"github.com/axzilla/deeploy/internal/forms"
-	"github.com/axzilla/deeploy/internal/services"
+	"github.com/axadrn/deeploy/internal/auth"
+	"github.com/axadrn/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/forms"
+	"github.com/axadrn/deeploy/internal/services"
 	"github.com/google/uuid"
 )
 

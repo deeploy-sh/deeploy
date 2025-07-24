@@ -21,7 +21,7 @@ for platform in "${platforms[@]}"; do
     echo "Building release/$output_name..."
     env GOOS=$GOOS GOARCH=$GOARCH go build \
       -C app/cmd/tui \
-      -ldflags "-X github.com/axzilla/deeploy/commands.Version=$version" \
+      -ldflags "-X github.com/axadrn/deeploy/commands.Version=$version" \
       -o release/$output_name
     if [ $? -ne 0 ]; then
         echo 'An error has occurred! Aborting.'

@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"github.com/axzilla/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/data"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

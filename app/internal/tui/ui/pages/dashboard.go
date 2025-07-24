@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"github.com/axzilla/deeploy/internal/tui/messages"
-	"github.com/axzilla/deeploy/internal/tui/ui/components"
+	"github.com/axadrn/deeploy/internal/tui/messages"
+	"github.com/axadrn/deeploy/internal/tui/ui/components"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )

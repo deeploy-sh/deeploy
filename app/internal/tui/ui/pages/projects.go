@@ -3,7 +3,7 @@ package pages
 import (
 	"log"
 
-	"github.com/axzilla/deeploy/internal/tui/messages"
+	"github.com/axadrn/deeploy/internal/tui/messages"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/data"
-	"github.com/axzilla/deeploy/internal/deeploy"
-	"github.com/axzilla/deeploy/internal/services"
+	"github.com/axadrn/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/deeploy"
+	"github.com/axadrn/deeploy/internal/services"
 
-	mw "github.com/axzilla/deeploy/internal/middleware"
+	mw "github.com/axadrn/deeploy/internal/middleware"
 )
 
 func Dashboard(app deeploy.App) {

@@ -1,11 +1,11 @@
 package services
 
 import (
-	"github.com/axzilla/deeploy/internal/auth"
-	"github.com/axzilla/deeploy/internal/data"
-	"github.com/axzilla/deeploy/internal/errs"
-	"github.com/axzilla/deeploy/internal/forms"
-	"github.com/axzilla/deeploy/internal/jwt"
+	"github.com/axadrn/deeploy/internal/auth"
+	"github.com/axadrn/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/errs"
+	"github.com/axadrn/deeploy/internal/forms"
+	"github.com/axadrn/deeploy/internal/jwt"
 	"github.com/google/uuid"
 )
 

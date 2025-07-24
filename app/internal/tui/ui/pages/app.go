@@ -3,10 +3,10 @@ package pages
 import (
 	"strings"
 
-	"github.com/axzilla/deeploy/internal/tui/config"
-	"github.com/axzilla/deeploy/internal/tui/messages"
-	"github.com/axzilla/deeploy/internal/tui/ui/components"
-	"github.com/axzilla/deeploy/internal/tui/ui/styles"
+	"github.com/axadrn/deeploy/internal/tui/config"
+	"github.com/axadrn/deeploy/internal/tui/messages"
+	"github.com/axadrn/deeploy/internal/tui/ui/components"
+	"github.com/axadrn/deeploy/internal/tui/ui/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )

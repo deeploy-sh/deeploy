@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/axzilla/deeploy/internal/data"
+	"github.com/axadrn/deeploy/internal/data"
 	"golang.org/x/crypto/bcrypt"
 )
 

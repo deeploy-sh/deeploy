@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/config"
-	"github.com/axzilla/deeploy/internal/db"
-	"github.com/axzilla/deeploy/internal/deeploy"
-	"github.com/axzilla/deeploy/internal/routes"
+	"github.com/axadrn/deeploy/internal/config"
+	"github.com/axadrn/deeploy/internal/db"
+	"github.com/axadrn/deeploy/internal/deeploy"
+	"github.com/axadrn/deeploy/internal/routes"
 )
 
 func main() {

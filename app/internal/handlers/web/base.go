@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/ui/pages"
+	"github.com/axadrn/deeploy/internal/ui/pages"
 )
 
 type DashboardHandler struct{}

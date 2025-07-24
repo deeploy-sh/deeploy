@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/errs"
-	"github.com/axzilla/deeploy/internal/tui/config"
+	"github.com/axadrn/deeploy/internal/errs"
+	"github.com/axadrn/deeploy/internal/tui/config"
 )
 
 type RequestProps struct {

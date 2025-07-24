@@ -1,7 +1,7 @@
 package forms
 
 import (
-	"github.com/axzilla/deeploy/internal/utils"
+	"github.com/axadrn/deeploy/internal/utils"
 )
 
 type RegisterForm struct {

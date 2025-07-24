@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/axzilla/deeploy/internal/cookie"
-	"github.com/axzilla/deeploy/internal/jwt"
-	"github.com/axzilla/deeploy/internal/services"
-	"github.com/axzilla/deeploy/internal/ui/pages"
+	"github.com/axadrn/deeploy/internal/cookie"
+	"github.com/axadrn/deeploy/internal/jwt"
+	"github.com/axadrn/deeploy/internal/services"
+	"github.com/axadrn/deeploy/internal/ui/pages"
 )
 
 type AuthMiddleWare struct {
