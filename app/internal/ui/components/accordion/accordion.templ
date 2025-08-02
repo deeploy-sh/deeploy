@@ -1,0 +1,126 @@
+// templui component accordion - version: v0.85.0 installed by templui v0.85.0
+package accordion
+
+import (
+	"github.com/axadrn/deeploy/internal/ui/components/icon"
+	"github.com/axadrn/deeploy/internal/utils"
+)
+
+type Props struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type ItemProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type TriggerProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type ContentProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+templ Accordion(props ...Props) {
+	{{ var p Props }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"divide-y rounded-md divide-border border",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+templ Item(props ...ItemProps) {
+	{{ var p ItemProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<details
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		name="accordion"
+		class={
+			utils.TwMerge(
+				"group",
+				"open:[&>summary_svg]:rotate-180",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		{ children... }
+	</details>
+}
+
+templ Trigger(props ...TriggerProps) {
+	{{ var p TriggerProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<summary
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"flex w-full items-center justify-between py-4 px-5",
+				"text-left font-medium cursor-pointer",
+				"transition-all hover:underline",
+				"list-none [&::-webkit-details-marker]:hidden",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		<div class="flex-1">
+			{ children... }
+		</div>
+		@icon.ChevronDown(icon.Props{
+			Size:  16,
+			Class: "transition-transform",
+		})
+	</summary>
+}
+
+templ Content(props ...ContentProps) {
+	{{ var p ContentProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"px-5 pb-4 pt-0",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}

@@ -2,7 +2,8 @@ package pages
 
 import (
 	"github.com/axadrn/deeploy/internal/ui/layouts"
-	"github.com/axadrn/templui/pkg/components"
+	"github.com/axadrn/deeploy/internal/ui/components/code"
+	"github.com/axadrn/deeploy/internal/ui/components/button"
 )
 
 templ Dashboard() {
@@ -21,27 +22,29 @@ templ Dashboard() {
 						Open-source platform to deploy and manage your infrastructure. Built for developers who love CLIs.
 					</p>
 					<div class="w-full max-w-lg">
-						@components.Code(components.CodeProps{ShowCopyButton: true}) {
+						@code.Code(code.Props{ShowCopyButton: true}) {
 							{ `curl -fsSL https://deeploy.sh/install-cli.sh | bash` }
 						}
 						<p class="text-muted-foreground mx-auto text-xs text-center mt-2">CLI/TUI client for your local development machine</p>
 					</div>
 					<div class="flex flex-col items-center gap-2">
 						<div class="flex flex-col sm:flex-row gap-2 mt-4">
-							@components.Button(components.ButtonProps{
-								Variant: "default",
+							@button.Button(button.Props{
+								Variant: button.VariantDefault,
 								Class:   "px-8",
 								Href:    "https://github.com/axadrn/deeploy",
 								Target:  "_blank",
-								Text:    "Star on GitHub",
-							})
-							@components.Button(components.ButtonProps{
-								Variant: "outline",
+							}) {
+								Star on GitHub
+							}
+							@button.Button(button.Props{
+								Variant: button.VariantOutline,
 								Class:   "px-8",
 								Href:    "https://twitter.com/_axadrn",
-								Text:    "Follow the Journey",
 								Target:  "_blank",
-							})
+							}) {
+								Follow the Journey
+							}
 						</div>
 					</div>
 				</div>

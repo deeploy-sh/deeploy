@@ -2,7 +2,7 @@ package pages
 
 import (
 	"github.com/axadrn/deeploy/internal/ui/layouts"
-	"github.com/axadrn/templui/pkg/icons"
+	"github.com/axadrn/deeploy/internal/ui/components/icon"
 )
 
 templ Landing() {
@@ -15,7 +15,7 @@ templ Landing() {
 					</div>
 					<h1 class="text-4xl md:text-6xl font-bold">deeploy.sh</h1>
 					<p class="text-xl text-muted-foreground max-w-2xl flex gap-2 items-center justify-center">
-						@icons.CircleCheck(icons.IconProps{Color: "green"})
+						@icon.CircleCheck(icon.Props{Color: "green"})
 						You successfully installed deeploy.sh!
 					</p>
 				</div>

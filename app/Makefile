@@ -3,7 +3,7 @@ templ:
 
 server:
 	air \
-	--build.cmd "go build -o tmp/main ./cmd/web/main.go" \
+	--build.cmd "go build -o tmp/main ./cmd/deeployd/main.go" \
 	--build.bin "tmp/main" \
 	--build.delay "100" \
 	--build.include_ext "go" \

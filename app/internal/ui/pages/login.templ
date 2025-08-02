@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"github.com/axadrn/deeploy/internal/forms"
 	"github.com/axadrn/deeploy/internal/ui/layouts"
-	"github.com/axadrn/templui/pkg/components"
+	"github.com/axadrn/deeploy/internal/ui/components/card"
+	"github.com/axadrn/deeploy/internal/ui/components/button"
+	"github.com/axadrn/deeploy/internal/ui/components/input"
+	formcomp "github.com/axadrn/deeploy/internal/ui/components/form"
+	"github.com/axadrn/deeploy/internal/ui/components/label"
+	"github.com/axadrn/deeploy/internal/ui/components/toast"
 )
 
 var loginURL = ""
@@ -23,12 +28,12 @@ templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, port strin
 				</p>
 			</a>
 			<div class="max-w-sm w-full">
-				@components.Card(components.CardProps{}) {
-					@components.CardHeader() {
-						@components.CardTitle() {
+				@card.Card(card.Props{}) {
+					@card.Header() {
+						@card.Title() {
 							Sign In
 						}
-						@components.CardDescription() {
+						@card.Description() {
 							Sign in to your account
 						}
 					}
@@ -36,13 +41,13 @@ templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, port strin
 						method="POST"
 						action={ templ.SafeURL(loginURL) }
 					>
-						@components.CardContent() {
+						@card.Content() {
 							<div class="space-y-4">
-								@components.FormItem(components.FormItemProps{}) {
-									@components.FormLabel(components.FormLabelProps{
-										Text: "Email",
-									})
-									@components.Input(components.InputProps{
+								@formcomp.Item() {
+									@label.Label(label.Props{}) {
+										Email
+									}
+									@input.Input(input.Props{
 										Name:        "email",
 										Type:        "email",
 										Placeholder: "Enter email",
@@ -50,43 +55,46 @@ templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, port strin
 										Value:       form.Email,
 									})
 									if errs.Email != "" {
-										@components.FormMessage(components.FormMessageProps{
-											Type:    "error",
-											Message: errs.Email,
-										})
+										@formcomp.Message(formcomp.MessageProps{
+											Variant: formcomp.MessageVariantError,
+										}) {
+											{ errs.Email }
+										}
 									}
 								}
-								@components.FormItem(components.FormItemProps{}) {
-									@components.FormLabel(components.FormLabelProps{
-										Text: "Password",
-									})
-									@components.Input(components.InputProps{
+								@formcomp.Item() {
+									@label.Label(label.Props{}) {
+										Password
+									}
+									@input.Input(input.Props{
 										Name:        "password",
 										Type:        "password",
 										Placeholder: "Enter password",
 										HasError:    errs.Password != "",
 									})
 									if errs.Password != "" {
-										@components.FormMessage(components.FormMessageProps{
-											Type:    "error",
-											Message: errs.Password,
-										})
+										@formcomp.Message(formcomp.MessageProps{
+											Variant: formcomp.MessageVariantError,
+										}) {
+											{ errs.Password }
+										}
 									}
 								}
 							</div>
 						}
-						@components.CardFooter() {
-							@components.Button(components.ButtonProps{
-								Type:  "submit",
-								Text:  "Sign In",
+						@card.Footer() {
+							@button.Button(button.Props{
+								Type:  button.TypeSubmit,
 								Class: "w-full",
-							})
+							}) {
+								Sign In
+							}
 						}
 					</form>
 					if errs.General != "" {
-						@components.Toast(components.ToastProps{
-							Message:     errs.General,
-							Type:        "error",
+						@toast.Toast(toast.Props{
+							Description: errs.General,
+							Variant:     toast.VariantError,
 							Icon:        true,
 							Dismissible: true,
 							Duration:    5000,

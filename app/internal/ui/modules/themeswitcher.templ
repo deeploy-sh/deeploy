@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"github.com/axadrn/templui/pkg/components"
-	"github.com/axadrn/templui/pkg/icons"
+	"github.com/axadrn/deeploy/internal/ui/components/button"
+	"github.com/axadrn/deeploy/internal/ui/components/icon"
 )
 
 templ themeSwitcherHandler() {
@@ -29,15 +29,16 @@ type ThemeSwitcherProps struct {
 
 templ ThemeSwitcher(props ThemeSwitcherProps) {
 	@themeSwitcherHandler()
-	@components.Button(components.ButtonProps{
-		Size:     components.ButtonSizeIcon,
-		Variant:  components.ButtonVariantGhost,
-		IconLeft: templ.Component(DynamicThemeIcon()),
+	@button.Button(button.Props{
+		Size:     button.SizeIcon,
+		Variant:  button.VariantGhost,
 		Class:    props.Class,
 		Attributes: templ.Attributes{
 			"@click": "toggleTheme",
 		},
-	})
+	}) {
+		@DynamicThemeIcon()
+	}
 }
 
 templ DynamicThemeIcon() {
@@ -52,9 +53,9 @@ templ DynamicThemeIcon() {
 }
 
 templ DarkIcon() {
-	@icons.Moon(icons.IconProps{})
+	@icon.Moon(icon.Props{})
 }
 
 templ LightIcon() {
-	@icons.SunMedium(icons.IconProps{})
+	@icon.SunMedium(icon.Props{})
 }

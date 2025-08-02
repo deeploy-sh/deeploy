@@ -2,7 +2,7 @@ package pages
 
 import (
 	"github.com/axadrn/deeploy/internal/ui/layouts"
-	"github.com/axadrn/templui/pkg/components"
+	"github.com/axadrn/deeploy/internal/ui/components/card"
 )
 
 var cliAuthScriptHandle = templ.NewOnceHandle()
@@ -59,8 +59,8 @@ templ CliAuthSuccess(port, token string) {
             </script>
 		}
 		<div class="flex justify-center items-center">
-			@components.Card(components.CardProps{Class: "max-w-md"}) {
-				@components.CardContent() {
+			@card.Card(card.Props{Class: "max-w-md"}) {
+				@card.Content() {
 					<div class="text-center space-y-4">
 						<div id="loading-spinner" class="w-24 h-24 mx-auto">
 							<div class="w-full h-full border-4 border-gray-200 border-t-primary-foreground rounded-full animate-spin"></div>

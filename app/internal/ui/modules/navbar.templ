@@ -2,7 +2,7 @@ package modules
 
 import (
 	"github.com/axadrn/deeploy/internal/auth"
-	"github.com/axadrn/templui/pkg/components"
+	"github.com/axadrn/deeploy/internal/ui/components/button"
 )
 
 templ Navbar() {
@@ -17,10 +17,12 @@ templ Navbar() {
 				@ThemeSwitcher(ThemeSwitcherProps{})
 				if auth.IsAuthenticated(ctx) {
 					<form action="/logout" method="GET">
-						@components.Button(components.ButtonProps{
-							Variant: components.ButtonVariantSecondary,
-							Text:    "Logout",
-						})
+						@button.Button(button.Props{
+							Variant: button.VariantSecondary,
+							Type:    button.TypeSubmit,
+						}) {
+							Logout
+						}
 					</form>
 				}
 			</div>

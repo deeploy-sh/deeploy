@@ -1,0 +1,141 @@
+// templui component datepicker - version: v0.85.0 installed by templui v0.85.0
+package datepicker
+
+import (
+	"github.com/axadrn/deeploy/internal/ui/components/button"
+	"github.com/axadrn/deeploy/internal/ui/components/calendar"
+	"github.com/axadrn/deeploy/internal/ui/components/card"
+	"github.com/axadrn/deeploy/internal/ui/components/icon"
+	"github.com/axadrn/deeploy/internal/ui/components/popover"
+	"github.com/axadrn/deeploy/internal/utils"
+	"time"
+)
+
+type Format string
+type LocaleTag string
+
+const (
+	FormatLOCALE_SHORT  Format = "locale-short"  // Locale-specific short format (e.g., MM/DD/YY or DD.MM.YY)
+	FormatLOCALE_MEDIUM Format = "locale-medium" // Locale-specific medium format (e.g., Jan 5, 2024 or 5. Jan. 2024)
+	FormatLOCALE_LONG   Format = "locale-long"   // Locale-specific long format (e.g., January 5, 2024 or 5. Januar 2024)
+	FormatLOCALE_FULL   Format = "locale-full"   // Locale-specific full format (e.g., Monday, January 5, 2024 or Montag, 5. Januar 2024)
+)
+
+// Common Locale  (BCP 47)
+var (
+	LocaleDefaultTag    = LocaleTag("en-US")
+	LocaleTagChinese    = LocaleTag("zh-CN")
+	LocaleTagFrench     = LocaleTag("fr-FR")
+	LocaleTagGerman     = LocaleTag("de-DE")
+	LocaleTagItalian    = LocaleTag("it-IT")
+	LocaleTagJapanese   = LocaleTag("ja-JP")
+	LocaleTagPortuguese = LocaleTag("pt-PT")
+	LocaleTagSpanish    = LocaleTag("es-ES")
+)
+
+type Props struct {
+	ID          string
+	Class       string
+	Attributes  templ.Attributes
+	Value       time.Time
+	Format      Format    // Controls the display format using Intl dateStyle options.
+	LocaleTag   LocaleTag // BCP 47 Locale Tag (e.g., "en-US", "es-ES"). Determines language and regional format defaults.
+	Placeholder string
+	Disabled    bool
+	Required    bool
+	HasError    bool
+	Name        string
+}
+
+templ DatePicker(props ...Props) {
+	{{
+		var p Props
+		if len(props) > 0 {
+			p = props[0]
+		}
+		if p.ID == "" {
+			p.ID = utils.RandomID()
+		}
+		if p.Name == "" {
+			p.Name = p.ID
+		}
+		if p.Placeholder == "" {
+			p.Placeholder = "Select a date"
+		}
+		if p.LocaleTag == "" {
+			p.LocaleTag = LocaleDefaultTag
+		}
+		if p.Format == "" {
+			p.Format = FormatLOCALE_MEDIUM
+		}
+
+		var contentID = p.ID + "-content"
+		var valuePtr *time.Time
+		if !p.Value.IsZero() {
+			valuePtr = &p.Value
+		}
+	}}
+	@popover.Trigger(popover.TriggerProps{For: contentID}) {
+		@button.Button(button.Props{
+			ID:      p.ID,
+			Variant: button.VariantOutline,
+			Class: utils.TwMerge(
+				// Base styles matching input
+				"w-full h-9 px-3 py-1 text-base md:text-sm",
+				"flex items-center justify-between",
+				"rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] outline-none",
+				// Dark mode background
+				"dark:bg-input/30",
+				// Selection styles
+				"selection:bg-primary selection:text-primary-foreground",
+				// Focus styles
+				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+				// Error/Invalid styles
+				"aria-invalid:ring-destructive/20 aria-invalid:border-destructive dark:aria-invalid:ring-destructive/40",
+				utils.If(p.HasError, "border-destructive ring-destructive/20 dark:ring-destructive/40"),
+				p.Class,
+			),
+			Disabled: p.Disabled,
+			Attributes: utils.MergeAttributes(p.Attributes, templ.Attributes{
+				"data-tui-datepicker":     "true",
+				"data-tui-datepicker-display-format": string(p.Format),
+				"data-tui-datepicker-locale-tag":     string(p.LocaleTag),
+				"data-tui-datepicker-placeholder":    p.Placeholder,
+				"aria-invalid":        utils.If(p.HasError, "true"),
+			}),
+		}) {
+			if p.Placeholder != "" {
+				<span data-tui-datepicker-display class={ "text-left grow text-muted-foreground" }>
+					{ p.Placeholder }
+				</span>
+			}
+			<span class="text-muted-foreground flex items-center ml-2">
+				@icon.Calendar(icon.Props{Size: 16})
+			</span>
+		}
+	}
+	@popover.Content(popover.ContentProps{
+		ID:        contentID,
+		Placement: popover.PlacementBottomStart,
+		Class:     "p-0",
+	}) {
+		@card.Card(card.Props{
+			Class: "border-0 shadow-none",
+		}) {
+			@card.Content(card.ContentProps{
+				Class: "p-3",
+			}) {
+				@calendar.Calendar(calendar.Props{
+					ID:        p.ID + "-calendar-instance",     // Pass ID for calendar instance
+					Name:      p.Name,                          // Pass Name for hidden input
+					LocaleTag: calendar.LocaleTag(p.LocaleTag), // Pass locale tag to calendar
+					Value:     valuePtr,                        // Pass pointer to value
+				})
+			}
+		}
+	}
+}
+
+templ Script() {
+	<script defer src="/assets/js/components/datepicker.min.js"></script>
+}
