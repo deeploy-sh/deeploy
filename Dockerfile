@@ -1,5 +1,5 @@
 # Build-Stage
-FROM golang:1.23-alpine AS build
+FROM golang:1.24-alpine AS build
 WORKDIR /app
 
 # Copy the source code
@@ -15,7 +15,7 @@ RUN templ generate
 RUN apk add --no-cache gcc musl-dev
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/deeployd/main.go
 
 # Deploy-Stage
 FROM alpine:3.20.2
@@ -25,7 +25,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 # Set environment variable for runtime
-ENV GO_ENV=prod
+ENV GO_ENV=production
 
 # Copy the binary from the build stage
 COPY --from=build /app/main .

@@ -3,6 +3,7 @@ module github.com/axadrn/deeploy
 go 1.23.3
 
 require (
+	github.com/Oudwins/tailwind-merge-go v0.2.0
 	github.com/a-h/templ v0.3.906
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	github.com/Oudwins/tailwind-merge-go v0.2.0 // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect

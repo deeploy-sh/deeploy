@@ -1,50 +1,52 @@
 package pages
 
 import (
-	"github.com/axzilla/deeploy/docs/internal/ui/layouts"
-	"github.com/axzilla/templui/pkg/components"
+	"github.com/axadrn/deeploy/internal/ui/components/button"
+	"github.com/axadrn/deeploy/internal/ui/components/code"
+	"github.com/axadrn/deeploy/internal/ui/layouts"
 )
 
-templ Landing() {
-	@layouts.BaseLayout() {
+templ Dashboard() {
+	@layouts.AppLayout() {
 		<div class="h-[calc(100vh-65px)]">
 			<div class="container mx-auto px-4">
 				<div class="flex flex-col items-center justify-center h-[calc(100vh-65px)] space-y-8">
 					<div class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium animate-pulse">
-						Pre-Alpha
+						Web UI Coming Soon
 					</div>
 					<h1 class="text-3xl text-center font-bold tracking-tight">
-						Modern Deployment.
-						Terminal First.
+						Access our Terminal UI.
+						Modern and Fast.
 					</h1>
 					<p class="text-xl text-muted-foreground max-w-2xl text-center">
-						Deploy with a sleek TUI. For developers who live in the terminal.
+						Open-source platform to deploy and manage your infrastructure. Built for developers who love CLIs.
 					</p>
 					<div class="w-full max-w-lg">
-						@components.Code(components.CodeProps{ShowCopyButton: true}) {
-							{ `curl -fsSL https://deeploy.sh/install.sh | bash` }
+						@code.Code(code.Props{ShowCopyButton: true}) {
+							{ `curl -fsSL https://deeploy.sh/install-cli.sh | bash` }
 						}
-						<p class="text-muted-foreground mx-auto text-xs text-center mt-2">Server installation for your VPS (Hetzner, DigitalOcean, etc.)</p>
+						<p class="text-muted-foreground mx-auto text-xs text-center mt-2">CLI/TUI client for your local development machine</p>
 					</div>
 					<div class="flex flex-col items-center gap-2">
 						<div class="flex flex-col sm:flex-row gap-2 mt-4">
-							@components.Button(components.ButtonProps{
-								Variant: "default",
+							@button.Button(button.Props{
+								Variant: button.VariantDefault,
 								Class:   "px-8",
-								Href:    "https://github.com/axzilla/deeploy",
+								Href:    "https://github.com/axadrn/deeploy",
 								Target:  "_blank",
-								Text:    "Star on GitHub",
-							})
-							@components.Button(components.ButtonProps{
-								Variant: "outline",
+							}) {
+								Star on GitHub
+							}
+							@button.Button(button.Props{
+								Variant: button.VariantOutline,
 								Class:   "px-8",
-								Href:    "https://twitter.com/axadrn",
-								Text:    "Follow the Journey",
+								Href:    "https://x.com/axadrn",
 								Target:  "_blank",
-							})
+							}) {
+								Follow the Journey
+							}
 						</div>
 					</div>
-					<iframe src="https://github.com/sponsors/axzilla/button" title="Sponsor axzilla" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
 				</div>
 			</div>
 			<div class="fixed bottom-4 left-4 z-50">

@@ -422,7 +422,7 @@ docker run -d \
 
 # 5. Start deeployd
 echo "Starting deeployd..."
-docker pull ghcr.io/axzilla/deeployd:latest
+docker pull ghcr.io/deeploy-sh/deeployd:latest
 docker rm -f deeployd 2>/dev/null || true
 docker run -d \
   --name deeployd \
@@ -433,7 +433,7 @@ docker run -d \
   -v /var/deeploy/projects:/var/deeploy/projects \
   -v /var/deeploy/data:/app/data \
   -e ENCRYPTION_KEY=$(openssl rand -hex 32) \
-  ghcr.io/axzilla/deeployd:latest
+  ghcr.io/deeploy-sh/deeployd:latest
 
 IP=$(hostname -I | awk '{print $1}')
 echo "✨ deeploy installed! Access at: http://$IP:8090"
