@@ -1,0 +1,107 @@
+// templui component alert - version: v0.85.0 installed by templui v0.85.0
+package alert
+
+import "github.com/axadrn/deeploy/internal/utils"
+
+type Variant string
+
+const (
+	VariantDefault     Variant = "default"
+	VariantDestructive Variant = "destructive"
+)
+
+type Props struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+	Variant    Variant
+}
+
+type TitleProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+type DescriptionProps struct {
+	ID         string
+	Class      string
+	Attributes templ.Attributes
+}
+
+templ Alert(props ...Props) {
+	{{ var p Props }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"relative w-full p-4",
+				"[&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4",
+				"[&>svg+div]:translate-y-[-3px] [&:has(svg)]:pl-11",
+				"rounded-lg border",
+				variantClasses(p.Variant),
+				p.Class,
+			),
+		}
+		role="alert"
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+templ Title(props ...TitleProps) {
+	{{ var p TitleProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<h5
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"mb-1 font-medium leading-none tracking-tight",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		{ children... }
+	</h5>
+}
+
+templ Description(props ...DescriptionProps) {
+	{{ var p DescriptionProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<div
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"[&_p]:leading-relaxed text-sm",
+				p.Class,
+			),
+		}
+		{ p.Attributes... }
+	>
+		{ children... }
+	</div>
+}
+
+func variantClasses(variant Variant) string {
+	switch variant {
+	case VariantDestructive:
+		return "border-destructive text-destructive"
+	default:
+		return "border-border text-foreground"
+	}
+}

@@ -1,14 +1,12 @@
-# Global
-debug.log
 .DS_Store
 bin
 node_modules
 tmp
 .env
-
-# Other
 *_templ.go
 *_templ.txt
-/cmd/cli/release
+debug.log
+/cmd/tui/release
 /data
-
+*__debug_bin*
+deeployd

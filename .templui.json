@@ -1,0 +1,7 @@
+{
+  "componentsDir": "internal/ui/components",
+  "utilsDir": "internal/utils",
+  "moduleName": "github.com/axadrn/deeploy",
+  "jsDir": "assets/js/components",
+  "jsPublicPath": "/assets/js/components"
+}

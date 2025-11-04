@@ -1,6 +1,6 @@
 # deeploy
 
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/axzilla?style=social&label=♥️%20Sponsor)](https://github.com/sponsors/axzilla)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/axadrn?style=social&label=♥️%20Sponsor)](https://github.com/sponsors/axadrn)
 
 Modern Deployment. Terminal First.
 
@@ -74,7 +74,7 @@ Deeploy is open-source software licensed under the [MIT license](LICENSE).
 
 ## Support
 
-For support, questions, or discussions, please [open an issue](https://github.com/axzilla/deeploy/issues) on our GitHub repository or [visit our community (GitHub Discussions)](https://github.com/axzilla/deeploy/discussions).
+For support, questions, or discussions, please [open an issue](https://github.com/deeploy-sh/deeploy/issues) on our GitHub repository or [visit our community (GitHub Discussions)](https://github.com/deeploy-sh/deeploy/discussions).
 
 ---
 
