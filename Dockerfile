@@ -15,7 +15,7 @@ RUN templ generate
 RUN apk add --no-cache gcc musl-dev
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o main cmd/deeployd/main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/deeployd
 
 # Deploy-Stage
 FROM alpine:3.20.2
