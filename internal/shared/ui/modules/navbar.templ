@@ -1,0 +1,31 @@
+package modules
+
+import (
+	"github.com/deeploy-sh/deeploy/internal/shared/auth"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/button"
+)
+
+templ Navbar() {
+	<nav class="border-b py-3">
+		<div class="container mx-auto px-4 flex items-center justify-between gap-2">
+			<a href="/">
+				<p class="font-bold text-xl">
+					🔥 deeploy.sh
+				</p>
+			</a>
+			<div class="flex gap-2">
+				@ThemeSwitcher(ThemeSwitcherProps{})
+				if auth.IsAuthenticated(ctx) {
+					<form action="/logout" method="GET">
+						@button.Button(button.Props{
+							Variant: button.VariantSecondary,
+							Type:    button.TypeSubmit,
+						}) {
+							Logout
+						}
+					</form>
+				}
+			</div>
+		</div>
+	</nav>
+}

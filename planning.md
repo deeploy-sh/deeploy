@@ -215,7 +215,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-${SERVICE_ID}.rule=Host(`api.myapp.com`)"
-      - "traefik.http.services.api-${SERVICE_ID}.loadbalancer.server.port=4000"
+      - "traefik.http.service.api-${SERVICE_ID}.loadbalancer.server.port=4000"
       - "traefik.http.routers.api-${SERVICE_ID}.tls.certresolver=letsencrypt"
     networks:
       - my-saas-app_network

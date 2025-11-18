@@ -1,0 +1,56 @@
+// templui component code - version: v0.101.0 installed by templui v0.101.0
+// 📚 Documentation: https://templui.io/docs/components/code
+package code
+
+import "github.com/deeploy-sh/deeploy/internal/shared/utils"
+
+type Props struct {
+	ID        string
+	Class     string
+	Attrs     templ.Attributes
+	Language  string
+	CodeClass string
+}
+
+templ Code(props ...Props) {
+	// Highlight.js with theme switching
+	<link
+		id="highlight-theme"
+		href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css"
+		rel="stylesheet"
+	/>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	{{ var p Props }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	if p.ID == "" {
+		{{ p.ID = "code-" + utils.RandomID() }}
+	}
+	<div
+		id={ p.ID }
+		class={ utils.TwMerge("relative code-component", p.Class) }
+		data-tui-code-component
+		{ p.Attrs... }
+	>
+		<pre class="overflow-hidden!">
+			<code
+				data-tui-code-block
+				class={
+					utils.TwMerge(
+						"language-"+p.Language,
+						"overflow-y-auto! rounded-md block text-sm max-h-[500px]",
+						"hljs-target",
+						p.CodeClass,
+					),
+				}
+			>
+				{ children... }
+			</code>
+		</pre>
+	</div>
+}
+
+templ Script() {
+	<script defer nonce={ templ.GetNonce(ctx) } src={ "/assets/js/components/code.min.js?v=" + utils.ScriptVersion }></script>
+}

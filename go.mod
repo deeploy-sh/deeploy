@@ -1,4 +1,4 @@
-module github.com/axadrn/deeploy
+module github.com/deeploy-sh/deeploy
 
 go 1.23.3
 

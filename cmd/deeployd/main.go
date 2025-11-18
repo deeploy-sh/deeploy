@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/axadrn/deeploy/internal/config"
-	"github.com/axadrn/deeploy/internal/db"
-	"github.com/axadrn/deeploy/internal/deeploy"
-	"github.com/axadrn/deeploy/internal/routes"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/config"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/db"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/routes"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	app := deeploy.New(mux, db)
+	app := app.New(mux, db)
 
 	routes.Assets(app)
 	routes.Base(app)
