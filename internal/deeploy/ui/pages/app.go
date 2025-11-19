@@ -1,14 +1,15 @@
 package pages
 
 import (
+	"log"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,7 @@ type HasInputView interface {
 	HasFocusedInput() bool
 }
 
-type App struct {
+type app struct {
 	currentPage tea.Model
 	width       int
 	height      int
@@ -29,16 +30,16 @@ type App struct {
 // Constructors
 // /////////////////////////////////////////////////////////////////////////////
 
-func NewApp() App {
-	return App{}
+func NewApp() app {
+	return app{}
 }
 
 // We wait for window size before creating pages
-func (a App) Init() tea.Cmd {
+func (a app) Init() tea.Cmd {
 	return nil
 }
 
-func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		if msg.Type == tea.KeyCtrlC {
 			return a, tea.Quit
@@ -61,6 +62,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// If no pages yet, create first one
 		if a.currentPage == nil {
 			config, err := config.LoadConfig()
+			log.Println(config)
 			var page tea.Model
 
 			// No config = show login, has config = show dashboard
@@ -119,7 +121,7 @@ type FooterMenuItem struct {
 	Desc string
 }
 
-func (a App) View() string {
+func (a app) View() string {
 	if a.currentPage == nil {
 		return "Loading..."
 	}

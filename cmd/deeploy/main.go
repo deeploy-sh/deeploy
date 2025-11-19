@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/pages"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/pages"
 )
 
 func main() {
