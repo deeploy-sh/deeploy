@@ -1,13 +1,14 @@
 package pages
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,13 +20,15 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
+	"github.com/deeploy-sh/deeploy/internal/shared/utils"
 )
 
-// /////////////////////////////////////////////////////////////////////////////
-// Types & Messages
-// /////////////////////////////////////////////////////////////////////////////
+var (
+	ErrInvalidURL        = errors.New("invalid url")
+	ErrNoDeeployInstance = errors.New("no deeploy instance")
+)
 
-type ConnectPage struct {
+type connectPage struct {
 	serverInput textinput.Model
 	status      string
 	waiting     bool
@@ -39,29 +42,21 @@ type authCallback struct {
 	err   error
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Constructors
-///////////////////////////////////////////////////////////////////////////////
-
-func NewConnectPage() ConnectPage {
+func NewConnectPage() connectPage {
 	ti := textinput.New()
 	ti.Placeholder = "e.g. 123.45.67.89:8090"
 	ti.Focus()
 
-	return ConnectPage{
+	return connectPage{
 		serverInput: ti,
 	}
 }
 
-// /////////////////////////////////////////////////////////////////////////////
-// Bubbletea Interface
-// /////////////////////////////////////////////////////////////////////////////
-
-func (p ConnectPage) Init() tea.Cmd {
+func (p connectPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m ConnectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -74,12 +69,13 @@ func (m ConnectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			m.validate()
-			if m.err == "" {
-				m.waiting = true
-				return m, m.startBrowserAuth()
+			err := m.validate()
+			if err != nil {
+				m.err = err.Error()
+				return m, nil
 			}
-
+			m.waiting = true
+			return m, m.startBrowserAuth()
 		}
 	case messages.AuthSuccessMsg:
 		return m, func() tea.Msg {
@@ -90,7 +86,7 @@ func (m ConnectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (p ConnectPage) View() string {
+func (p connectPage) View() string {
 	var b strings.Builder
 
 	if p.waiting {
@@ -122,47 +118,38 @@ func (p ConnectPage) View() string {
 // Helper Methods
 // /////////////////////////////////////////////////////////////////////////////
 
-func (p *ConnectPage) validate() {
-	value := strings.TrimSpace(p.serverInput.Value())
-
-	// 1. Base-Check
-	if value == "" {
-		p.err = "Server required"
-		return
+func (p *connectPage) validate() error {
+	if !utils.IsValidURL(p.serverInput.Value()) {
+		return ErrInvalidURL
 	}
 
-	// 2. Format-Check (Host:Port)
-	host, port, err := net.SplitHostPort(value)
+	url := fmt.Sprintf("%s/api/health", p.serverInput.Value())
+
+	client := http.Client{Timeout: 3 * time.Second}
+	res, err := client.Get(url)
 	if err != nil {
-		p.err = "Invalid format (host:port)"
-		return
+		return ErrInvalidURL
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK ||
+		res.Header.Get("Content-Type") != "application/json" {
+		return ErrNoDeeployInstance
 	}
 
-	// 3. Port-Validation
-	portNum, err := strconv.Atoi(port)
-	if err != nil || portNum < 1 || portNum > 65535 {
-		p.err = "Invalid port number"
-		return
+	var healthCheck struct {
+		Service string
+		Version string
 	}
 
-	// 4. Simple Host-Check
-	if host == "" {
-		p.err = "Invalid host"
-		return
+	if err := json.NewDecoder(res.Body).Decode(&healthCheck); err != nil || healthCheck.Service != "deeploy" {
+		return ErrNoDeeployInstance
 	}
 
-	// Connection test
-	timeout := time.Second * 3
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
-	if err != nil {
-		p.err = "Server not reachable"
-		p.status = ""
-		return
-	}
-	defer conn.Close()
+	return nil
 }
 
-func (p *ConnectPage) resetErr() {
+func (p *connectPage) resetErr() {
 	p.err = ""
 }
 
@@ -211,13 +198,13 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, append(args, url)...).Start()
 }
 
-func (m ConnectPage) startBrowserAuth() tea.Cmd {
+func (m connectPage) startBrowserAuth() tea.Cmd {
 	return func() tea.Msg {
 		port, callback := startLocalAuthServer()
 
 		// Open browser
 		authURL := fmt.Sprintf(
-			"http://%s?cli=true&port=%d",
+			"%s?cli=true&port=%d",
 			m.serverInput.Value(),
 			port,
 		)

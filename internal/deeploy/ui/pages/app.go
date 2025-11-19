@@ -1,12 +1,10 @@
 package pages
 
 import (
-	"log"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
@@ -61,16 +59,18 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// If no pages yet, create first one
 		if a.currentPage == nil {
-			config, err := config.LoadConfig()
-			log.Println(config)
+			// config, err := config.LoadConfig()
+			// config, _ := config.LoadConfig()
+			// log.Println(config)
 			var page tea.Model
 
+			page = NewBootstrap()
 			// No config = show login, has config = show dashboard
-			if err != nil || config.Server == "" || config.Token == "" {
-				page = NewConnectPage()
-			} else {
-				page = NewDashboard()
-			}
+			// if err != nil || config.Server == "" || config.Token == "" {
+			// 	page = NewConnectPage()
+			// } else {
+			// 	page = NewDashboard()
+			// }
 
 			// Add first page to stack
 			a.currentPage = page

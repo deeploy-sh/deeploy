@@ -12,7 +12,7 @@ import (
 type RequestProps struct {
 	Method string
 	URL    string
-	Data   interface{}
+	Data   any
 }
 
 func Request(p RequestProps) (*http.Response, error) {
@@ -30,7 +30,7 @@ func Request(p RequestProps) (*http.Response, error) {
 		}
 	}
 
-	r, err := http.NewRequest(p.Method, "http://"+config.Server+"/api"+p.URL, bytes.NewBuffer(jsonData))
+	r, err := http.NewRequest(p.Method, config.Server+"/api"+p.URL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}

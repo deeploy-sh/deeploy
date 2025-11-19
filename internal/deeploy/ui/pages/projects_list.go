@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/deeploy-sh/deeploy/internal/shared/repo"
 )
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,6 @@ func (p ProjectListPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.err = msg
 	case messages.ProjectsInitDataMsg:
 		p.projects = msg
-		log.Println("xxx: ", p.projects)
 		return p, nil
 	case messages.ProjectCreatedMsg:
 		p.projects = append(p.projects, repo.ProjectDTO(msg))
