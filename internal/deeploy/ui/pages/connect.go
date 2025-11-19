@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // /////////////////////////////////////////////////////////////////////////////
