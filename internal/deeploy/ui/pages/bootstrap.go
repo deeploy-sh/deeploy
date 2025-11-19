@@ -73,6 +73,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.checkingState = checkingStateConfig
 			return m, checkConfig
 		}
+		// todo: implement retry modal
 		m.err = msg.err
 
 	case checkConfigMsg:
