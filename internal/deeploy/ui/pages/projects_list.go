@@ -165,7 +165,7 @@ func getProjects() tea.Msg {
 		return messages.ChangePageMsg{Page: NewConnectPage()}
 	}
 
-	r, err := http.NewRequest("GET", "http://"+config.Server+"/api/projects", nil)
+	r, err := http.NewRequest("GET", config.Server+"/api/projects", nil)
 	if err != nil {
 		return messages.ProjectErrMsg(err)
 	}
