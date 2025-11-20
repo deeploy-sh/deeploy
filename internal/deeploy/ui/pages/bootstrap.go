@@ -27,18 +27,25 @@ type checkServerMsg struct {
 	err error
 }
 
+type checkAuthMsg struct {
+	ok  bool
+	err error
+}
+
 type checkingState = int
 
 const (
 	checkingStateInternet checkingState = iota
 	checkingStateConfig
 	checkingStateServer
+	checkingStateAuth
 )
 
 type bootstrap struct {
 	internetOK    bool
 	configOK      bool
 	serverOK      bool
+	authOK        bool
 	checkingState checkingState
 	err           error
 }
@@ -86,6 +93,19 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case checkServerMsg:
 		if msg.ok {
 			m.serverOK = true
+			m.checkingState = checkingStateAuth
+			return m, checkAuth
+		}
+		m.err = msg.err
+		return m, func() tea.Msg {
+			return messages.ChangePageMsg{
+				Page: NewConnectPage(),
+			}
+		}
+
+	case checkAuthMsg:
+		if msg.ok {
+			m.serverOK = true
 			return m, func() tea.Msg {
 				return messages.ChangePageMsg{
 					Page: NewDashboard(),
@@ -93,6 +113,11 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.err = msg.err
+		return m, func() tea.Msg {
+			return messages.ChangePageMsg{
+				Page: NewConnectPage(),
+			}
+		}
 	}
 
 	return m, nil
@@ -178,6 +203,24 @@ func checkServer() tea.Msg {
 	}
 
 	return checkServerMsg{
+		ok:  true,
+		err: nil,
+	}
+}
+
+func checkAuth() tea.Msg {
+	_, err := utils.Request(utils.RequestProps{
+		Method: "GET",
+		URL:    "/dashboard",
+	})
+	if err != nil {
+		return checkAuthMsg{
+			ok:  false,
+			err: err,
+		}
+	}
+
+	return checkAuthMsg{
 		ok:  true,
 		err: nil,
 	}

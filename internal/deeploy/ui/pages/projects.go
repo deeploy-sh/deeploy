@@ -1,11 +1,9 @@
 package pages
 
 import (
-	"log"
-
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 )
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -39,7 +37,6 @@ func (p ProjectPage) Init() tea.Cmd {
 func (p ProjectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Println("FROM PROJECTS: ", msg)
 		if msg.Type == tea.KeyEsc {
 			if len(p.stack) == 0 {
 				return p, func() tea.Msg {
@@ -106,7 +103,7 @@ func (p ProjectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			p.stack = p.stack[:len(p.stack)-1]
 			return p, nil
 		}
-	
+
 	default:
 		// Forward all other messages to the current page
 		if len(p.stack) > 0 {

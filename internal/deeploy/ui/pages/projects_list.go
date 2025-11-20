@@ -2,7 +2,6 @@ package pages
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -46,7 +45,6 @@ func (p ProjectListPage) Init() tea.Cmd {
 func (p ProjectListPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		log.Println("FROM PROJECTS LIST: ", msg)
 		if msg.Type == tea.KeyEsc {
 			if len(p.stack) == 0 {
 				return p, func() tea.Msg {
@@ -125,7 +123,6 @@ func (p ProjectListPage) View() string {
 		Width(p.width).
 		Align(lipgloss.Center).
 		Render("🔥deeploy.sh\n")
-	log.Println(p.projects)
 	var cards []string
 	if p.err != nil {
 		cards = append(cards, components.ErrorCard(30).Render(p.err.Error()))
@@ -187,6 +184,5 @@ func getProjects() tea.Msg {
 		return messages.ProjectErrMsg(err)
 	}
 
-	log.Println("Projects loaded:", len(projects)) // Debugging output, replace with proper logging if needed
 	return messages.ProjectsInitDataMsg(projects)
 }

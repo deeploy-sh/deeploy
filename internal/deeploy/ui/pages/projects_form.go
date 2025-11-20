@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
 // /////////////////////////////////////////////////////////////////////////////
