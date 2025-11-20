@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

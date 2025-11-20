@@ -7,10 +7,10 @@ import (
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
 	handlers "github.com/deeploy-sh/deeploy/internal/deeployd/handler"
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 
-	mw "github.com/deeploy-sh/deeploy/internal/shared/middleware"
+	mw "github.com/deeploy-sh/deeploy/internal/deeployd/middleware"
 )
 
 func Base(app app.App) {

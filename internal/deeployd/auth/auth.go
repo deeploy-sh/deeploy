@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	"golang.org/x/crypto/bcrypt"
 )
 

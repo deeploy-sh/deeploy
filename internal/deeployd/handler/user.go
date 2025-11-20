@@ -9,7 +9,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/forms"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/ui/pages"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 )
 
 type UserHandler struct {

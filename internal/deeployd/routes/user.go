@@ -3,9 +3,9 @@ package routes
 import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
 	handlers "github.com/deeploy-sh/deeploy/internal/deeployd/handler"
-	mw "github.com/deeploy-sh/deeploy/internal/shared/middleware"
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	mw "github.com/deeploy-sh/deeploy/internal/deeployd/middleware"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 )
 
 func User(app app.App) {

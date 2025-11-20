@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/forms"
-	"github.com/deeploy-sh/deeploy/internal/shared/auth"
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 	"github.com/google/uuid"
 )
 

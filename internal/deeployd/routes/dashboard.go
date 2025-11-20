@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
-	mw "github.com/deeploy-sh/deeploy/internal/shared/middleware"
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	mw "github.com/deeploy-sh/deeploy/internal/deeployd/middleware"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 )
 
 func Dashboard(app app.App) {

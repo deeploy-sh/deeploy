@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/cookie"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/jwt"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/ui/pages"
-	"github.com/deeploy-sh/deeploy/internal/shared/jwt"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 )
 
 type AuthMiddleWare struct {

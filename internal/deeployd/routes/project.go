@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
-	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
 	apihandler "github.com/deeploy-sh/deeploy/internal/deeploy/handler"
-	mw "github.com/deeploy-sh/deeploy/internal/shared/middleware"
-	"github.com/deeploy-sh/deeploy/internal/shared/service"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
+	mw "github.com/deeploy-sh/deeploy/internal/deeployd/middleware"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 )
 
 func Project(app app.App) {

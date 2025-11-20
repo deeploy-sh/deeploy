@@ -1,11 +1,11 @@
 package service
 
 import (
+	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/forms"
-	"github.com/deeploy-sh/deeploy/internal/shared/auth"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/jwt"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
-	"github.com/deeploy-sh/deeploy/internal/shared/jwt"
-	"github.com/deeploy-sh/deeploy/internal/shared/repo"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	"github.com/google/uuid"
 )
 
