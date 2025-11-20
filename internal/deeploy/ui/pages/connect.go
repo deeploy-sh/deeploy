@@ -1,8 +1,6 @@
 package pages
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -10,7 +8,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,13 +16,8 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
-	"github.com/deeploy-sh/deeploy/internal/shared/utils"
-)
-
-var (
-	ErrInvalidURL        = errors.New("invalid url")
-	ErrNoDeeployInstance = errors.New("no deeploy instance")
 )
 
 type connectPage struct {
@@ -69,7 +61,7 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			err := m.validate()
+			err := utils.ValidateServer(m.serverInput.Value())
 			if err != nil {
 				m.err = err.Error()
 				return m, nil
@@ -117,37 +109,6 @@ func (p connectPage) View() string {
 // /////////////////////////////////////////////////////////////////////////////
 // Helper Methods
 // /////////////////////////////////////////////////////////////////////////////
-
-func (p *connectPage) validate() error {
-	if !utils.IsValidURL(p.serverInput.Value()) {
-		return ErrInvalidURL
-	}
-
-	url := fmt.Sprintf("%s/api/health", p.serverInput.Value())
-
-	client := http.Client{Timeout: 3 * time.Second}
-	res, err := client.Get(url)
-	if err != nil {
-		return ErrInvalidURL
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK ||
-		res.Header.Get("Content-Type") != "application/json" {
-		return ErrNoDeeployInstance
-	}
-
-	var healthCheck struct {
-		Service string
-		Version string
-	}
-
-	if err := json.NewDecoder(res.Body).Decode(&healthCheck); err != nil || healthCheck.Service != "deeploy" {
-		return ErrNoDeeployInstance
-	}
-
-	return nil
-}
 
 func (p *connectPage) resetErr() {
 	p.err = ""

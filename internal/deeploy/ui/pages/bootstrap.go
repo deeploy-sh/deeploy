@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 )
 
 type checkInternetMsg struct {
@@ -21,7 +22,7 @@ type checkConfigMsg struct {
 	err        error
 }
 
-type checkAuthMsg struct {
+type checkServerMsg struct {
 	ok  bool
 	err error
 }
@@ -31,13 +32,13 @@ type checkingState = int
 const (
 	checkingStateInternet checkingState = iota
 	checkingStateConfig
-	checkingStateAuth
+	checkingStateServer
 )
 
 type bootstrap struct {
 	internetOK    bool
 	configOK      bool
-	authOK        bool
+	serverOK      bool
 	checkingState checkingState
 	err           error
 }
@@ -72,8 +73,8 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case checkConfigMsg:
 		if msg.ok {
 			m.configOK = true
-			m.checkingState = checkingStateAuth
-			return m, checkAuth
+			m.checkingState = checkingStateServer
+			return m, checkServer
 		}
 		m.err = msg.err
 		return m, func() tea.Msg {
@@ -82,9 +83,9 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case checkAuthMsg:
+	case checkServerMsg:
 		if msg.ok {
-			m.authOK = true
+			m.serverOK = true
 			return m, func() tea.Msg {
 				return messages.ChangePageMsg{
 					Page: NewDashboard(),
@@ -107,13 +108,15 @@ func (m bootstrap) View() string {
 		return "checking internet connection ..."
 	case checkingStateConfig:
 		return "checking config ..."
-	case checkingStateAuth:
-		return "checking auth ..."
+	case checkingStateServer:
+		return "checking server ..."
 	}
 	return ""
 }
 
 func checkInternet() tea.Msg {
+	time.Sleep(1 * time.Second)
+
 	endpoints := []string{
 		"https://www.google.com",
 		"https://1.1.1.1", // Cloudflare
@@ -142,6 +145,8 @@ func checkInternet() tea.Msg {
 }
 
 func checkConfig() tea.Msg {
+	time.Sleep(1 * time.Second)
+
 	config, err := config.LoadConfig()
 	needsSetup := err != nil || config == nil || config.Server == "" || config.Token == ""
 
@@ -152,35 +157,27 @@ func checkConfig() tea.Msg {
 	}
 }
 
-func checkAuth() tea.Msg {
+func checkServer() tea.Msg {
+	time.Sleep(1 * time.Second)
+
 	config, err := config.LoadConfig()
 	if err != nil {
-		return checkAuthMsg{
+		return checkServerMsg{
 			ok:  false,
 			err: err,
 		}
+
 	}
 
-	req, err := http.NewRequest(http.MethodHead, config.Server, nil)
+	err = utils.ValidateServer(config.Server)
 	if err != nil {
-		return checkAuthMsg{
+		return checkServerMsg{
 			ok:  false,
 			err: err,
 		}
 	}
 
-	client := &http.Client{
-		Timeout: 3 * time.Second,
-	}
-	_, err = client.Do(req)
-	if err != nil {
-		return checkAuthMsg{
-			ok:  false,
-			err: err,
-		}
-	}
-
-	return checkAuthMsg{
+	return checkServerMsg{
 		ok:  true,
 		err: nil,
 	}
