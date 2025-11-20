@@ -21,12 +21,7 @@ type checkConfigMsg struct {
 	err        error
 }
 
-type checkServerMsg struct {
-	ok  bool
-	err error
-}
-
-type checkTokenMsg struct {
+type checkAuthMsg struct {
 	ok  bool
 	err error
 }
@@ -36,15 +31,13 @@ type checkingState = int
 const (
 	checkingStateInternet checkingState = iota
 	checkingStateConfig
-	checkingStateServer
-	checkingStateToken
+	checkingStateAuth
 )
 
 type bootstrap struct {
 	internetOK    bool
 	configOK      bool
-	serverOK      bool
-	tokenOK       bool
+	authOK        bool
 	checkingState checkingState
 	err           error
 }
@@ -79,8 +72,8 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case checkConfigMsg:
 		if msg.ok {
 			m.configOK = true
-			m.checkingState = checkingStateServer
-			return m, checkServer
+			m.checkingState = checkingStateAuth
+			return m, checkAuth
 		}
 		m.err = msg.err
 		return m, func() tea.Msg {
@@ -89,17 +82,14 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case checkServerMsg:
+	case checkAuthMsg:
 		if msg.ok {
-			m.serverOK = true
-			m.checkingState = checkingStateToken
-			return m, checkToken
-		}
-		m.err = msg.err
-
-	case checkTokenMsg:
-		if msg.ok {
-			m.tokenOK = true
+			m.authOK = true
+			return m, func() tea.Msg {
+				return messages.ChangePageMsg{
+					Page: NewDashboard(),
+				}
+			}
 		}
 		m.err = msg.err
 	}
@@ -117,12 +107,9 @@ func (m bootstrap) View() string {
 		return "checking internet connection ..."
 	case checkingStateConfig:
 		return "checking config ..."
-	case checkingStateServer:
-		return "checking server connection ..."
-	case checkingStateToken:
-		return "checking token validation ..."
+	case checkingStateAuth:
+		return "checking auth ..."
 	}
-
 	return ""
 }
 
@@ -165,10 +152,10 @@ func checkConfig() tea.Msg {
 	}
 }
 
-func checkServer() tea.Msg {
+func checkAuth() tea.Msg {
 	config, err := config.LoadConfig()
 	if err != nil {
-		return checkServerMsg{
+		return checkAuthMsg{
 			ok:  false,
 			err: err,
 		}
@@ -176,7 +163,7 @@ func checkServer() tea.Msg {
 
 	req, err := http.NewRequest(http.MethodHead, config.Server, nil)
 	if err != nil {
-		return checkServerMsg{
+		return checkAuthMsg{
 			ok:  false,
 			err: err,
 		}
@@ -187,18 +174,14 @@ func checkServer() tea.Msg {
 	}
 	_, err = client.Do(req)
 	if err != nil {
-		return checkServerMsg{
+		return checkAuthMsg{
 			ok:  false,
 			err: err,
 		}
 	}
 
-	return checkServerMsg{
+	return checkAuthMsg{
 		ok:  true,
 		err: nil,
 	}
-}
-
-func checkToken() tea.Msg {
-	return ""
 }
