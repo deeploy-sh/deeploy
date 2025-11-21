@@ -3,11 +3,14 @@ package pages
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 )
 
@@ -47,6 +50,7 @@ type bootstrap struct {
 	serverOK      bool
 	authOK        bool
 	checkingState checkingState
+	width, height int
 	err           error
 }
 
@@ -62,6 +66,10 @@ func (m bootstrap) Init() tea.Cmd {
 
 func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlA:
@@ -115,7 +123,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.err
 		return m, func() tea.Msg {
 			return messages.ChangePageMsg{
-				Page: NewConnectPage(),
+				Page: NewAuthPage(""),
 			}
 		}
 	}
@@ -128,15 +136,26 @@ func (m bootstrap) View() string {
 		return m.err.Error()
 	}
 
+	var b strings.Builder
+
 	switch m.checkingState {
 	case checkingStateInternet:
-		return "checking internet connection ..."
+		b.WriteString("checking internet connection ...")
 	case checkingStateConfig:
-		return "checking config ..."
+		b.WriteString("checking config ...")
 	case checkingStateServer:
-		return "checking server ..."
+		b.WriteString("checking server ...")
 	}
-	return ""
+
+	logo := lipgloss.NewStyle().
+		Width(m.width).
+		Align(lipgloss.Center).
+		Render("🔥deeploy.sh\n")
+	card := components.Card(components.CardProps{Width: 50}).Render(b.String())
+
+	view := lipgloss.JoinVertical(0.5, logo, card)
+	layout := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view)
+	return layout
 }
 
 func checkInternet() tea.Msg {

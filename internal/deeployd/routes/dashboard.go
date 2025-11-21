@@ -17,7 +17,6 @@ func Dashboard(app app.App) {
 	auth := mw.NewAuthMiddleware(userService)
 
 	app.Router.HandleFunc("GET /api/dashboard", auth.Auth(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("xxxxx")
 		fmt.Fprint(w, "Hello from server!")
 	}))
 }
