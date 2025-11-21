@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
@@ -51,17 +52,25 @@ type bootstrap struct {
 	authOK        bool
 	checkingState checkingState
 	width, height int
+	spinner       spinner.Model
 	err           error
 }
 
 func NewBootstrap() tea.Model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return &bootstrap{
+		spinner:       s,
 		checkingState: checkingStateInternet,
 	}
 }
 
 func (m bootstrap) Init() tea.Cmd {
-	return checkInternet
+	return tea.Batch(
+		m.spinner.Tick,
+		checkInternet,
+	)
 }
 
 func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -113,7 +122,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case checkAuthMsg:
 		if msg.ok {
-			m.serverOK = true
+			m.authOK = true
 			return m, func() tea.Msg {
 				return messages.ChangePageMsg{
 					Page: NewDashboard(),
@@ -126,6 +135,11 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Page: NewAuthPage(""),
 			}
 		}
+
+	default:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	}
 
 	return m, nil
@@ -138,13 +152,18 @@ func (m bootstrap) View() string {
 
 	var b strings.Builder
 
+	spinner := m.spinner.View()
+
 	switch m.checkingState {
 	case checkingStateInternet:
-		b.WriteString("checking internet connection ...")
+		b.WriteString(spinner + " checking internet connection...")
 	case checkingStateConfig:
-		b.WriteString("checking config ...")
+		b.WriteString(spinner + " checking config...")
 	case checkingStateServer:
-		b.WriteString("checking server ...")
+		b.WriteString(spinner + " checking server...")
+	case checkingStateAuth:
+		b.WriteString(spinner + " checking auth...")
+
 	}
 
 	logo := lipgloss.NewStyle().
@@ -228,6 +247,8 @@ func checkServer() tea.Msg {
 }
 
 func checkAuth() tea.Msg {
+	time.Sleep(1 * time.Second)
+
 	_, err := utils.Request(utils.RequestProps{
 		Method: "GET",
 		URL:    "/dashboard",
