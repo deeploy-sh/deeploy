@@ -254,6 +254,7 @@ func checkAuth() tea.Msg {
 		URL:    "/dashboard",
 	})
 	if err != nil {
+		utils.DeleteCfgToken()
 		return checkAuthMsg{
 			ok:  false,
 			err: err,

@@ -87,3 +87,17 @@ func ValidateServer(value string) error {
 
 	return nil
 }
+
+func DeleteCfgToken() {
+	// TODO: probably should check errors here
+	c, _ := config.Load()
+	c.Token = ""
+	_ = config.Save(c)
+}
+
+func DeleteCfgServer() {
+	// TODO: probably should check errors here
+	c, _ := config.Load()
+	c.Server = ""
+	_ = config.Save(c)
+}
