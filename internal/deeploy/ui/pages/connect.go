@@ -72,7 +72,7 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (p connectPage) View() string {
 	var b strings.Builder
 
-	b.WriteString("CONNECT TO SERVER\n\n")
+	b.WriteString("Connect to deeploy.sh server\n\n")
 	b.WriteString(styles.FocusedStyle.Render("Server "))
 	b.WriteString(p.serverInput.View())
 	if p.err != "" {

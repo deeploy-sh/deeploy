@@ -60,11 +60,6 @@ func (m authPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyEnter:
-			// err := utils.ValidateServer(m.serverInput.Value())
-			// if err != nil {
-			// 	m.err = err.Error()
-			// 	return m, nil
-			// }
 			m.waiting = true
 			return m, m.startBrowserAuth()
 		}
@@ -73,7 +68,6 @@ func (m authPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return viewtypes.Dashboard
 		}
 	}
-	// m.serverInput, cmd = m.serverInput.Update(msg)
 	return m, cmd
 }
 
@@ -84,11 +78,11 @@ func (p authPage) View() string {
 		b.WriteString("✨ Browser opened for authentication. Waiting for completion.")
 	} else {
 		if p.isReauth {
-			b.WriteString(fmt.Sprintf("🔄 Re-authenticating %v \n", p.serverURL))
-			b.WriteString("Press enter to authenticate")
+			b.WriteString(fmt.Sprintf("> Re-authenticating %v \n", p.serverURL))
+			b.WriteString("> Press enter to authenticate")
 		} else {
-			b.WriteString(fmt.Sprintf("✨ Authenticating %v \n", p.serverURL))
-			b.WriteString("Press enter to authenticate")
+			b.WriteString(fmt.Sprintf("> Authenticating %v \n", p.serverURL))
+			b.WriteString("> Press enter to authenticate")
 		}
 	}
 
