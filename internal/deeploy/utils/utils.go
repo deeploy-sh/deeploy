@@ -25,7 +25,7 @@ type RequestProps struct {
 }
 
 func Request(p RequestProps) (*http.Response, error) {
-	config, err := config.LoadConfig()
+	config, err := config.Load()
 	if err != nil {
 		return nil, err
 	}
