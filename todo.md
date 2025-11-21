@@ -1,4 +1,4 @@
 ## TODO
 
-- think about to simplify bootstrap checks and/or why is validate func needed at connect page
-- when no internet -> add retry modal
+- feat: when no internet -> add retry modal
+- fix: placeholders only have one char
