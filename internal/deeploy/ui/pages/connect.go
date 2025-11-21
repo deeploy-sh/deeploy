@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -18,17 +19,19 @@ type connectPage struct {
 	status      string
 	width       int
 	height      int
-	err         string
+	err         error
 }
 
-func NewConnectPage() connectPage {
+func NewConnectPage(err error) connectPage {
+	log.Println(err)
 	ti := textinput.New()
 	ti.Placeholder = "e.g. 123.45.67.89:8090"
-	ti.Width = 80 // HACK: only because of: https://github.com/charmbracelet/bubbles/issues/779
+	ti.Width = 30 // HACK: only because of: https://github.com/charmbracelet/bubbles/issues/779
 	ti.Focus()
 
 	return connectPage{
 		serverInput: ti,
+		err:         err,
 	}
 }
 
@@ -52,7 +55,7 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			input := m.serverInput.Value()
 			err := utils.ValidateServer(input)
 			if err != nil {
-				m.err = err.Error()
+				m.err = err
 				return m, nil
 			}
 			return m, func() tea.Msg {
@@ -75,8 +78,8 @@ func (p connectPage) View() string {
 
 	b.WriteString("Connect to deeploy.sh server\n\n")
 	b.WriteString(p.serverInput.View())
-	if p.err != "" {
-		b.WriteString(styles.ErrorStyle.Render("\n* " + p.err))
+	if p.err != nil {
+		b.WriteString(styles.ErrorStyle.Render("\n* " + p.err.Error()))
 	}
 	if p.status != "" {
 		b.WriteString(p.status)
@@ -94,5 +97,5 @@ func (p connectPage) View() string {
 }
 
 func (p *connectPage) resetErr() {
-	p.err = ""
+	p.err = nil
 }

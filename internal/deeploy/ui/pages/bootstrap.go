@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -21,9 +22,8 @@ type checkInternetMsg struct {
 }
 
 type checkConfigMsg struct {
-	ok         bool
-	needsSetup bool
-	err        error
+	ok  bool
+	err error
 }
 
 type checkServerMsg struct {
@@ -103,7 +103,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.err
 		return m, func() tea.Msg {
 			return messages.ChangePageMsg{
-				Page: NewConnectPage(),
+				Page: NewConnectPage(m.err),
 			}
 		}
 
@@ -116,7 +116,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg.err
 		return m, func() tea.Msg {
 			return messages.ChangePageMsg{
-				Page: NewConnectPage(),
+				Page: NewConnectPage(m.err),
 			}
 		}
 
@@ -211,12 +211,19 @@ func checkConfig() tea.Msg {
 	time.Sleep(1 * time.Second)
 
 	config, err := config.Load()
-	needsSetup := err != nil || config == nil || config.Server == "" || config.Token == ""
+	log.Println(config)
+
+	if err != nil || config == nil {
+		err = fmt.Errorf("missing config")
+	} else if config.Server == "" {
+		err = fmt.Errorf("missing server")
+	} else if config.Token == "" {
+		err = fmt.Errorf("missing token")
+	}
 
 	return checkConfigMsg{
-		ok:         !needsSetup,
-		needsSetup: needsSetup,
-		err:        nil,
+		ok:  err == nil,
+		err: err,
 	}
 }
 

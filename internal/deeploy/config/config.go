@@ -43,9 +43,6 @@ func Load() (*Config, error) {
 	configPath := filepath.Join(home, ".config", "deeploy", "config.json")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return &Config{}, nil
-		}
 		return nil, err
 	}
 

@@ -159,7 +159,7 @@ func (p ProjectListPage) View() string {
 func getProjects() tea.Msg {
 	config, err := config.Load()
 	if err != nil {
-		return messages.ChangePageMsg{Page: NewConnectPage()}
+		return messages.ChangePageMsg{Page: NewConnectPage(err)}
 	}
 
 	r, err := http.NewRequest("GET", config.Server+"/api/projects", nil)
@@ -174,7 +174,7 @@ func getProjects() tea.Msg {
 		return messages.ProjectErrMsg(err)
 	}
 	if res.StatusCode == http.StatusUnauthorized {
-		return messages.ChangePageMsg{Page: NewConnectPage()}
+		return messages.ChangePageMsg{Page: NewConnectPage(err)}
 	}
 	defer res.Body.Close()
 
