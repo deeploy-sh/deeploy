@@ -191,7 +191,7 @@ func checkInternet() tea.Msg {
 func checkConfig() tea.Msg {
 	time.Sleep(1 * time.Second)
 
-	config, err := config.LoadConfig()
+	config, err := config.Load()
 	needsSetup := err != nil || config == nil || config.Server == "" || config.Token == ""
 
 	return checkConfigMsg{
@@ -204,7 +204,7 @@ func checkConfig() tea.Msg {
 func checkServer() tea.Msg {
 	time.Sleep(1 * time.Second)
 
-	config, err := config.LoadConfig()
+	config, err := config.Load()
 	if err != nil {
 		return checkServerMsg{
 			ok:  false,

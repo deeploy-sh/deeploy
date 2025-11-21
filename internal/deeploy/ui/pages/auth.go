@@ -34,7 +34,7 @@ type authCallback struct {
 func NewAuthPage(server string) authPage {
 	isReauth := server == ""
 	if isReauth {
-		cfg, _ := config.LoadConfig()
+		cfg, _ := config.Load()
 		server = cfg.Server
 	}
 	return authPage{
@@ -173,7 +173,7 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 			Server: m.serverURL,
 			Token:  result.token,
 		}
-		if err := config.SaveConfig(&cfg); err != nil {
+		if err := config.Save(&cfg); err != nil {
 			return messages.AuthErrorMsg{Err: err}
 		}
 

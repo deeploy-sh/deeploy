@@ -157,7 +157,7 @@ func (p ProjectListPage) View() string {
 // /////////////////////////////////////////////////////////////////////////////
 
 func getProjects() tea.Msg {
-	config, err := config.LoadConfig()
+	config, err := config.Load()
 	if err != nil {
 		return messages.ChangePageMsg{Page: NewConnectPage()}
 	}

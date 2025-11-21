@@ -11,7 +11,7 @@ type Config struct {
 	Token  string `json:"token"`
 }
 
-func SaveConfig(cfg *Config) error {
+func Save(cfg *Config) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func SaveConfig(cfg *Config) error {
 	)
 }
 
-func LoadConfig() (*Config, error) {
+func Load() (*Config, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
