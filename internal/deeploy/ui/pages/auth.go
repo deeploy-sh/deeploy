@@ -121,7 +121,6 @@ func startLocalAuthServer() (int, chan authCallback) {
 		}
 		callback <- authCallback{token: string(token)}
 		w.Write([]byte("OK"))
-		return
 	})
 
 	// Get a free random port

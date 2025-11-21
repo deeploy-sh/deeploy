@@ -24,6 +24,7 @@ type connectPage struct {
 func NewConnectPage() connectPage {
 	ti := textinput.New()
 	ti.Placeholder = "e.g. 123.45.67.89:8090"
+	ti.Width = 80 // HACK: only because of: https://github.com/charmbracelet/bubbles/issues/779
 	ti.Focus()
 
 	return connectPage{
@@ -73,7 +74,6 @@ func (p connectPage) View() string {
 	var b strings.Builder
 
 	b.WriteString("Connect to deeploy.sh server\n\n")
-	b.WriteString(styles.FocusedStyle.Render("Server "))
 	b.WriteString(p.serverInput.View())
 	if p.err != "" {
 		b.WriteString(styles.ErrorStyle.Render("\n* " + p.err))
@@ -88,7 +88,7 @@ func (p connectPage) View() string {
 		Render("🔥deeploy.sh\n")
 	card := components.Card(components.CardProps{Width: 50}).Render(b.String())
 
-	view := lipgloss.JoinVertical(0.5, logo, card)
+	view := lipgloss.JoinVertical(lipgloss.Center, logo, card)
 	layout := lipgloss.Place(p.width, p.height, lipgloss.Center, lipgloss.Center, view)
 	return layout
 }

@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
 
 type CardProps struct {
