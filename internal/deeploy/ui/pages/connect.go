@@ -2,7 +2,6 @@ package pages
 
 import (
 	"log"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,7 +34,7 @@ func NewConnectPage(err error) connectPage {
 	}
 }
 
-func (p connectPage) Init() tea.Cmd {
+func (m connectPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
@@ -49,8 +48,6 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		m.resetErr()
 		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
 		case tea.KeyEnter:
 			input := m.serverInput.Value()
 			err := utils.ValidateServer(input)
@@ -73,29 +70,24 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (p connectPage) View() string {
-	var b strings.Builder
-
-	b.WriteString("Connect to deeploy.sh server\n\n")
-	b.WriteString(p.serverInput.View())
-	if p.err != nil {
-		b.WriteString(styles.ErrorStyle.Render("\n* " + p.err.Error()))
-	}
-	if p.status != "" {
-		b.WriteString(p.status)
-	}
-
+func (m connectPage) View() string {
 	logo := lipgloss.NewStyle().
-		Width(p.width).
+		Width(m.width).
 		Align(lipgloss.Center).
-		Render("🔥deeploy.sh\n")
-	card := components.Card(components.CardProps{Width: 50}).Render(b.String())
+		MarginBottom(1).
+		Render("🔥deeploy.sh")
+
+	content := "Connect to deeploy.sh server\n\n" + m.serverInput.View()
+	if m.err != nil {
+		content += styles.ErrorStyle.Render("\n* " + m.err.Error())
+	}
+
+	card := components.Card(components.CardProps{Width: 50}).Render(content)
 
 	view := lipgloss.JoinVertical(lipgloss.Center, logo, card)
-	layout := lipgloss.Place(p.width, p.height, lipgloss.Center, lipgloss.Center, view)
-	return layout
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view)
 }
 
-func (p *connectPage) resetErr() {
-	p.err = nil
+func (m *connectPage) resetErr() {
+	m.err = nil
 }

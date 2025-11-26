@@ -79,8 +79,8 @@ type FooterMenuItem struct {
 
 func (m app) View() string {
 	footerMenuItems := []FooterMenuItem{
-		{Key: "esc", Desc: "back"},
-		{Key: "ctrl + c", Desc: "quit"},
+		// {Key: "esc", Desc: "back"},
+		{Key: "ctrl+c", Desc: "quit"},
 	}
 
 	var footerText strings.Builder
