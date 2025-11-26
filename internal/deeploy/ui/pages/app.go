@@ -73,9 +73,8 @@ func (m app) View() string {
 	main := m.currentPage.View()
 
 	footerMenuItems := []FooterMenuItem{
-		{Key: ":", Desc: "menu"},
 		{Key: "esc", Desc: "back"},
-		{Key: "q", Desc: "quit"},
+		{Key: "ctrl + c", Desc: "quit"},
 	}
 
 	var footer strings.Builder
