@@ -2,19 +2,27 @@ package pages
 
 import (
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 )
 
 const footerHeight = 1
 
+type heartbeatMsg struct {
+	ok bool
+}
+
 type app struct {
-	currentPage tea.Model
-	width       int
-	height      int
+	currentPage      tea.Model
+	width            int
+	height           int
+	isOffline        bool
+	heartbeatStarted bool
 }
 
 func NewApp() app {
@@ -24,11 +32,17 @@ func NewApp() app {
 }
 
 func (m app) Init() tea.Cmd {
-	return m.currentPage.Init()
+	return tea.Batch(m.currentPage.Init())
 }
 
 func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case heartbeatMsg:
+		m.isOffline = !msg.ok
+		return m, tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
+			return checkHearbeat()
+		})
+
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC {
 			return m, tea.Quit
@@ -51,8 +65,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case messages.ChangePageMsg:
-		newPage := msg.Page
-		m.currentPage = newPage
+		m.currentPage = msg.Page
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
@@ -60,8 +73,19 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
+
+		_, initial := m.currentPage.(DashboardPage)
+		if initial && !m.heartbeatStarted {
+			m.heartbeatStarted = true
+			return m, tea.Batch(
+				m.currentPage.Init(),
+				checkHearbeat,
+				cmd,
+			)
+		}
+
 		return m, tea.Batch(
-			newPage.Init(),
+			m.currentPage.Init(),
 			cmd,
 		)
 
@@ -78,6 +102,18 @@ type FooterMenuItem struct {
 }
 
 func (m app) View() string {
+	if m.isOffline && m.heartbeatStarted {
+		logo := lipgloss.NewStyle().
+			Width(m.width).
+			Align(lipgloss.Center).
+			Render("🔥deeploy.sh\n")
+
+		view := lipgloss.JoinVertical(0.5, logo, "No internet. Retrying...")
+		layout := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view)
+		return layout
+
+	}
+
 	footerMenuItems := []FooterMenuItem{
 		// {Key: "esc", Desc: "back"},
 		{Key: "ctrl+c", Desc: "quit"},
@@ -102,4 +138,11 @@ func (m app) View() string {
 	view := lipgloss.JoinVertical(lipgloss.Left, m.currentPage.View(), footer)
 
 	return lipgloss.Place(m.width, m.height+footerHeight, lipgloss.Left, lipgloss.Bottom, view)
+}
+
+func checkHearbeat() tea.Msg {
+	isOnline := utils.IsOnline()
+	return heartbeatMsg{
+		ok: isOnline,
+	}
 }

@@ -22,7 +22,8 @@ func main() {
 	// Start App
 	m := pages.NewApp()
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
+	_, err := p.Run()
+	if err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}

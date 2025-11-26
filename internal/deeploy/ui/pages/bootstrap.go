@@ -2,7 +2,6 @@ package pages
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"time"
 
@@ -23,8 +22,7 @@ var (
 )
 
 type checkInternetMsg struct {
-	ok  bool
-	err error
+	ok bool
 }
 
 type checkConfigMsg struct {
@@ -42,14 +40,14 @@ type checkAuthMsg struct {
 	err error
 }
 
-type checkingState = int
+type state = int
 
 const (
-	checkingStateInternet checkingState = iota
-	checkingStateConfig
-	checkingStateServer
-	checkingStateAuth
-	checkingStateErr
+	stateCheckingInternet state = iota
+	stateNoInternet
+	stateCheckingConfig
+	stateCheckingServer
+	stateCheckingAuth
 )
 
 type bootstrap struct {
@@ -57,7 +55,7 @@ type bootstrap struct {
 	configOK      bool
 	serverOK      bool
 	authOK        bool
-	checkingState checkingState
+	state         state
 	width, height int
 	spinner       spinner.Model
 	err           error
@@ -68,8 +66,8 @@ func NewBootstrap() tea.Model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return &bootstrap{
-		spinner:       s,
-		checkingState: checkingStateInternet,
+		spinner: s,
+		state:   stateCheckingInternet,
 	}
 }
 
@@ -95,16 +93,19 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case checkInternetMsg:
 		if msg.ok {
 			m.internetOK = true
-			m.checkingState = checkingStateConfig
+			m.state = stateCheckingConfig
 			return m, checkConfig
 		}
-		// todo: implement retry modal
-		m.err = msg.err
+
+		m.state = stateNoInternet
+		return m, tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
+			return checkInternet()
+		})
 
 	case checkConfigMsg:
 		if msg.ok {
 			m.configOK = true
-			m.checkingState = checkingStateServer
+			m.state = stateCheckingServer
 			return m, checkServer
 		}
 		m.err = msg.err
@@ -117,7 +118,7 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case checkServerMsg:
 		if msg.ok {
 			m.serverOK = true
-			m.checkingState = checkingStateAuth
+			m.state = stateCheckingAuth
 			return m, checkAuth
 		}
 		m.err = msg.err
@@ -157,15 +158,17 @@ func (m bootstrap) View() string {
 
 	spinner := m.spinner.View()
 
-	switch m.checkingState {
-	case checkingStateInternet:
-		b.WriteString(spinner + " checking internet connection...")
-	case checkingStateConfig:
-		b.WriteString(spinner + " checking config...")
-	case checkingStateServer:
-		b.WriteString(spinner + " checking server...")
-	case checkingStateAuth:
-		b.WriteString(spinner + " checking auth...")
+	switch m.state {
+	case stateCheckingInternet:
+		b.WriteString(spinner + " Checking internet...")
+	case stateNoInternet:
+		b.WriteString(spinner + " No internet. Retrying...")
+	case stateCheckingConfig:
+		b.WriteString(spinner + " Checking config...")
+	case stateCheckingServer:
+		b.WriteString(spinner + " Checking server...")
+	case stateCheckingAuth:
+		b.WriteString(spinner + " Checking auth...")
 	}
 
 	logo := lipgloss.NewStyle().
@@ -181,31 +184,9 @@ func (m bootstrap) View() string {
 
 func checkInternet() tea.Msg {
 	time.Sleep(1 * time.Second)
-
-	endpoints := []string{
-		"https://www.google.com",
-		"https://1.1.1.1", // Cloudflare
-		"https://8.8.8.8", // Google DNS
-	}
-
-	client := &http.Client{
-		Timeout: 3 * time.Second,
-	}
-
-	for _, endpoint := range endpoints {
-		req, _ := http.NewRequest(http.MethodHead, endpoint, nil)
-		_, err := client.Do(req)
-		if err == nil {
-			return checkInternetMsg{
-				ok:  true,
-				err: nil,
-			}
-		}
-	}
-
+	isOnline := utils.IsOnline()
 	return checkInternetMsg{
-		ok:  false,
-		err: ErrNoInternetConnection,
+		ok: isOnline,
 	}
 }
 
