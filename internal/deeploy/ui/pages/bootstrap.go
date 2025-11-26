@@ -1,8 +1,7 @@
 package pages
 
 import (
-	"fmt"
-	"log"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -14,6 +13,13 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
+)
+
+var (
+	ErrNoInternetConnection = errors.New("no internet connection")
+	ErrMissingConfig        = errors.New("missing config")
+	ErrMissingServer        = errors.New("missing server")
+	ErrMissingToken         = errors.New("missing token")
 )
 
 type checkInternetMsg struct {
@@ -43,6 +49,7 @@ const (
 	checkingStateConfig
 	checkingStateServer
 	checkingStateAuth
+	checkingStateErr
 )
 
 type bootstrap struct {
@@ -146,10 +153,6 @@ func (m bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m bootstrap) View() string {
-	if m.err != nil {
-		return m.err.Error()
-	}
-
 	var b strings.Builder
 
 	spinner := m.spinner.View()
@@ -163,7 +166,6 @@ func (m bootstrap) View() string {
 		b.WriteString(spinner + " checking server...")
 	case checkingStateAuth:
 		b.WriteString(spinner + " checking auth...")
-
 	}
 
 	logo := lipgloss.NewStyle().
@@ -203,7 +205,7 @@ func checkInternet() tea.Msg {
 
 	return checkInternetMsg{
 		ok:  false,
-		err: fmt.Errorf("no internet connection"),
+		err: ErrNoInternetConnection,
 	}
 }
 
@@ -211,14 +213,13 @@ func checkConfig() tea.Msg {
 	time.Sleep(1 * time.Second)
 
 	config, err := config.Load()
-	log.Println(config)
 
 	if err != nil || config == nil {
-		err = fmt.Errorf("missing config")
+		err = ErrMissingConfig
 	} else if config.Server == "" {
-		err = fmt.Errorf("missing server")
+		err = ErrMissingServer
 	} else if config.Token == "" {
-		err = fmt.Errorf("missing token")
+		err = ErrMissingToken
 	}
 
 	return checkConfigMsg{
