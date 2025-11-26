@@ -6,9 +6,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
+
+const footerHeight = 1
 
 type app struct {
 	currentPage tea.Model
@@ -32,36 +33,43 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Type == tea.KeyCtrlC {
 			return m, tea.Quit
 		}
+		var cmd tea.Cmd
+
+		m.currentPage, cmd = m.currentPage.Update(msg)
+		return m, cmd
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
-		m.height = msg.Height
-		// return a, cmd
-		// return a, nil
+		m.height = msg.Height - footerHeight
+
+		pageMsg := tea.WindowSizeMsg{
+			Width:  m.width,
+			Height: m.height, // Reduzierte Höhe!
+		}
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(pageMsg)
+		return m, cmd
 
 	case messages.ChangePageMsg:
 		newPage := msg.Page
 		m.currentPage = newPage
 
-		// Batch window size and init commands together
-		// This prevents double rendering by ensuring both happen in sequence
+		pageMsg := tea.WindowSizeMsg{
+			Width:  m.width,
+			Height: m.height,
+		}
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(pageMsg)
 		return m, tea.Batch(
-			func() tea.Msg {
-				return tea.WindowSizeMsg{
-					Width:  m.width,
-					Height: m.height,
-				}
-			},
-			// INFO: do we really need this here?
-			// newPage.Init(),
+			newPage.Init(),
+			cmd,
 		)
-	}
 
-	// All other messages go to current page
-	currentPage := m.currentPage
-	updatedPage, cmd := currentPage.Update(msg)
-	m.currentPage = updatedPage
-	return m, cmd
+	default:
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(msg)
+		return m, cmd
+	}
 }
 
 type FooterMenuItem struct {
@@ -70,31 +78,28 @@ type FooterMenuItem struct {
 }
 
 func (m app) View() string {
-	main := m.currentPage.View()
-
 	footerMenuItems := []FooterMenuItem{
 		{Key: "esc", Desc: "back"},
 		{Key: "ctrl + c", Desc: "quit"},
 	}
 
-	var footer strings.Builder
+	var footerText strings.Builder
 
 	for i, v := range footerMenuItems {
-		footer.WriteString(styles.FocusedStyle.Render(v.Key))
-		footer.WriteString(" ")
-		footer.WriteString(v.Desc)
+		footerText.WriteString(styles.FocusedStyle.Render(v.Key))
+		footerText.WriteString(" ")
+		footerText.WriteString(v.Desc)
 		if len(footerMenuItems)-1 != i {
-			footer.WriteString(" • ")
+			footerText.WriteString(" • ")
 		}
 	}
+	footer := lipgloss.
+		NewStyle().
+		PaddingLeft(1).
+		PaddingRight(1).
+		Render(footerText.String())
 
-	footerCard := components.Card(components.CardProps{
-		Width:   m.width,
-		Padding: []int{0, 1},
-	}).Render(footer.String())
+	view := lipgloss.JoinVertical(lipgloss.Left, m.currentPage.View(), footer)
 
-	horizontal := lipgloss.JoinHorizontal(0.5, main)
-	view := lipgloss.JoinVertical(lipgloss.Bottom, horizontal, footerCard)
-
-	return view
+	return lipgloss.Place(m.width, m.height+footerHeight, lipgloss.Left, lipgloss.Bottom, view)
 }
