@@ -18,7 +18,8 @@ func Save(cfg *Config) error {
 	}
 
 	configDir := filepath.Join(home, ".config", "deeploy")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	err = os.MkdirAll(configDir, 0755)
+	if err != nil {
 		return err
 	}
 
@@ -47,7 +48,8 @@ func Load() (*Config, error) {
 	}
 
 	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	err = json.Unmarshal(data, &cfg)
+	if err != nil {
 		return nil, err
 	}
 
