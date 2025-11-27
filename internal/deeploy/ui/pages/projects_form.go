@@ -118,11 +118,7 @@ func (p ProjectFormPage) CreateProject() tea.Msg {
 		Title: p.titleInput.Value(),
 	}
 
-	res, err := utils.Request(utils.RequestProps{
-		Method: "POST",
-		URL:    "/projects",
-		Data:   postData,
-	})
+	res, err := utils.Request("POST", "/projects", postData)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -142,11 +138,7 @@ func (p ProjectFormPage) UpdateProject() tea.Msg {
 	postData := p.project
 	postData.Title = p.titleInput.Value()
 
-	res, err := utils.Request(utils.RequestProps{
-		Method: "PUT",
-		URL:    "/projects",
-		Data:   postData,
-	})
+	res, err := utils.Request("PUT", "/projects", postData)
 	if err != nil {
 		log.Println(err)
 		return nil

@@ -18,13 +18,7 @@ var (
 	ErrNoDeeployInstance = errors.New("no deeploy instance")
 )
 
-type RequestProps struct {
-	Method string
-	URL    string
-	Data   any
-}
-
-func Request(p RequestProps) (*http.Response, error) {
+func Request(method, url string, data any) (*http.Response, error) {
 	config, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -32,14 +26,14 @@ func Request(p RequestProps) (*http.Response, error) {
 
 	var jsonData []byte
 
-	if p.Data != nil {
-		jsonData, err = json.Marshal(p.Data)
+	if data != nil {
+		jsonData, err = json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	r, err := http.NewRequest(p.Method, config.Server+"/api"+p.URL, bytes.NewBuffer(jsonData))
+	r, err := http.NewRequest(method, config.Server+"/api"+url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}

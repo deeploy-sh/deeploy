@@ -21,7 +21,7 @@ func Base(app app.App) {
 	auth := mw.NewAuthMiddleware(userService)
 
 	app.Router.HandleFunc("GET /dashboard", mw.RequireAuth(auth.Auth(dashboardHandler.DashboardView)))
-	app.Router.HandleFunc("GET /api/health", healthHandler)
+	app.Router.HandleFunc("GET /api/health", auth.Auth(healthHandler))
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {

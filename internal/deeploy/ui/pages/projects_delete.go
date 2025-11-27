@@ -144,10 +144,7 @@ func (p ProjectDeletePage) View() string {
 // /////////////////////////////////////////////////////////////////////////////
 
 func (p ProjectDeletePage) DeleteProject() tea.Msg {
-	res, err := utils.Request(utils.RequestProps{
-		Method: "DELETE",
-		URL:    "/projects/" + p.project.ID,
-	})
+	res, err := utils.Request("DELETE", "/projects/"+p.project.ID, nil)
 	if err != nil {
 		log.Println(err)
 		return nil
