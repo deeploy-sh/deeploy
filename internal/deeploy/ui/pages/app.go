@@ -1,11 +1,9 @@
 package pages
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
@@ -15,44 +13,27 @@ import (
 
 const footerHeight = 1
 
-type state int
-
-const (
-	StateConnecting state = iota
-	StateOffline
-	StateNeedsSetup
-	StateNeedsAuth
-	StateReady
-)
-
 type app struct {
 	currentPage      tea.Model
 	width            int
 	height           int
 	heartbeatStarted bool
-	state            state
-	//
-	serverInput textinput.Model
-	tokenInput  textinput.Model
+	offline          bool
+	bootstrapped     bool
 }
 
 func NewApp() tea.Model {
-	si := textinput.New()
-	si.Placeholder = "https://deeploy.example.com"
-
-	ti := textinput.New()
-	ti.Placeholder = "your-token"
-	ti.EchoMode = textinput.EchoPassword
-
 	return &app{
-		state:       StateConnecting,
-		serverInput: si,
-		tokenInput:  ti,
+		currentPage: NewBootstrap(),
 	}
 }
 
 func (m app) Init() tea.Cmd {
-	return tea.Batch(utils.CheckConnection)
+	return tea.Batch(
+		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+			return utils.CheckConnection()
+		}),
+	)
 }
 
 func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -60,13 +41,26 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case utils.ConnectionResultMsg:
 		switch {
 		case msg.NeedsSetup:
-			m.state = StateNeedsSetup
+			return m, func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewConnectPage(nil)}
+			}
 		case msg.NeedsAuth:
-			m.state = StateNeedsAuth
+			return m, func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewAuthPage("")}
+			}
 		case msg.Offline:
-			m.state = StateOffline
-		default:
-			m.state = StateReady
+			m.offline = true
+			if !m.bootstrapped {
+				bp, ok := m.currentPage.(*bootstrap)
+				if ok {
+					bp.offline = true
+				}
+				return m, tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
+					return utils.CheckConnection()
+				})
+			}
+		case msg.Online:
+			m.offline = false
 		}
 
 		if m.heartbeatStarted {
@@ -76,6 +70,8 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.heartbeatStarted = true
+		m.bootstrapped = true
+
 		return m, tea.Batch(
 			func() tea.Msg {
 				return messages.ChangePageMsg{Page: NewDashboard()}
@@ -86,7 +82,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case tea.KeyMsg:
-		if m.state == StateOffline && msg.Type != tea.KeyCtrlC {
+		if m.offline && msg.Type != tea.KeyCtrlC {
 			return m, nil // block app
 		}
 		if msg.Type == tea.KeyCtrlC {
@@ -122,15 +118,6 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
 
-		if !m.heartbeatStarted {
-			m.heartbeatStarted = true
-			return m, tea.Batch(
-				m.currentPage.Init(),
-				utils.CheckConnection,
-				cmd,
-			)
-		}
-
 		return m, tea.Batch(
 			m.currentPage.Init(),
 			cmd,
@@ -148,49 +135,17 @@ type FooterMenuItem struct {
 	Desc string
 }
 
-func (m app) centered(content string) string {
-	return lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		content,
-	)
-}
-
 func (m app) View() string {
-	if m.currentPage == nil {
-		return ""
-	}
-	switch m.state {
-	// case StateOffline:
-	// 	return m.centered("◐ Offline")
-
-	case StateConnecting:
-		return m.centered("◐ deeploy.sh")
-
-	case StateNeedsSetup:
-		return m.centered(fmt.Sprintf(
-			"⚡ deeploy.sh\n\n"+
-				"Server URL:\n%s\n\n"+
-				"[Enter] connect",
-			m.serverInput.View(),
-		))
-
-	case StateNeedsAuth:
-		return m.centered(fmt.Sprintf(
-			"⚡ deeploy.sh\n\n"+
-				"Token:\n%s\n\n"+
-				"[Enter] login",
-			m.tokenInput.View(),
-		))
+	_, ok := m.currentPage.(*bootstrap)
+	if ok {
+		return m.currentPage.View()
 	}
 
 	var status string
 	var statusStyle lipgloss.Style
 
 	logo := "⚡ deeploy.sh"
-	if m.state == StateOffline {
+	if m.offline {
 		status = "● reconnecting"
 		statusStyle = styles.OfflineStyle
 	} else {
@@ -198,10 +153,7 @@ func (m app) View() string {
 		statusStyle = styles.OnlineStyle
 	}
 
-	gap := m.width - lipgloss.Width(logo) - lipgloss.Width(status) - 2
-	if gap < 1 {
-		gap = 1
-	}
+	gap := max(m.width-lipgloss.Width(logo)-lipgloss.Width(status)-2, 1)
 
 	headerContent := logo + strings.Repeat(" ", gap) + statusStyle.Render(status)
 
