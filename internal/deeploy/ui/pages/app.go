@@ -30,6 +30,8 @@ func NewApp() tea.Model {
 
 func (m app) Init() tea.Cmd {
 	return tea.Batch(
+		m.currentPage.Init(),
+		// INFO: use tick here to show bootstrap(logo) min. 1 second
 		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
 			return utils.CheckConnection()
 		}),

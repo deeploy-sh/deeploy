@@ -8,7 +8,7 @@ import (
 
 // Colors - Modern, muted palette
 var (
-	ColorPrimary = lipgloss.Color("99")  // Lila/Purple - Brand
+	ColorPrimary = lipgloss.Color("#FF79C6")  // Dracula Pink - Brand
 	ColorSuccess = lipgloss.Color("78")  // Grün - Online, Deployed
 	ColorError   = lipgloss.Color("204") // Rosa/Red - Fehler
 	ColorWarning = lipgloss.Color("214") // Orange - Pending, In Progress
