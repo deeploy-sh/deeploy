@@ -10,15 +10,22 @@ import (
 
 type ConnectionResultMsg struct {
 	NeedsSetup bool
-	Offline    bool
 	NeedsAuth  bool
+	Offline    bool
+	Online     bool
 }
 
+// TODO: Connection check improvements for post-MVP:
+// - Validate that server is actually a Deeploy instance (check response body)
+// - Differentiate "Offline" reasons (DNS error, server down, wrong URL)
 func CheckConnection() tea.Msg {
 	// Config check
 	cfg, err := config.Load()
-	if err != nil || cfg == nil || cfg.Server == "" || cfg.Token == "" {
+	if err != nil || cfg == nil || cfg.Server == "" {
 		return ConnectionResultMsg{NeedsSetup: true}
+	}
+	if cfg.Token == "" {
+		return ConnectionResultMsg{NeedsAuth: true}
 	}
 
 	// Server check
@@ -30,5 +37,5 @@ func CheckConnection() tea.Msg {
 		return ConnectionResultMsg{Offline: true}
 	}
 
-	return ConnectionResultMsg{Offline: false}
+	return ConnectionResultMsg{Online: true}
 }
