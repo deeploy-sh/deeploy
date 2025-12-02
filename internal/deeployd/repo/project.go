@@ -4,15 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Project struct {
-	ID          string    `json:"id"`
-	UserID      string    `json:"user_id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string    `json:"id" db:"id"`
+	UserID      string    `json:"user_id" db:"user_id"`
+	Title       string    `json:"title" db:"title"`
+	Description string    `json:"description" db:"description"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type ProjectDTO struct {
@@ -40,19 +42,17 @@ type ProjectRepoInterface interface {
 }
 
 type ProjectRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewProjectRepo(db *sql.DB) *ProjectRepo {
+func NewProjectRepo(db *sqlx.DB) *ProjectRepo {
 	return &ProjectRepo{db: db}
 }
 
-func (m *ProjectRepo) Create(project *Project) error {
-	query := `
-		INSERT INTO projects (id, user_id, title, description)
-		VALUES(?, ?, ?, ?)`
+func (r *ProjectRepo) Create(project *Project) error {
+	query := `INSERT INTO projects (id, user_id, title, description) VALUES (?, ?, ?, ?)`
 
-	_, err := m.db.Exec(query, project.ID, project.UserID, project.Title, project.Description)
+	_, err := r.db.Exec(query, project.ID, project.UserID, project.Title, project.Description)
 	if err != nil {
 		return err
 	}
@@ -62,73 +62,40 @@ func (m *ProjectRepo) Create(project *Project) error {
 
 func (r *ProjectRepo) Project(id string) (*Project, error) {
 	project := &Project{}
+	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE id = ?`
 
-	query := `
-		SELECT id, user_id, title, description, created_at, updated_at 
-		FROM projects
-		WHERE id = ?`
-
-	err := r.db.QueryRow(query, id).Scan(
-		&project.ID,
-		&project.UserID,
-		&project.Title,
-		&project.Description,
-		&project.CreatedAt,
-		&project.UpdatedAt,
-	)
+	err := r.db.Get(project, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err // INFO: Like project not found
+		return nil, err
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
+
 	return project, nil
 }
 
 func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 	projects := []Project{}
+	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE user_id = ?`
 
-	query := `
-		SELECT id, user_id, title, description, created_at, updated_at 
-		FROM projects
-		WHERE user_id = ?`
-
-	rows, err := r.db.Query(query, id)
+	err := r.db.Select(&projects, query, id)
 	if err == sql.ErrNoRows {
-		return nil, nil // INFO: Like project not found
+		return nil, nil
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		p := &Project{}
-		err := rows.Scan(
-			&p.ID,
-			&p.UserID,
-			&p.Title,
-			&p.Description,
-			&p.CreatedAt,
-			&p.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		projects = append(projects, *p)
-	}
 	return projects, nil
 }
 
 func (r *ProjectRepo) Update(project Project) error {
-	query := `
-		UPDATE projects
-		SET title = ?, description = ?
-		WHERE id = ?`
+	query := `UPDATE projects SET title = ?, description = ? WHERE id = ?`
 
 	result, err := r.db.Exec(query, project.Title, project.Description, project.ID)
 	if err != nil {
-		return err // INFO: real db errors
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -143,13 +110,11 @@ func (r *ProjectRepo) Update(project Project) error {
 }
 
 func (r *ProjectRepo) Delete(id string) error {
-	query := `
-		DELETE FROM projects
-		WHERE id = ?`
+	query := `DELETE FROM projects WHERE id = ?`
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {
-		return err // INFO: real db errors
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()

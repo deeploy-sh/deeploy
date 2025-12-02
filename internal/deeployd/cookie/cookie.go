@@ -2,17 +2,18 @@ package cookie
 
 import (
 	"net/http"
-
-	"github.com/deeploy-sh/deeploy/internal/deeployd/config"
+	"os"
 )
 
 func SetCookie(w http.ResponseWriter, token string) {
+	secure := os.Getenv("GO_ENV") != "development"
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   config.AppConfig.CookieSecure,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   3600 * 24,
 	})

@@ -1,33 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/config"
-	"github.com/deeploy-sh/deeploy/internal/deeployd/db"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/logger"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/routes"
 )
 
 func main() {
-	config.LoadConfig()
+	cfg := config.Load()
+	logger.Init(cfg.IsDevelopment())
 
-	db, err := db.Init()
+	application, err := app.New(cfg)
 	if err != nil {
-		fmt.Printf("DB Error: %s", err)
+		slog.Error("failed to initialize app", "error", err)
+		os.Exit(1)
 	}
+	defer application.Close()
 
-	mux := http.NewServeMux()
-	app := app.New(mux, db)
+	handler := routes.Setup(application)
+	slog.Info("server starting", "port", cfg.Port)
 
-	routes.Assets(app)
-	routes.Base(app)
-	routes.User(app)
-	routes.Dashboard(app)
-	routes.Project(app)
-	routes.Pod(app)
-
-	fmt.Println("Server is running on http://localhost:8090")
-	http.ListenAndServe(":8090", mux)
+	err = http.ListenAndServe(":"+cfg.Port, handler)
+	if err != nil {
+		slog.Error("server failed", "error", err)
+	}
 }

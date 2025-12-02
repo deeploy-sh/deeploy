@@ -3,14 +3,16 @@ package repo
 import (
 	"database/sql"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type User struct {
-	ID        string
-	Email     string
-	Password  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        string    `db:"id"`
+	Email     string    `db:"email"`
+	Password  string    `db:"password"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type UserDTO struct {
@@ -33,21 +35,18 @@ type UserRepoInterface interface {
 }
 
 type UserRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewUserRepo(db *sql.DB) *UserRepo {
+func NewUserRepo(db *sqlx.DB) *UserRepo {
 	return &UserRepo{db: db}
 }
 
 func (r *UserRepo) CountUsers() (int, error) {
 	var count int
+	query := `SELECT count(*) FROM users`
 
-	query := `
-		SELECT count(*)
-		from users`
-
-	err := r.db.QueryRow(query).Scan(&count)
+	err := r.db.Get(&count, query)
 	if err != nil {
 		return 0, err
 	}
@@ -55,12 +54,10 @@ func (r *UserRepo) CountUsers() (int, error) {
 	return count, nil
 }
 
-func (m *UserRepo) CreateUser(user *User) error {
-	query := `
-		INSERT INTO users (id, email, password)
-		VALUES(?, ?, ?)`
+func (r *UserRepo) CreateUser(user *User) error {
+	query := `INSERT INTO users (id, email, password) VALUES (?, ?, ?)`
 
-	_, err := m.db.Exec(query, user.ID, user.Email, user.Password)
+	_, err := r.db.Exec(query, user.ID, user.Email, user.Password)
 	if err != nil {
 		return err
 	}
@@ -70,48 +67,30 @@ func (m *UserRepo) CreateUser(user *User) error {
 
 func (r *UserRepo) GetUserByEmail(email string) (*User, error) {
 	user := &User{}
+	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE email = ?`
 
-	query := `
-		SELECT id, email, password, created_at, updated_at 
-		FROM users
-		WHERE email = ?`
-
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	err := r.db.Get(user, query, email)
 	if err == sql.ErrNoRows {
-		return nil, nil // INFO: Like user not found
+		return nil, nil
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
+
 	return user, nil
 }
 
 func (r *UserRepo) GetUserByID(id string) (*User, error) {
 	user := &User{}
+	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE id = ?`
 
-	query := `
-		SELECT id, email, password, created_at, updated_at 
-		FROM users
-		WHERE id = ?`
-
-	err := r.db.QueryRow(query, id).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	err := r.db.Get(user, query, id)
 	if err == sql.ErrNoRows {
-		return nil, nil // INFO: Like user not found
+		return nil, nil
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
+
 	return user, nil
 }

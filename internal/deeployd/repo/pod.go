@@ -4,16 +4,18 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Pod struct {
-	ID          string    `json:"id"`
-	UserID      string    `json:"user_id"`
-	ProjectID   string    `json:"project_id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string    `json:"id" db:"id"`
+	UserID      string    `json:"user_id" db:"user_id"`
+	ProjectID   string    `json:"project_id" db:"project_id"`
+	Title       string    `json:"title" db:"title"`
+	Description string    `json:"description" db:"description"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type PodDTO struct {
@@ -42,26 +44,17 @@ type PodRepoInterface interface {
 }
 
 type PodRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewPodRepo(db *sql.DB) *PodRepo {
+func NewPodRepo(db *sqlx.DB) *PodRepo {
 	return &PodRepo{db: db}
 }
 
-func (m *PodRepo) Create(pod *Pod) error {
-	query := `
-		INSERT INTO pods (id, user_id, project_id, title, description)
-		VALUES(?, ?, ?, ?, ?)`
+func (r *PodRepo) Create(pod *Pod) error {
+	query := `INSERT INTO pods (id, user_id, project_id, title, description) VALUES (?, ?, ?, ?, ?)`
 
-	_, err := m.db.Exec(
-		query,
-		pod.ID,
-		pod.UserID,
-		pod.ProjectID,
-		pod.Title,
-		pod.Description,
-	)
+	_, err := r.db.Exec(query, pod.ID, pod.UserID, pod.ProjectID, pod.Title, pod.Description)
 	if err != nil {
 		return err
 	}
@@ -71,75 +64,40 @@ func (m *PodRepo) Create(pod *Pod) error {
 
 func (r *PodRepo) Pod(id string) (*Pod, error) {
 	pod := &Pod{}
+	query := `SELECT id, user_id, project_id, title, description, created_at, updated_at FROM pods WHERE id = ?`
 
-	query := `
-		SELECT id, user_id, project_id, title, description, created_at, updated_at 
-		FROM pods
-		WHERE id = ?`
-
-	err := r.db.QueryRow(query, id).Scan(
-		&pod.ID,
-		&pod.UserID,
-		&pod.ProjectID,
-		&pod.Title,
-		&pod.Description,
-		&pod.CreatedAt,
-		&pod.UpdatedAt,
-	)
+	err := r.db.Get(pod, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err // INFO: Like pod not found
+		return nil, err
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
+
 	return pod, nil
 }
 
 func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 	pods := []Pod{}
+	query := `SELECT id, user_id, project_id, title, description, created_at, updated_at FROM pods WHERE project_id = ?`
 
-	query := `
-		SELECT id, user_id, project_id, title, description, created_at, updated_at 
-		FROM pods
-		WHERE project_id = ?`
-
-	rows, err := r.db.Query(query, id)
+	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {
-		return nil, nil // INFO: Like pod not found
+		return nil, nil
 	}
 	if err != nil {
-		return nil, err // INFO: real db errors
+		return nil, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		p := &Pod{}
-		err := rows.Scan(
-			&p.ID,
-			&p.UserID,
-			&p.ProjectID,
-			&p.Title,
-			&p.Description,
-			&p.CreatedAt,
-			&p.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		pods = append(pods, *p)
-	}
 	return pods, nil
 }
 
 func (r *PodRepo) Update(pod Pod) error {
-	query := `
-		UPDATE pods
-		SET title = ?, description = ?
-		WHERE id = ?`
+	query := `UPDATE pods SET title = ?, description = ? WHERE id = ?`
 
 	result, err := r.db.Exec(query, pod.Title, pod.Description, pod.ID)
 	if err != nil {
-		return err // INFO: real db errors
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -154,13 +112,11 @@ func (r *PodRepo) Update(pod Pod) error {
 }
 
 func (r *PodRepo) Delete(id string) error {
-	query := `
-		DELETE FROM pods
-		WHERE id = ?`
+	query := `DELETE FROM pods WHERE id = ?`
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {
-		return err // INFO: real db errors
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()

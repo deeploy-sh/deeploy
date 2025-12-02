@@ -1,31 +1,47 @@
 package config
 
 import (
-	"fmt"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	CookieSecure bool
 	GoEnv        string
+	Port         string
+	DBDriver     string
+	DBConnection string
+	JWTSecret    string
+	CookieSecure bool
 }
 
-var AppConfig *Config
+func Load() *Config {
+	godotenv.Load()
 
-func LoadConfig() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file, using env variables instead.")
-	} else {
-		log.Println(".env file initialized.")
-	}
+	goEnv := getEnv("GO_ENV", "development")
 
-	AppConfig = &Config{
-		// CookieSecure: os.Getenv("GO_ENV") != "dev",
-		GoEnv:        os.Getenv("GO_ENV"),
-		CookieSecure: false, // INFO: false for now because to many http/https cookie related issues (e.g login) while testing
+	return &Config{
+		GoEnv:        goEnv,
+		Port:         getEnv("PORT", "8090"),
+		DBDriver:     getEnv("DB_DRIVER", "sqlite"),
+		DBConnection: getEnv("DB_CONNECTION", "./data/deeploy.db"),
+		JWTSecret:    getEnv("JWT_SECRET", ""),
+		CookieSecure: goEnv != "development",
 	}
+}
+
+func (c *Config) IsDevelopment() bool {
+	return c.GoEnv == "development"
+}
+
+func (c *Config) IsProduction() bool {
+	return c.GoEnv == "production"
+}
+
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
