@@ -1,7 +1,9 @@
 package components
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
 
@@ -9,7 +11,7 @@ type CardProps struct {
 	Width            int
 	Height           int
 	Padding          []int
-	BorderForeground lipgloss.TerminalColor
+	BorderForeground color.Color
 }
 
 func Card(p CardProps) lipgloss.Style {

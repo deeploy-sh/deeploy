@@ -2,7 +2,7 @@ package messages
 
 import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // Navigation Messages
@@ -15,8 +15,7 @@ type ChangePageMsg struct {
 type AuthErrorMsg struct {
 	Err error
 }
-type AuthSuccessMsg struct {
-}
+type AuthSuccessMsg struct{}
 
 // Project Messages
 type ProjectCreatedMsg repo.ProjectDTO
@@ -24,5 +23,10 @@ type ProjectUpdatedMsg repo.ProjectDTO
 type ProjectDeleteMsg *repo.ProjectDTO
 type ProjectErrMsg error
 type ProjectsInitDataMsg []repo.ProjectDTO
-type ProjectPushPageMsg struct{ Page tea.Model }
-type ProjectPopPageMsg struct{}
+
+// Pod Messages
+type PodCreatedMsg repo.PodDTO
+type PodUpdatedMsg repo.PodDTO
+type PodDeleteMsg *repo.PodDTO
+type PodErrMsg error
+type PodsInitDataMsg []repo.PodDTO

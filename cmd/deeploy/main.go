@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/pages"
 )
 
@@ -21,7 +21,7 @@ func main() {
 
 	// Start App
 	m := pages.NewApp()
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	_, err := p.Run()
 	if err != nil {
 		fmt.Println("Error running program:", err)

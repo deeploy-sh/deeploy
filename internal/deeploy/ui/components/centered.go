@@ -1,6 +1,6 @@
 package components
 
-import "github.com/charmbracelet/lipgloss"
+import lipgloss "charm.land/lipgloss/v2"
 
 func Centered(w, h int, content string) string {
 	return lipgloss.Place(

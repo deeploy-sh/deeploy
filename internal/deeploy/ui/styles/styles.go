@@ -3,17 +3,18 @@ package styles
 import (
 	"fmt"
 
-	"github.com/charmbracelet/lipgloss"
+	lipgloss "charm.land/lipgloss/v2"
 )
 
 // Colors - Modern, muted palette
 var (
-	ColorPrimary = lipgloss.Color("#FF79C6")  // Dracula Pink - Brand
-	ColorSuccess = lipgloss.Color("78")  // Grün - Online, Deployed
-	ColorError   = lipgloss.Color("204") // Rosa/Red - Fehler
-	ColorWarning = lipgloss.Color("214") // Orange - Pending, In Progress
-	ColorMuted   = lipgloss.Color("241") // Grau - Secondary text
-	ColorDim     = lipgloss.Color("238") // Dunkelgrau - Disabled
+	ColorPrimary    = lipgloss.Color("#FF79C6") // Dracula Pink - Brand
+	ColorForeground = lipgloss.Color("252")     // Hell - Primary text
+	ColorSuccess    = lipgloss.Color("78")      // Grün - Online, Deployed
+	ColorError      = lipgloss.Color("204")     // Rosa/Red - Fehler
+	ColorWarning    = lipgloss.Color("214")     // Orange - Pending, In Progress
+	ColorMuted      = lipgloss.Color("241")     // Grau - Secondary text
+	ColorDim        = lipgloss.Color("238")     // Dunkelgrau - Disabled
 )
 
 // Text Styles
@@ -24,6 +25,7 @@ var (
 	WarningStyle = lipgloss.NewStyle().Foreground(ColorWarning)
 
 	// Interactive
+	PrimaryStyle = lipgloss.NewStyle().Foreground(ColorPrimary)
 	FocusedStyle = lipgloss.NewStyle().Foreground(ColorPrimary)
 	MutedStyle   = lipgloss.NewStyle().Foreground(ColorMuted)
 	DimStyle     = lipgloss.NewStyle().Foreground(ColorDim)

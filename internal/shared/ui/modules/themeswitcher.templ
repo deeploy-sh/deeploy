@@ -30,9 +30,9 @@ type ThemeSwitcherProps struct {
 templ ThemeSwitcher(props ThemeSwitcherProps) {
 	@themeSwitcherHandler()
 	@button.Button(button.Props{
-		Size:     button.SizeIcon,
-		Variant:  button.VariantGhost,
-		Class:    props.Class,
+		Size:    button.SizeIcon,
+		Variant: button.VariantGhost,
+		Class:   props.Class,
 		Attributes: templ.Attributes{
 			"@click": "toggleTheme",
 		},
