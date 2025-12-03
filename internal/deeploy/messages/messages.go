@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	tea "charm.land/bubbletea/v2"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
 // Navigation Messages
@@ -18,11 +18,11 @@ type AuthErrorMsg struct {
 type AuthSuccessMsg struct{}
 
 // Project Messages
-type ProjectCreatedMsg repo.ProjectDTO
-type ProjectUpdatedMsg repo.ProjectDTO
-type ProjectDeleteMsg *repo.ProjectDTO
+type ProjectCreatedMsg repo.Project
+type ProjectUpdatedMsg repo.Project
+type ProjectDeleteMsg *repo.Project
 type ProjectErrMsg error
-type ProjectsInitDataMsg []repo.ProjectDTO
+type ProjectsInitDataMsg []repo.Project
 
 // Pod Messages
 type PodCreatedMsg repo.PodDTO
