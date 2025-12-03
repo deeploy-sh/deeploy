@@ -175,8 +175,7 @@ func (p DashboardPage) View() tea.View {
 		content = p.renderList()
 	}
 
-	centered := lipgloss.Place(p.width, contentHeight,
-		lipgloss.Center, lipgloss.Center, content)
+	centered := lipgloss.Place(p.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
 }

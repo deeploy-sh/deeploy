@@ -12,7 +12,7 @@ func NewHelpModel() help.Model {
 	h.Styles = help.Styles{
 		ShortKey:       DimStyle.Copy(),
 		ShortDesc:      MutedStyle.Copy(),
-		ShortSeparator: lipgloss.NewStyle().Foreground(ColorDim).SetString(" • "),
+		ShortSeparator: lipgloss.NewStyle().Foreground(ColorDim),
 		Ellipsis:       DimStyle.Copy(),
 		FullKey:        DimStyle.Copy(),
 		FullDesc:       MutedStyle.Copy(),

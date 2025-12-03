@@ -135,7 +135,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
-			Height: m.height,
+			Height: m.height - headerHeight,
 		}
 		var cmd tea.Cmd
 		if m.currentPage == nil {
