@@ -28,6 +28,9 @@ type dashboardKeyMap struct {
 	Filter key.Binding
 }
 
+func (m DashboardPage) HelpKeys() help.KeyMap {
+	return m.keys // gibt einfach den existierenden KeyMap zurück
+}
 func (k dashboardKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Search, k.New, k.Select, k.Filter}
 }
@@ -48,7 +51,6 @@ func newDashboardKeyMap() dashboardKeyMap {
 type DashboardPage struct {
 	list    list.Model
 	keys    dashboardKeyMap
-	help    help.Model
 	loading bool
 	width   int
 	height  int
@@ -68,7 +70,6 @@ func NewDashboard() DashboardPage {
 	return DashboardPage{
 		list:    l,
 		keys:    newDashboardKeyMap(),
-		help:    styles.NewHelpModel(),
 		loading: true,
 	}
 }
@@ -160,7 +161,6 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p DashboardPage) View() tea.View {
-	helpView := p.help.View(p.keys)
 	contentHeight := p.height - 1
 
 	var content string
@@ -177,7 +177,7 @@ func (p DashboardPage) View() tea.View {
 
 	centered := lipgloss.Place(p.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered))
 }
 
 func (p DashboardPage) renderEmptyState() string {

@@ -43,8 +43,9 @@ func (m *bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *bootstrap) View() tea.View {
 	spinner := m.spinner.View()
+	height := m.height + headerHeight + footerHeight
 	if m.offline {
-		return tea.NewView(components.Centered(m.width, m.height+headerHeight, spinner+" ⚡ deeploy.sh\n\ncan't connect. retrying..."))
+		return tea.NewView(components.Centered(m.width, height, spinner+" ⚡ deeploy.sh\n\ncan't connect. retrying..."))
 	}
-	return tea.NewView(components.Centered(m.width, m.height+headerHeight, spinner+" ⚡ deeploy.sh"))
+	return tea.NewView(components.Centered(m.width, height, spinner+" ⚡ deeploy.sh"))
 }

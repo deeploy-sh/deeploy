@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/help"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
@@ -17,6 +18,11 @@ import (
 )
 
 const headerHeight = 1
+const footerHeight = 1
+
+type HelpProvider interface {
+	HelpKeys() help.KeyMap
+}
 
 type app struct {
 	currentPage      tea.Model
@@ -27,11 +33,13 @@ type app struct {
 	heartbeatStarted bool
 	offline          bool
 	bootstrapped     bool
+	help             help.Model
 }
 
 func NewApp() tea.Model {
 	return &app{
 		currentPage: NewBootstrap(),
+		help:        styles.NewHelpModel(),
 	}
 }
 
@@ -135,7 +143,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
-			Height: m.height - headerHeight,
+			Height: m.height - headerHeight - footerHeight,
 		}
 		var cmd tea.Cmd
 		if m.currentPage == nil {
@@ -150,7 +158,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
-			Height: m.height - headerHeight,
+			Height: m.height - headerHeight - footerHeight,
 		}
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
@@ -281,7 +289,7 @@ func (m app) View() tea.View {
 
 	// Content - Pages render their own help footer
 	content := m.currentPage.View().Content
-	contentHeight := m.height - headerHeight
+	contentHeight := m.height - headerHeight - footerHeight
 
 	contentArea := lipgloss.Place(
 		m.width,
@@ -291,7 +299,14 @@ func (m app) View() tea.View {
 		content,
 	)
 
-	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea)
+	var helpView string
+	hp, ok := m.currentPage.(HelpProvider)
+	if ok {
+		hs := lipgloss.NewStyle().Padding(0, 1)
+		helpView = hs.Render(m.help.View(hp.HelpKeys()))
+	}
+
+	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea, helpView)
 
 	// Render palette overlay if open
 	if m.palette != nil {
