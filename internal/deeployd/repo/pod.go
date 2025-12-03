@@ -18,23 +18,6 @@ type Pod struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-type PodDTO struct {
-	ID          string `json:"id"`
-	UserID      string `json:"user_id"`
-	ProjectID   string `json:"project_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
-func (u *Pod) ToDTO() *PodDTO {
-	return &PodDTO{
-		ID:          u.ID,
-		UserID:      u.UserID,
-		Title:       u.Title,
-		Description: u.Description,
-	}
-}
-
 type PodRepoInterface interface {
 	Create(pod *Pod) error
 	Pod(id string) (*Pod, error)

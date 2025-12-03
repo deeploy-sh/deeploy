@@ -25,8 +25,8 @@ type ProjectErrMsg error
 type ProjectsInitDataMsg []repo.Project
 
 // Pod Messages
-type PodCreatedMsg repo.PodDTO
-type PodUpdatedMsg repo.PodDTO
-type PodDeleteMsg *repo.PodDTO
+type PodCreatedMsg repo.Pod
+type PodUpdatedMsg repo.Pod
+type PodDeleteMsg *repo.Pod
 type PodErrMsg error
-type PodsInitDataMsg []repo.PodDTO
+type PodsInitDataMsg []repo.Pod

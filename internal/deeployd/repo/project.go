@@ -17,22 +17,6 @@ type Project struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-type ProjectDTO struct {
-	ID          string `json:"id"`
-	UserID      string `json:"user_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
-func (u *Project) ToDTO() *ProjectDTO {
-	return &ProjectDTO{
-		ID:          u.ID,
-		UserID:      u.UserID,
-		Title:       u.Title,
-		Description: u.Description,
-	}
-}
-
 type ProjectRepoInterface interface {
 	Create(project *Project) error
 	Project(id string) (*Project, error)

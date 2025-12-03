@@ -82,9 +82,9 @@ func (h *PodHandler) PodsByProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto := make([]repo.PodDTO, len(pods))
+	dto := make([]repo.Pod, len(pods))
 	for i, pod := range pods {
-		dto[i] = *pod.ToDTO()
+		dto[i] = pod
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -109,7 +109,7 @@ func (h *PodHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pod.ToDTO())
+	json.NewEncoder(w).Encode(pod)
 }
 
 func (h *PodHandler) Delete(w http.ResponseWriter, r *http.Request) {
