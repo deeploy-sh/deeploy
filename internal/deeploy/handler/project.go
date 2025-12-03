@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deeploy-sh/deeploy/internal/deeployd/forms"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/forms"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 	"github.com/google/uuid"
@@ -81,9 +81,9 @@ func (h *ProjectHandler) ProjectsByUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	dto := make([]repo.ProjectDTO, len(projects))
+	dto := make([]repo.Project, len(projects))
 	for i, project := range projects {
-		dto[i] = *project.ToDTO()
+		dto[i] = project
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -108,7 +108,7 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(project.ToDTO())
+	json.NewEncoder(w).Encode(project)
 }
 
 func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
