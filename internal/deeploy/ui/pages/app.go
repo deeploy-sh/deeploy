@@ -1,20 +1,27 @@
 package pages
 
 import (
+	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-const footerHeight = 1
+const headerHeight = 1 // Minimal header ohne Border
 
 type app struct {
 	currentPage      tea.Model
+	palette          *components.Palette
+	projects         []repo.Project
 	width            int
 	height           int
 	heartbeatStarted bool
@@ -81,27 +88,54 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 				return utils.CheckConnection()
 			}),
+			loadAppProjects,
 		)
 
-	case tea.KeyMsg:
-		if m.offline && msg.Type != tea.KeyCtrlC {
+	case tea.KeyPressMsg:
+		if m.offline && msg.String() != "ctrl+c" {
 			return m, nil // block app
 		}
-		if msg.Type == tea.KeyCtrlC {
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
-		var cmd tea.Cmd
 
+		// Ctrl+K toggles palette
+		if msg.String() == "ctrl+k" && m.bootstrapped {
+			if m.palette != nil {
+				m.palette = nil
+			} else {
+				palette := components.NewPalette(m.getPaletteItems())
+				palette.SetSize(50, 20)
+				m.palette = &palette
+				return m, palette.Init()
+			}
+			return m, nil
+		}
+
+		// Esc closes palette
+		if msg.Code == tea.KeyEscape && m.palette != nil {
+			m.palette = nil
+			return m, nil
+		}
+
+		// Forward to palette if open
+		if m.palette != nil {
+			var cmd tea.Cmd
+			*m.palette, cmd = m.palette.Update(msg)
+			return m, cmd
+		}
+
+		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(msg)
 		return m, cmd
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
-		m.height = msg.Height - footerHeight - 2
+		m.height = msg.Height
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
-			Height: m.height, // Reduced height!
+			Height: m.height - headerHeight,
 		}
 		var cmd tea.Cmd
 		if m.currentPage == nil {
@@ -112,10 +146,11 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case messages.ChangePageMsg:
 		m.currentPage = msg.Page
+		m.palette = nil // Close palette on page change
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
-			Height: m.height,
+			Height: m.height - headerHeight,
 		}
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
@@ -125,6 +160,10 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd,
 		)
 
+	case appProjectsMsg:
+		m.projects = msg
+		return m, nil
+
 	default:
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(msg)
@@ -132,21 +171,90 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-type FooterMenuItem struct {
-	Key  string
-	Desc string
+// appProjectsMsg holds loaded projects for the palette
+type appProjectsMsg []repo.Project
+
+// loadAppProjects loads projects for the command palette
+func loadAppProjects() tea.Msg {
+	cfg, err := config.Load()
+	if err != nil {
+		return nil
+	}
+
+	r, err := http.NewRequest("GET", cfg.Server+"/api/projects", nil)
+	if err != nil {
+		return nil
+	}
+	r.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	client := http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return nil
+	}
+	defer res.Body.Close()
+
+	var projects []repo.Project
+	err = json.NewDecoder(res.Body).Decode(&projects)
+	if err != nil {
+		return nil
+	}
+
+	return appProjectsMsg(projects)
 }
 
-func (m app) View() string {
+// PageInfo interface for pages to provide breadcrumbs
+type PageInfo interface {
+	Breadcrumbs() []string
+}
+
+// getPaletteItems returns the items for the command palette
+func (m app) getPaletteItems() []components.PaletteItem {
+	items := []components.PaletteItem{
+		// Actions
+		{
+			Title:       "Dashboard",
+			Description: "Go to dashboard",
+			Category:    "action",
+			Action: func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewDashboard()}
+			},
+		},
+		{
+			Title:       "New Project",
+			Description: "Create a new project",
+			Category:    "action",
+			Action: func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewProjectFormPage(nil)}
+			},
+		},
+	}
+
+	// Add projects dynamically
+	for _, p := range m.projects {
+		project := p // Capture for closure
+		items = append(items, components.PaletteItem{
+			Title:       project.Title,
+			Description: project.Description,
+			Category:    "project",
+			Action: func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewProjectDetailPage(project.ID)}
+			},
+		})
+	}
+
+	return items
+}
+
+func (m app) View() tea.View {
 	_, ok := m.currentPage.(*bootstrap)
 	if ok {
 		return m.currentPage.View()
 	}
 
+	// Status
 	var status string
 	var statusStyle lipgloss.Style
-
-	logo := "⚡ deeploy.sh"
 	if m.offline {
 		status = "● reconnecting"
 		statusStyle = styles.OfflineStyle
@@ -155,39 +263,60 @@ func (m app) View() string {
 		statusStyle = styles.OnlineStyle
 	}
 
-	gap := max(m.width-lipgloss.Width(logo)-lipgloss.Width(status)-2, 1)
+	// Breadcrumbs
+	logo := "⚡ deeploy.sh"
+	breadcrumbParts := []string{logo}
+	if p, ok := m.currentPage.(PageInfo); ok {
+		breadcrumbParts = append(breadcrumbParts, p.Breadcrumbs()...)
+	}
+	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle.Render("  >  "))
 
-	headerContent := logo + strings.Repeat(" ", gap) + statusStyle.Render(status)
-
+	// Header - minimal, ohne Border
+	gap := max(m.width-lipgloss.Width(breadcrumbs)-lipgloss.Width(status)-2, 1)
+	headerContent := breadcrumbs + strings.Repeat(" ", gap) + statusStyle.Render(status)
 	header := lipgloss.NewStyle().
 		Width(m.width).
 		Padding(0, 1).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
 		Render(headerContent)
 
-	footerMenuItems := []FooterMenuItem{
-		// {Key: "esc", Desc: "back"},
-		{Key: "ctrl+c", Desc: "quit"},
+	// Content - Pages render their own help footer
+	content := m.currentPage.View().Content
+	contentHeight := m.height - headerHeight
+
+	contentArea := lipgloss.Place(
+		m.width,
+		contentHeight,
+		lipgloss.Left,
+		lipgloss.Top,
+		content,
+	)
+
+	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea)
+
+	// Render palette overlay if open
+	if m.palette != nil {
+		paletteContent := m.palette.View()
+		paletteCard := components.Card(components.CardProps{
+			Width:   54,
+			Padding: []int{1, 2},
+		}).Render(paletteContent)
+
+		// Calculate palette position (centered horizontally, 30% from top)
+		paletteWidth := lipgloss.Width(paletteCard)
+		paletteX := (m.width - paletteWidth) / 2
+		paletteY := m.height * 3 / 10
+
+		// Create layers with proper z-ordering
+		baseLayer := lipgloss.NewLayer(base)
+		paletteLayer := lipgloss.NewLayer(paletteCard).
+			X(paletteX).
+			Y(paletteY).
+			Z(1)
+
+		// Compose with Canvas
+		canvas := lipgloss.NewCanvas(baseLayer, paletteLayer)
+		return tea.NewView(canvas.Render())
 	}
 
-	var footerText strings.Builder
-
-	for i, v := range footerMenuItems {
-		footerText.WriteString(styles.FocusedStyle.Render(v.Key))
-		footerText.WriteString(" ")
-		footerText.WriteString(v.Desc)
-		if len(footerMenuItems)-1 != i {
-			footerText.WriteString(" • ")
-		}
-	}
-	footer := lipgloss.
-		NewStyle().
-		PaddingLeft(1).
-		PaddingRight(1).
-		Render(footerText.String())
-
-	view := lipgloss.JoinVertical(lipgloss.Left, header, m.currentPage.View(), footer)
-
-	return lipgloss.Place(m.width, m.height+footerHeight, lipgloss.Left, lipgloss.Bottom, view)
+	return tea.NewView(base)
 }
