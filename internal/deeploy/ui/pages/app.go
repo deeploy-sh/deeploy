@@ -16,7 +16,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-const headerHeight = 1 // Minimal header ohne Border
+const headerHeight = 1
 
 type app struct {
 	currentPage      tea.Model
