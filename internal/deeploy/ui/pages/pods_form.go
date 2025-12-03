@@ -17,38 +17,15 @@ import (
 )
 
 // /////////////////////////////////////////////////////////////////////////////
-// KeyMap
-// /////////////////////////////////////////////////////////////////////////////
-
-type formKeyMap struct {
-	Save   key.Binding
-	Cancel key.Binding
-}
-
-func (k formKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Save, k.Cancel}
-}
-
-func (k formKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Save, k.Cancel}}
-}
-
-func newFormKeyMap() formKeyMap {
-	return formKeyMap{
-		Save:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
-		Cancel: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
-	}
-}
-
-// /////////////////////////////////////////////////////////////////////////////
 // Types & Messages
 // /////////////////////////////////////////////////////////////////////////////
 
-type ProjectFormPage struct {
+type PodFormPage struct {
 	titleInput textinput.Model
 	keys       formKeyMap
 	help       help.Model
-	project    *repo.Project
+	projectID  string
+	pod        *repo.Pod
 	width      int
 	height     int
 }
@@ -57,51 +34,54 @@ type ProjectFormPage struct {
 // Constructors
 ///////////////////////////////////////////////////////////////////////////////
 
-func NewProjectFormPage(project *repo.Project) ProjectFormPage {
+func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
 	titleInput := textinput.New()
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
-	if project != nil {
-		titleInput.SetValue(project.Title)
+	if pod != nil {
+		titleInput.SetValue(pod.Title)
 	}
 
-	projectFormPage := ProjectFormPage{
+	podFormPage := PodFormPage{
 		titleInput: titleInput,
 		keys:       newFormKeyMap(),
 		help:       styles.NewHelpModel(),
+		projectID:  projectID,
 	}
-	if project != nil {
-		projectFormPage.project = project
+	if pod != nil {
+		podFormPage.pod = pod
 	}
-	return projectFormPage
+	return podFormPage
 }
 
 // /////////////////////////////////////////////////////////////////////////////
 // Bubbletea Interface
 // /////////////////////////////////////////////////////////////////////////////
 
-func (p ProjectFormPage) Init() tea.Cmd {
+func (p PodFormPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p PodFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.Code {
 		case tea.KeyEscape:
+			projectID := p.projectID
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewDashboard()}
+				return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
 			}
 		}
 		switch {
 		case key.Matches(msg, p.keys.Save):
 			if len(p.titleInput.Value()) > 0 {
+				projectID := p.projectID
 				return p, tea.Batch(
 					p.Submit,
 					func() tea.Msg {
-						return messages.ChangePageMsg{Page: NewDashboard()}
+						return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
 					},
 				)
 			}
@@ -117,7 +97,7 @@ func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p ProjectFormPage) View() tea.View {
+func (p PodFormPage) View() tea.View {
 	card := components.Card(components.CardProps{
 		Width:   40,
 		Padding: []int{2, 3},
@@ -133,67 +113,69 @@ func (p ProjectFormPage) View() tea.View {
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centeredCard, helpView))
 }
 
-func (p ProjectFormPage) Breadcrumbs() []string {
-	if p.project != nil {
-		return []string{"Projects", "Edit"}
+func (p PodFormPage) Breadcrumbs() []string {
+	if p.pod != nil {
+		return []string{"Projects", "Pods", "Edit"}
 	}
-	return []string{"Projects", "New"}
+	return []string{"Projects", "Pods", "New"}
 }
 
 // /////////////////////////////////////////////////////////////////////////////
 // Helper Methods
 // /////////////////////////////////////////////////////////////////////////////
 
-func (p ProjectFormPage) HasFocusedInput() bool {
+func (p PodFormPage) HasFocusedInput() bool {
 	return p.titleInput.Focused()
 }
 
-func (p ProjectFormPage) Submit() tea.Msg {
-	if p.project != nil {
-		return p.UpdateProject()
+func (p PodFormPage) Submit() tea.Msg {
+	if p.pod != nil {
+		return p.UpdatePod()
 	}
-	return p.CreateProject()
+	return p.CreatePod()
 }
 
-func (p ProjectFormPage) CreateProject() tea.Msg {
+func (p PodFormPage) CreatePod() tea.Msg {
 	postData := struct {
-		Title string
+		Title     string `json:"title"`
+		ProjectID string `json:"project_id"`
 	}{
-		Title: p.titleInput.Value(),
+		Title:     p.titleInput.Value(),
+		ProjectID: p.projectID,
 	}
 
-	res, err := utils.Request("POST", "/projects", postData)
+	res, err := utils.Request("POST", "/pods", postData)
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
 	defer res.Body.Close()
 
-	var project repo.Project
-	err = json.NewDecoder(res.Body).Decode(&project)
+	var pod repo.Pod
+	err = json.NewDecoder(res.Body).Decode(&pod)
 	if err != nil {
 		return nil
 	}
 
-	return messages.ProjectCreatedMsg(project)
+	return messages.PodCreatedMsg(pod)
 }
 
-func (p ProjectFormPage) UpdateProject() tea.Msg {
-	postData := p.project
+func (p PodFormPage) UpdatePod() tea.Msg {
+	postData := p.pod
 	postData.Title = p.titleInput.Value()
 
-	res, err := utils.Request("PUT", "/projects", postData)
+	res, err := utils.Request("PUT", "/pods", postData)
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
 	defer res.Body.Close()
 
-	var project repo.Project
-	err = json.NewDecoder(res.Body).Decode(&project)
+	var pod repo.Pod
+	err = json.NewDecoder(res.Body).Decode(&pod)
 	if err != nil {
 		return nil
 	}
 
-	return messages.ProjectUpdatedMsg(project)
+	return messages.PodUpdatedMsg(pod)
 }

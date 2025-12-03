@@ -3,15 +3,42 @@ package pages
 import (
 	"log"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
+
+// /////////////////////////////////////////////////////////////////////////////
+// KeyMap
+// /////////////////////////////////////////////////////////////////////////////
+
+type deleteKeyMap struct {
+	Select  key.Binding
+	Confirm key.Binding
+	Cancel  key.Binding
+}
+
+func (k deleteKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Select, k.Confirm, k.Cancel}
+}
+
+func (k deleteKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{{k.Select, k.Confirm, k.Cancel}}
+}
+
+func newDeleteKeyMap() deleteKeyMap {
+	return deleteKeyMap{
+		Select:  key.NewBinding(key.WithKeys("left", "right", "h", "l", "tab"), key.WithHelp("←/→", "select")),
+		Confirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
+		Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+	}
+}
 
 const (
 	confirmNo = iota
@@ -23,8 +50,10 @@ const (
 // /////////////////////////////////////////////////////////////////////////////
 
 type ProjectDeletePage struct {
-	project  *repo.ProjectDTO
+	project  *repo.Project
 	decision int
+	keys     deleteKeyMap
+	help     help.Model
 	width    int
 	height   int
 }
@@ -33,9 +62,11 @@ type ProjectDeletePage struct {
 // Constructors
 ///////////////////////////////////////////////////////////////////////////////
 
-func NewProjectDeletePage(project *repo.ProjectDTO) ProjectDeletePage {
+func NewProjectDeletePage(project *repo.Project) ProjectDeletePage {
 	return ProjectDeletePage{
 		project: project,
+		keys:    newDeleteKeyMap(),
+		help:    styles.NewHelpModel(),
 	}
 }
 
@@ -44,35 +75,39 @@ func NewProjectDeletePage(project *repo.ProjectDTO) ProjectDeletePage {
 // /////////////////////////////////////////////////////////////////////////////
 
 func (p ProjectDeletePage) Init() tea.Cmd {
-	return textinput.Blink
+	return nil
 }
 
 func (p ProjectDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "left", "h":
+	case tea.KeyPressMsg:
+		switch msg.Code {
+		case tea.KeyLeft, 'h':
 			p.decision = confirmNo
 			return p, nil
-		case "right", "l":
+		case tea.KeyRight, 'l':
 			p.decision = confirmYes
 			return p, nil
-		case "tab":
+		case tea.KeyTab:
 			if p.decision == confirmNo {
 				p.decision = confirmYes
 			} else {
 				p.decision = confirmNo
 			}
-		case "enter":
+		case tea.KeyEscape:
+			return p, func() tea.Msg {
+				return messages.ChangePageMsg{Page: NewDashboard()}
+			}
+		case tea.KeyEnter:
 			if p.decision == confirmNo {
 				return p, func() tea.Msg {
-					return messages.ProjectPopPageMsg{}
+					return messages.ChangePageMsg{Page: NewDashboard()}
 				}
 			}
 			return p, tea.Batch(
 				p.DeleteProject,
 				func() tea.Msg {
-					return messages.ProjectPopPageMsg{}
+					return messages.ChangePageMsg{Page: NewDashboard()}
 				},
 			)
 		}
@@ -84,12 +119,7 @@ func (p ProjectDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, nil
 }
 
-func (p ProjectDeletePage) View() string {
-	logo := lipgloss.NewStyle().
-		Width(p.width).
-		Align(lipgloss.Center).
-		Render("🔥deeploy.sh\n")
-
+func (p ProjectDeletePage) View() tea.View {
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Padding(0, 0, 1, 0).
@@ -118,25 +148,25 @@ func (p ProjectDeletePage) View() string {
 		yesButton = activeButton.Render("YES")
 	}
 
-	// Help text
-	help := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		Render("← →/h l to move • enter to confirm")
-
 	buttons := lipgloss.JoinHorizontal(lipgloss.Center, noButton, yesButton)
-	content := lipgloss.JoinVertical(0.5,
-		title,
-		buttons,
-		help,
-	)
+	content := lipgloss.JoinVertical(0.5, title, buttons)
 
 	card := components.Card(components.CardProps{
-		// Width:   p.width / 2,
 		Padding: []int{2, 1},
 	}).Render(content)
 
-	view := lipgloss.JoinVertical(0.5, logo, card)
-	return lipgloss.Place(p.width, p.height, lipgloss.Center, lipgloss.Center, view)
+	helpView := p.help.View(p.keys)
+	contentHeight := p.height - 1 // 1 für help
+
+	// Card vertikal zentrieren
+	centeredCard := lipgloss.Place(p.width, contentHeight,
+		lipgloss.Center, lipgloss.Center, card)
+
+	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centeredCard, helpView))
+}
+
+func (p ProjectDeletePage) Breadcrumbs() []string {
+	return []string{"Projects", "Delete"}
 }
 
 // /////////////////////////////////////////////////////////////////////////////

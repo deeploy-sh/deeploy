@@ -1,9 +1,9 @@
 package pages
 
 import (
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
@@ -41,10 +41,10 @@ func (m *bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *bootstrap) View() string {
+func (m *bootstrap) View() tea.View {
 	spinner := m.spinner.View()
 	if m.offline {
-		return components.Centered(m.width, m.height, spinner+" ⚡ deeploy.sh\n\ncan't connect. retrying...")
+		return tea.NewView(components.Centered(m.width, m.height, spinner+" ⚡ deeploy.sh\n\ncan't connect. retrying..."))
 	}
-	return components.Centered(m.width, m.height, spinner+" ⚡ deeploy.sh")
+	return tea.NewView(components.Centered(m.width, m.height, spinner+" ⚡ deeploy.sh"))
 }

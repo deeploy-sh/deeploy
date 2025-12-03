@@ -3,9 +3,11 @@ package pages
 import (
 	"log"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
@@ -13,8 +15,32 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
 )
 
+// /////////////////////////////////////////////////////////////////////////////
+// KeyMap
+// /////////////////////////////////////////////////////////////////////////////
+
+type connectKeyMap struct {
+	Connect key.Binding
+}
+
+func (k connectKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Connect}
+}
+
+func (k connectKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{{k.Connect}}
+}
+
+func newConnectKeyMap() connectKeyMap {
+	return connectKeyMap{
+		Connect: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "connect")),
+	}
+}
+
 type connectPage struct {
 	serverInput textinput.Model
+	keys        connectKeyMap
+	help        help.Model
 	status      string
 	width       int
 	height      int
@@ -25,11 +51,13 @@ func NewConnectPage(err error) connectPage {
 	log.Println(err)
 	ti := textinput.New()
 	ti.Placeholder = "e.g. 123.45.67.89:8090"
-	ti.Width = 30 // HACK: only because of: https://github.com/charmbracelet/bubbles/issues/779
+	ti.CharLimit = 50
 	ti.Focus()
 
 	return connectPage{
 		serverInput: ti,
+		keys:        newConnectKeyMap(),
+		help:        styles.NewHelpModel(),
 		err:         err,
 	}
 }
@@ -45,9 +73,9 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		m.resetErr()
-		switch msg.Type {
+		switch msg.Code {
 		case tea.KeyEnter:
 			input := m.serverInput.Value()
 			err := utils.ValidateServer(input)
@@ -70,22 +98,25 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m connectPage) View() string {
-	logo := lipgloss.NewStyle().
-		Width(m.width).
-		Align(lipgloss.Center).
-		MarginBottom(1).
-		Render("🔥deeploy.sh")
-
+func (m connectPage) View() tea.View {
 	content := "Connect to deeploy.sh server\n\n" + m.serverInput.View()
 	if m.err != nil {
 		content += styles.ErrorStyle.Render("\n* " + m.err.Error())
 	}
 
 	card := components.Card(components.CardProps{Width: 50}).Render(content)
+	helpView := m.help.View(m.keys)
+	contentHeight := m.height - 1 // 1 für help
 
-	view := lipgloss.JoinVertical(lipgloss.Center, logo, card)
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view)
+	// Card vertikal zentrieren
+	centered := lipgloss.Place(m.width, contentHeight,
+		lipgloss.Center, lipgloss.Center, card)
+
+	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+}
+
+func (m connectPage) Breadcrumbs() []string {
+	return []string{"Connect"}
 }
 
 func (m *connectPage) resetErr() {
