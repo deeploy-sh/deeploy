@@ -1,0 +1,17 @@
+package layouts
+
+import "github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
+
+templ AuthLayout() {
+	@BaseLayout() {
+		<div
+			class="min-h-screen flex justify-center items-center"
+		>
+			{ children... }
+			@modules.MadeWith()
+			<div class="absolute bottom-4 right-4">
+				@modules.ThemeSwitcher(modules.ThemeSwitcherProps{})
+			</div>
+		</div>
+	}
+}

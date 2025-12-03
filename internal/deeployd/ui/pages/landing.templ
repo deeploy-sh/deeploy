@@ -1,0 +1,25 @@
+package pages
+
+import (
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/icon"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/layouts"
+)
+
+templ Landing() {
+	@layouts.AppLayout() {
+		<div class="h-[calc(100vh-65px)] bg-gradient-to-b from-background to-secondary/10">
+			<div class="container mx-auto px-4">
+				<div class="flex flex-col items-center justify-center h-[calc(100vh-65px)] text-center space-y-8">
+					<div class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium animate-pulse">
+						Coming Soon
+					</div>
+					<h1 class="text-4xl md:text-6xl font-bold">deeploy.sh</h1>
+					<p class="text-xl text-muted-foreground max-w-2xl flex gap-2 items-center justify-center">
+						@icon.CircleCheck(icon.Props{Color: "green"})
+						You successfully installed deeploy.sh!
+					</p>
+				</div>
+			</div>
+		</div>
+	}
+}

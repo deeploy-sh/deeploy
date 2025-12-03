@@ -1,0 +1,13 @@
+package layouts
+
+import "github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
+
+templ AppLayout() {
+	@BaseLayout() {
+		<div>
+			@modules.Navbar()
+			{ children... }
+			@modules.MadeWith()
+		</div>
+	}
+}

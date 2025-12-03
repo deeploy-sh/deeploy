@@ -1,0 +1,61 @@
+package modules
+
+import (
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/button"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/icon"
+)
+
+templ themeSwitcherHandler() {
+	{{ handle := templ.NewOnceHandle() }}
+	@handle.Once() {
+		<script nonce={ templ.GetNonce(ctx) }>
+			document.addEventListener('alpine:init', () => {
+				Alpine.data('themeSwitcherHandler', () => ({
+					isDarkMode() {
+						return this.isDark
+					},
+					isLightMode() {
+						return !this.isDark
+					}
+				}))
+			})
+		</script>
+	}
+}
+
+type ThemeSwitcherProps struct {
+	Class string
+}
+
+templ ThemeSwitcher(props ThemeSwitcherProps) {
+	@themeSwitcherHandler()
+	@button.Button(button.Props{
+		Size:    button.SizeIcon,
+		Variant: button.VariantGhost,
+		Class:   props.Class,
+		Attributes: templ.Attributes{
+			"@click": "toggleTheme",
+		},
+	}) {
+		@DynamicThemeIcon()
+	}
+}
+
+templ DynamicThemeIcon() {
+	<div x-data="themeSwitcherHandler">
+		<span x-show="isDarkMode" class="block">
+			@LightIcon()
+		</span>
+		<span x-show="isLightMode" class="block">
+			@DarkIcon()
+		</span>
+	</div>
+}
+
+templ DarkIcon() {
+	@icon.Moon(icon.Props{})
+}
+
+templ LightIcon() {
+	@icon.SunMedium(icon.Props{})
+}

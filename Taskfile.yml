@@ -1,0 +1,40 @@
+version: "3"
+
+vars:
+  TAILWIND_CMD:
+    sh: command -v tailwindcss >/dev/null 2>&1 && echo "tailwindcss" || echo "npx tailwindcss@latest"
+
+tasks:
+  # --- Shared ---
+  tailwind:watch:
+    cmds:
+      - "{{.TAILWIND_CMD}} -i ./assets/css/input.css -o ./assets/css/output.css --watch"
+
+  templ:deeployd:
+    cmds:
+      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/deeployd" --open-browser=false
+
+  templ:docs:
+    cmds:
+      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/docs" --open-browser=false
+
+  # --- Dev ---
+  dev:deeploy:
+    desc: TUI client
+    cmds:
+      - DEBUG=1 go run ./cmd/deeploy
+
+  dev:deeployd:
+    desc: VPS server
+    cmds:
+      - task --parallel tailwind:watch templ:deeployd
+
+  dev:docs:
+    desc: Docs website
+    cmds:
+      - task --parallel tailwind:watch templ:docs
+
+  dev:all:
+    desc: Run deeployd + docs (ports 8090 + 8091)
+    cmds:
+      - task --parallel dev:deeployd dev:docs
