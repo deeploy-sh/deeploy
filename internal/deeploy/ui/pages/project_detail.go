@@ -117,7 +117,8 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return messages.ChangePageMsg{Page: NewPodFormPage(projectID, nil)}
 			}
 		case key.Matches(msg, p.keys.EditPod):
-			if item := p.list.SelectedItem(); item != nil {
+			item := p.list.SelectedItem()
+			if item != nil {
 				pod := item.(components.PodItem).Pod
 				projectID := p.project.ID
 				return p, func() tea.Msg {
@@ -125,7 +126,8 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case key.Matches(msg, p.keys.DeletePod):
-			if item := p.list.SelectedItem(); item != nil {
+			item := p.list.SelectedItem()
+			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return p, func() tea.Msg {
 					return messages.ChangePageMsg{Page: NewPodDeletePage(&pod)}
@@ -176,7 +178,8 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		pod := msg
 		items := p.list.Items()
 		for i, item := range items {
-			if pi, ok := item.(components.PodItem); ok && pi.ID == pod.ID {
+			pi, ok := item.(components.PodItem)
+			if ok && pi.ID == pod.ID {
 				items[i] = components.PodItem{Pod: repo.Pod(pod)}
 				break
 			}
@@ -188,7 +191,8 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		pod := msg
 		items := p.list.Items()
 		for i, item := range items {
-			if pi, ok := item.(components.PodItem); ok && pi.ID == pod.ID {
+			pi, ok := item.(components.PodItem)
+			if ok && pi.ID == pod.ID {
 				items = append(items[:i], items[i+1:]...)
 				break
 			}
@@ -290,7 +294,8 @@ func loadProjectDetail(projectID string) tea.Msg {
 	defer projectRes.Body.Close()
 
 	var project repo.Project
-	if err := json.NewDecoder(projectRes.Body).Decode(&project); err != nil {
+	err = json.NewDecoder(projectRes.Body).Decode(&project)
+	if err != nil {
 		return projectDetailErrMsg{err: err}
 	}
 
@@ -308,7 +313,8 @@ func loadProjectDetail(projectID string) tea.Msg {
 	defer podsRes.Body.Close()
 
 	var pods []repo.Pod
-	if err := json.NewDecoder(podsRes.Body).Decode(&pods); err != nil {
+	err = json.NewDecoder(podsRes.Body).Decode(&pods)
+	if err != nil {
 		return projectDetailErrMsg{err: err}
 	}
 
