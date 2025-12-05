@@ -21,6 +21,11 @@ import (
 const headerHeight = 1
 const footerHeight = 1
 
+type Store interface {
+	Projects() []repo.Project
+	Pods() []repo.Pod
+}
+
 type HelpProvider interface {
 	HelpKeys() help.KeyMap
 }
@@ -36,6 +41,14 @@ type app struct {
 	offline          bool
 	bootstrapped     bool
 	help             help.Model
+}
+
+func (m *app) Projects() []repo.Project {
+	return m.projects
+}
+
+func (m *app) Pods() []repo.Pod {
+	return m.pods
 }
 
 func NewApp() tea.Model {

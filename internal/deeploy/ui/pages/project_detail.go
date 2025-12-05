@@ -20,6 +20,7 @@ import (
 type projectDetailKeyMap struct {
 	NewPod        key.Binding
 	EditPod       key.Binding
+	SelectPod     key.Binding
 	DeletePod     key.Binding
 	EditProject   key.Binding
 	DeleteProject key.Binding
@@ -29,7 +30,7 @@ type projectDetailKeyMap struct {
 
 func (k projectDetailKeyMap) ShortHelp() []key.Binding {
 	// return []key.Binding{k.NewPod, k.EditPod, k.DeletePod, k.Filter, k.Back}
-	return []key.Binding{k.NewPod, k.EditPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Filter, k.Back}
+	return []key.Binding{k.NewPod, k.EditPod, k.SelectPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Filter, k.Back}
 }
 
 func (k projectDetailKeyMap) FullHelp() [][]key.Binding {
@@ -39,8 +40,9 @@ func (k projectDetailKeyMap) FullHelp() [][]key.Binding {
 func newProjectDetailKeyMap() projectDetailKeyMap {
 	return projectDetailKeyMap{
 		NewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
-		EditPod:       key.NewBinding(key.WithKeys("enter", "e"), key.WithHelp("enter", "edit pod")),
+		EditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("ej", "edit pod")),
 		DeletePod:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
+		SelectPod:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
 		EditProject:   key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
 		DeleteProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "delete project")),
 		Filter:        key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "filter")),
@@ -126,6 +128,16 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return messages.ChangePageMsg{Page: NewPodFormPage(projectID, &pod)}
 				}
 			}
+		case key.Matches(msg, p.keys.SelectPod):
+			item := p.list.SelectedItem()
+			if item != nil {
+				pod := item.(components.PodItem).Pod
+				projectID := p.project.ID
+				return p, func() tea.Msg {
+					return messages.ChangePageMsg{Page: NewPodDetailPage(projectID, &pod)}
+				}
+			}
+
 		case key.Matches(msg, p.keys.DeletePod):
 			item := p.list.SelectedItem()
 			if item != nil {
