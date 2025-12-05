@@ -8,6 +8,7 @@ type PodServiceInterface interface {
 	Create(pod *repo.Pod) (*repo.Pod, error)
 	Pod(id string) (*repo.Pod, error)
 	PodsByProject(id string) ([]repo.Pod, error)
+	PodsByUser(id string) ([]repo.Pod, error)
 	Update(pod repo.Pod) error
 	Delete(id string) error
 }
@@ -41,6 +42,15 @@ func (s *PodService) PodsByProject(id string) ([]repo.Pod, error) {
 	if err != nil {
 		return nil, err
 	}
+	return pods, nil
+}
+
+func (s *PodService) PodsByUser(id string) ([]repo.Pod, error) {
+	pods, err := s.repo.PodsByUser(id)
+	if err != nil {
+		return nil, err
+	}
+
 	return pods, nil
 }
 

@@ -22,6 +22,7 @@ type PodRepoInterface interface {
 	Create(pod *Pod) error
 	Pod(id string) (*Pod, error)
 	PodsByProject(id string) ([]Pod, error)
+	PodsByUser(id string) ([]Pod, error)
 	Update(pod Pod) error
 	Delete(id string) error
 }
@@ -63,6 +64,21 @@ func (r *PodRepo) Pod(id string) (*Pod, error) {
 func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 	pods := []Pod{}
 	query := `SELECT id, user_id, project_id, title, description, created_at, updated_at FROM pods WHERE project_id = ?`
+
+	err := r.db.Select(&pods, query, id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return pods, nil
+}
+
+func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
+	pods := []Pod{}
+	query := `SELECT id, user_id, title, description, created_at, updated_at FROM pods WHERE user_id = ?`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {

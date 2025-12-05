@@ -91,6 +91,25 @@ func (h *PodHandler) PodsByProject(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dto)
 }
 
+func (h *PodHandler) PodsByUser(w http.ResponseWriter, r *http.Request) {
+	userID := auth.GetUser(r.Context()).ID
+
+	pods, err := h.service.PodsByUser(userID)
+	if err != nil {
+		log.Printf("Failed to get pods: %v", err)
+		http.Error(w, "Failed to get pods", http.StatusInternalServerError)
+		return
+	}
+
+	dto := make([]repo.Pod, len(pods))
+	for i, pod := range pods {
+		dto[i] = pod
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dto)
+}
+
 func (h *PodHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var pod repo.Pod
 

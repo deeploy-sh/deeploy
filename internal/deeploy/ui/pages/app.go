@@ -2,6 +2,7 @@ package pages
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ type app struct {
 	currentPage      tea.Model
 	palette          *components.Palette
 	projects         []repo.Project
+	pods             []repo.Pod
 	width            int
 	height           int
 	heartbeatStarted bool
@@ -96,7 +98,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 				return utils.CheckConnection()
 			}),
-			loadAppProjects,
+			initData,
 		)
 
 	case tea.KeyPressMsg:
@@ -168,8 +170,9 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd,
 		)
 
-	case appProjectsMsg:
-		m.projects = msg
+	case InitDataMsg:
+		m.projects = msg.projects
+		m.pods = msg.pods
 		return m, nil
 
 	default:
@@ -179,36 +182,79 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-// appProjectsMsg holds loaded projects for the palette
-type appProjectsMsg []repo.Project
+// InitDataMsg holds loaded projects for the palette
+type InitDataMsg struct {
+	projects []repo.Project
+	pods     []repo.Pod
+	// later we add settings, domains, etc.
+}
 
-// loadAppProjects loads projects for the command palette
-func loadAppProjects() tea.Msg {
+func initData() tea.Msg {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil
 	}
 
-	r, err := http.NewRequest("GET", cfg.Server+"/api/projects", nil)
+	projects, err := initProjects(*cfg)
 	if err != nil {
-		return nil
+		log.Fatal("something went wrong: ", err)
 	}
-	r.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	pods, err := initPods(*cfg)
+	if err != nil {
+		log.Fatal("something went wrong: ", err)
+	}
+
+	return InitDataMsg{
+		projects: projects,
+		pods:     pods,
+	}
+}
+
+func initProjects(cfg config.Config) ([]repo.Project, error) {
+	req, err := http.NewRequest("GET", cfg.Server+"/api/projects", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
 
 	client := http.Client{}
-	res, err := client.Do(r)
+	res, err := client.Do(req)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	var projects []repo.Project
 	err = json.NewDecoder(res.Body).Decode(&projects)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return appProjectsMsg(projects)
+	return projects, nil
+}
+
+func initPods(cfg config.Config) ([]repo.Pod, error) {
+	req, err := http.NewRequest("GET", cfg.Server+"/api/pods", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
+
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var pods []repo.Pod
+	err = json.NewDecoder(res.Body).Decode(&pods)
+	if err != nil {
+		return nil, err
+	}
+
+	return pods, nil
 }
 
 // PageInfo interface for pages to provide breadcrumbs
@@ -251,6 +297,20 @@ func (m app) getPaletteItems() []components.PaletteItem {
 		})
 	}
 
+	for _, p := range m.pods {
+		pod := p // Capture for closure
+		items = append(items, components.PaletteItem{
+			Title:       pod.Title,
+			Description: pod.Description,
+			Category:    "pod",
+			Action: func() tea.Msg {
+				return nil
+				// return messages.ChangePageMsg{Page: NewProjectDetailPage(project.ID)}
+			},
+		})
+	}
+
+	log.Println(m.pods)
 	return items
 }
 
