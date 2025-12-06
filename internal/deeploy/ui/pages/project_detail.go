@@ -63,6 +63,14 @@ type projectDetailErrMsg struct{ err error }
 func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	delegate := components.NewPodDelegate(40)
 
+	var project repo.Project
+	for _, p := range s.Projects() {
+		if p.ID == projectID {
+			project = p
+			break
+		}
+	}
+
 	var pods []repo.Pod
 	for _, p := range s.Pods() {
 		if p.ProjectID == projectID {
@@ -83,7 +91,7 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 		pods:    l,
 		keys:    newProjectDetailKeyMap(),
 		help:    styles.NewHelpModel(),
-		project: &repo.Project{ID: projectID},
+		project: &project,
 	}
 }
 
@@ -269,8 +277,5 @@ func (p ProjectDetailPage) renderContent() string {
 }
 
 func (p ProjectDetailPage) Breadcrumbs() []string {
-	if p.project != nil && p.project.Title != "" {
-		return []string{"Projects", p.project.Title}
-	}
-	return []string{"Projects", "Detail"}
+	return []string{"Projects", p.project.Title}
 }
