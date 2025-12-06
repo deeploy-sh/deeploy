@@ -70,14 +70,13 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 		}
 	}
 
-	l := list.New([]list.Item{}, delegate, 0, 0)
+	l := list.New(components.PodsToItems(pods), delegate, 0, 0)
 	l.Title = "Pods"
 	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
-	l.SetItems(components.PodsToItems(pods))
 
 	return ProjectDetailPage{
 		store:   s,
