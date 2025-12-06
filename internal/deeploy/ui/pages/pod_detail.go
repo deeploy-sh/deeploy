@@ -36,43 +36,42 @@ func newPodDetailKeyMap() podDetailKeyMap {
 
 type PodDetailPage struct {
 	pod     *repo.Pod
+	project *repo.Project
 	keys    podDetailKeyMap
 	help    help.Model
 	loading bool
 	width   int
 	height  int
-	err     error
 }
 
-type podDetailDataMsg struct {
-	pod repo.Pod
-}
-
-type podDetailErrMsg struct{ err error }
-
-func NewPodDetailPage(podID string, pod *repo.Pod) PodDetailPage {
+func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
 	return PodDetailPage{
+		pod:     pod,
+		project: project,
 		keys:    newPodDetailKeyMap(),
 		help:    styles.NewHelpModel(),
 		loading: true,
-		pod:     pod,
-		// pod:     &repo.Pod{ID: podID},
 	}
 }
 
-func (p PodDetailPage) Init() tea.Cmd {
+func (m PodDetailPage) Init() tea.Cmd {
 	return nil
 }
 
-func (p PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(msg, p.keys.Back):
-			// return p, func() tea.Msg {
-			// 	return messages.ChangePageMsg{Page: NewDashboard()}
-			// }
-		case key.Matches(msg, p.keys.EditPod):
+		case key.Matches(msg, m.keys.Back):
+			return m, func() tea.Msg {
+				return ChangePageMsg{
+					// Page: NewDashboard()
+					PageFactory: func(s Store) tea.Model {
+						return NewProjectDetailPage(s, m.project.ID)
+					},
+				}
+			}
+		case key.Matches(msg, m.keys.EditPod):
 			// item := p.list.SelectedItem()
 			// if item != nil {
 			// 	pod := item.(components.PodItem).Pod
@@ -81,7 +80,7 @@ func (p PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// 		return messages.ChangePageMsg{Page: NewPodFormPage(projectID, &pod)}
 			// 	}
 			// }
-		case key.Matches(msg, p.keys.DeletePod):
+		case key.Matches(msg, m.keys.DeletePod):
 			// item := p.list.SelectedItem()
 			// if item != nil {
 			// 	pod := item.(components.PodItem).Pod
@@ -92,11 +91,11 @@ func (p PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		m.width = msg.Width
+		m.height = msg.Height
 		// List height for card content
 		// listHeight := min((msg.Height-1)/2, 12)
-		return p, nil
+		return m, nil
 
 	case messages.PodUpdatedMsg:
 		// pod := msg
@@ -109,7 +108,7 @@ func (p PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// 	}
 		// }
 		// cmd := p.list.SetItems(items)
-		return p, nil
+		return m, nil
 
 	case messages.PodDeleteMsg:
 		// pod := msg
@@ -123,74 +122,28 @@ func (p PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// }
 		// cmd := p.list.SetItems(items)
 		// return p, cmd
-		return p, nil
+		return m, nil
 	}
 
 	// Pass other messages to the list
 	var cmd tea.Cmd
-	return p, cmd
+	return m, cmd
 }
 
-func (p PodDetailPage) View() tea.View {
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1
+func (m PodDetailPage) View() tea.View {
+	helpView := m.help.View(m.keys)
+	contentHeight := m.height - 1
 
 	var content string
 
-	// if p.loading {
-	// 	content = styles.MutedStyle.Render("Loading...")
-	// } else if p.err != nil {
-	// 	content = styles.ErrorStyle.Render("Error: " + p.err.Error())
-	// } else {
-	// 	content = p.renderContent()
-	// }
+	content = m.pod.Title
 
-	content = p.pod.Title
-
-	centered := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(m.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, content)
 
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
 }
 
-func (p PodDetailPage) renderContent() string {
-	// titleStyle := lipgloss.NewStyle().
-	// 	Bold(true).
-	// 	Foreground(styles.ColorForeground)
-
-	// Project Header
-	// header := titleStyle.Render(p.project.Title)
-	// if p.project.Description != "" {
-	// 	header += "\n" + styles.MutedStyle.Render(p.project.Description)
-	// }
-	//
-	// // Pods list
-	// var podsContent string
-	// if len(p.list.Items()) == 0 {
-	// 	podsContent = fmt.Sprintf("Pods (0)\n\n%s",
-	// 		styles.MutedStyle.Render("No pods yet. Press 'n' to create one."))
-	// } else {
-	// 	podsContent = p.list.View()
-	// }
-	//
-	// cardContent := lipgloss.JoinVertical(lipgloss.Left,
-	// 	header,
-	// 	"",
-	// 	podsContent,
-	// )
-	//
-	// card := components.Card(components.CardProps{
-	// 	Width:   50,
-	// 	Padding: []int{1, 2},
-	// }).Render(cardContent)
-	//
-	// return card
-	return ""
-}
-
-func (p PodDetailPage) Breadcrumbs() []string {
-	// if p.project != nil && p.project.Title != "" {
-	// 	return []string{"Pod", p.project.Title}
-	// }
-	return []string{"Pod", "Detail"}
+func (m PodDetailPage) Breadcrumbs() []string {
+	return []string{"Projects", m.project.Title, "Pods", m.pod.Title}
 }

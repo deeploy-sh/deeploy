@@ -95,98 +95,97 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	}
 }
 
-func (p ProjectDetailPage) Init() tea.Cmd {
+func (m ProjectDetailPage) Init() tea.Cmd {
 	return nil
 }
 
-func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		// Don't handle keys if filtering is active
-		if p.pods.FilterState() == list.Filtering {
+		if m.pods.FilterState() == list.Filtering {
 			// But allow esc to cancel filter
 			if msg.Code == tea.KeyEscape {
 				var cmd tea.Cmd
-				p.pods, cmd = p.pods.Update(msg)
-				return p, cmd
+				m.pods, cmd = m.pods.Update(msg)
+				return m, cmd
 			}
 			break
 		}
 
 		switch {
-		case key.Matches(msg, p.keys.Back):
-			return p, func() tea.Msg {
+		case key.Matches(msg, m.keys.Back):
+			return m, func() tea.Msg {
 				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
 			}
-		case key.Matches(msg, p.keys.NewPod):
-			projectID := p.project.ID
-			return p, func() tea.Msg {
+		case key.Matches(msg, m.keys.NewPod):
+			projectID := m.project.ID
+			return m, func() tea.Msg {
 				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, nil) }}
 			}
-		case key.Matches(msg, p.keys.EditPod):
-			item := p.pods.SelectedItem()
+		case key.Matches(msg, m.keys.EditPod):
+			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
-				projectID := p.project.ID
-				return p, func() tea.Msg {
+				projectID := m.project.ID
+				return m, func() tea.Msg {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
 				}
 			}
-		case key.Matches(msg, p.keys.SelectPod):
-			item := p.pods.SelectedItem()
+		case key.Matches(msg, m.keys.SelectPod):
+			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
-				projectID := p.project.ID
-				return p, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDetailPage(projectID, &pod) }}
+				return m, func() tea.Msg {
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDetailPage(&pod, m.project) }}
 				}
 			}
 
-		case key.Matches(msg, p.keys.DeletePod):
-			item := p.pods.SelectedItem()
+		case key.Matches(msg, m.keys.DeletePod):
+			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
-				return p, func() tea.Msg {
+				return m, func() tea.Msg {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDeletePage(&pod) }}
 				}
 			}
-		case key.Matches(msg, p.keys.EditProject):
-			if p.project != nil {
-				project := p.project
-				return p, func() tea.Msg {
+		case key.Matches(msg, m.keys.EditProject):
+			if m.project != nil {
+				project := m.project
+				return m, func() tea.Msg {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectFormPage(project) }}
 				}
 			}
-		case key.Matches(msg, p.keys.DeleteProject):
-			if p.project != nil {
-				project := p.project
-				return p, func() tea.Msg {
+		case key.Matches(msg, m.keys.DeleteProject):
+			if m.project != nil {
+				project := m.project
+				return m, func() tea.Msg {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDeletePage(project) }}
 				}
 			}
 		}
 
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		m.width = msg.Width
+		m.height = msg.Height
 		// List height for card content
 		listHeight := min((msg.Height-1)/2, 12)
-		p.pods.SetSize(46, listHeight)
-		return p, nil
+		m.pods.SetSize(46, listHeight)
+		return m, nil
 
 	case projectDetailErrMsg:
-		p.err = msg.err
-		p.loading = false
-		return p, nil
+		m.err = msg.err
+		m.loading = false
+		return m, nil
 
 	case messages.PodCreatedMsg:
 		newItem := components.PodItem{Pod: repo.Pod(msg)}
-		cmd := p.pods.InsertItem(len(p.pods.Items()), newItem)
-		return p, cmd
+		cmd := m.pods.InsertItem(len(m.pods.Items()), newItem)
+		return m, cmd
 
 	case messages.PodUpdatedMsg:
 		pod := msg
-		items := p.pods.Items()
+		items := m.pods.Items()
 		for i, item := range items {
 			pi, ok := item.(components.PodItem)
 			if ok && pi.ID == pod.ID {
@@ -194,12 +193,12 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := p.pods.SetItems(items)
-		return p, cmd
+		cmd := m.pods.SetItems(items)
+		return m, cmd
 
 	case messages.PodDeleteMsg:
 		pod := msg
-		items := p.pods.Items()
+		items := m.pods.Items()
 		for i, item := range items {
 			pi, ok := item.(components.PodItem)
 			if ok && pi.ID == pod.ID {
@@ -207,59 +206,59 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := p.pods.SetItems(items)
-		return p, cmd
+		cmd := m.pods.SetItems(items)
+		return m, cmd
 
 	case messages.ProjectUpdatedMsg:
 		project := repo.Project(msg)
-		p.project = &project
-		return p, nil
+		m.project = &project
+		return m, nil
 	}
 
 	// Pass other messages to the list
 	var cmd tea.Cmd
-	p.pods, cmd = p.pods.Update(msg)
-	return p, cmd
+	m.pods, cmd = m.pods.Update(msg)
+	return m, cmd
 }
 
-func (p ProjectDetailPage) View() tea.View {
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1
+func (m ProjectDetailPage) View() tea.View {
+	helpView := m.help.View(m.keys)
+	contentHeight := m.height - 1
 
 	var content string
 
-	if p.loading {
+	if m.loading {
 		content = styles.MutedStyle.Render("Loading...")
-	} else if p.err != nil {
-		content = styles.ErrorStyle.Render("Error: " + p.err.Error())
+	} else if m.err != nil {
+		content = styles.ErrorStyle.Render("Error: " + m.err.Error())
 	} else {
-		content = p.renderContent()
+		content = m.renderContent()
 	}
 
-	centered := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(m.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, content)
 
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
 }
 
-func (p ProjectDetailPage) renderContent() string {
+func (m ProjectDetailPage) renderContent() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(styles.ColorForeground)
 
 	// Project Header
-	header := titleStyle.Render(p.project.Title)
-	if p.project.Description != "" {
-		header += "\n" + styles.MutedStyle.Render(p.project.Description)
+	header := titleStyle.Render(m.project.Title)
+	if m.project.Description != "" {
+		header += "\n" + styles.MutedStyle.Render(m.project.Description)
 	}
 
 	// Pods list
 	var podsContent string
-	if len(p.pods.Items()) == 0 {
+	if len(m.pods.Items()) == 0 {
 		podsContent = fmt.Sprintf("Pods (0)\n\n%s",
 			styles.MutedStyle.Render("No pods yet. Press 'n' to create one."))
 	} else {
-		podsContent = p.pods.View()
+		podsContent = m.pods.View()
 	}
 
 	cardContent := lipgloss.JoinVertical(lipgloss.Left,
@@ -276,6 +275,6 @@ func (p ProjectDetailPage) renderContent() string {
 	return card
 }
 
-func (p ProjectDetailPage) Breadcrumbs() []string {
-	return []string{"Projects", p.project.Title}
+func (m ProjectDetailPage) Breadcrumbs() []string {
+	return []string{"Projects", m.project.Title}
 }
