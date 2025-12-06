@@ -226,7 +226,6 @@ func initData() tea.Msg {
 	if err != nil {
 		log.Fatal("something went wrong: ", err)
 	}
-
 	return InitDataMsg{
 		projects: projects,
 		pods:     pods,
@@ -319,7 +318,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "project",
 			Action: func() tea.Msg {
 				return ChangePageMsg{
-					PageFactory: func(m Store) tea.Model { return NewProjectDetailPage(project.ID) },
+					PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, project.ID) },
 				}
 
 			},

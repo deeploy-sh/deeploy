@@ -78,7 +78,7 @@ func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 
 func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 	pods := []Pod{}
-	query := `SELECT id, user_id, title, description, created_at, updated_at FROM pods WHERE user_id = ?`
+	query := `SELECT id, user_id, project_id, title, description, created_at, updated_at FROM pods WHERE user_id = ?`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {

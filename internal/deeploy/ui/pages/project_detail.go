@@ -1,16 +1,13 @@
 package pages
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
@@ -50,8 +47,9 @@ func newProjectDetailKeyMap() projectDetailKeyMap {
 }
 
 type ProjectDetailPage struct {
+	store   Store
 	project *repo.Project
-	list    list.Model
+	pods    list.Model
 	keys    projectDetailKeyMap
 	help    help.Model
 	loading bool
@@ -60,15 +58,17 @@ type ProjectDetailPage struct {
 	err     error
 }
 
-type projectDetailDataMsg struct {
-	project repo.Project
-	pods    []repo.Pod
-}
-
 type projectDetailErrMsg struct{ err error }
 
-func NewProjectDetailPage(projectID string) ProjectDetailPage {
+func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	delegate := components.NewPodDelegate(40)
+
+	var pods []repo.Pod
+	for _, p := range s.Pods() {
+		if p.ProjectID == projectID {
+			pods = append(pods, p)
+		}
+	}
 
 	l := list.New([]list.Item{}, delegate, 0, 0)
 	l.Title = "Pods"
@@ -77,32 +77,30 @@ func NewProjectDetailPage(projectID string) ProjectDetailPage {
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
+	l.SetItems(components.PodsToItems(pods))
 
 	return ProjectDetailPage{
-		list:    l,
+		store:   s,
+		pods:    l,
 		keys:    newProjectDetailKeyMap(),
 		help:    styles.NewHelpModel(),
-		loading: true,
 		project: &repo.Project{ID: projectID},
 	}
 }
 
 func (p ProjectDetailPage) Init() tea.Cmd {
-	projectID := p.project.ID
-	return func() tea.Msg {
-		return loadProjectDetail(projectID)
-	}
+	return nil
 }
 
 func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		// Don't handle keys if filtering is active
-		if p.list.FilterState() == list.Filtering {
+		if p.pods.FilterState() == list.Filtering {
 			// But allow esc to cancel filter
 			if msg.Code == tea.KeyEscape {
 				var cmd tea.Cmd
-				p.list, cmd = p.list.Update(msg)
+				p.pods, cmd = p.pods.Update(msg)
 				return p, cmd
 			}
 			break
@@ -119,7 +117,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, nil) }}
 			}
 		case key.Matches(msg, p.keys.EditPod):
-			item := p.list.SelectedItem()
+			item := p.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				projectID := p.project.ID
@@ -128,7 +126,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case key.Matches(msg, p.keys.SelectPod):
-			item := p.list.SelectedItem()
+			item := p.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				projectID := p.project.ID
@@ -138,7 +136,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, p.keys.DeletePod):
-			item := p.list.SelectedItem()
+			item := p.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return p, func() tea.Msg {
@@ -166,15 +164,8 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.height = msg.Height
 		// List height for card content
 		listHeight := min((msg.Height-1)/2, 12)
-		p.list.SetSize(46, listHeight)
+		p.pods.SetSize(46, listHeight)
 		return p, nil
-
-	case projectDetailDataMsg:
-		p.project = &msg.project
-		items := components.PodsToItems(msg.pods)
-		cmd := p.list.SetItems(items)
-		p.loading = false
-		return p, cmd
 
 	case projectDetailErrMsg:
 		p.err = msg.err
@@ -183,12 +174,12 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case messages.PodCreatedMsg:
 		newItem := components.PodItem{Pod: repo.Pod(msg)}
-		cmd := p.list.InsertItem(len(p.list.Items()), newItem)
+		cmd := p.pods.InsertItem(len(p.pods.Items()), newItem)
 		return p, cmd
 
 	case messages.PodUpdatedMsg:
 		pod := msg
-		items := p.list.Items()
+		items := p.pods.Items()
 		for i, item := range items {
 			pi, ok := item.(components.PodItem)
 			if ok && pi.ID == pod.ID {
@@ -196,12 +187,12 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := p.list.SetItems(items)
+		cmd := p.pods.SetItems(items)
 		return p, cmd
 
 	case messages.PodDeleteMsg:
 		pod := msg
-		items := p.list.Items()
+		items := p.pods.Items()
 		for i, item := range items {
 			pi, ok := item.(components.PodItem)
 			if ok && pi.ID == pod.ID {
@@ -209,7 +200,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := p.list.SetItems(items)
+		cmd := p.pods.SetItems(items)
 		return p, cmd
 
 	case messages.ProjectUpdatedMsg:
@@ -220,7 +211,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Pass other messages to the list
 	var cmd tea.Cmd
-	p.list, cmd = p.list.Update(msg)
+	p.pods, cmd = p.pods.Update(msg)
 	return p, cmd
 }
 
@@ -257,11 +248,11 @@ func (p ProjectDetailPage) renderContent() string {
 
 	// Pods list
 	var podsContent string
-	if len(p.list.Items()) == 0 {
+	if len(p.pods.Items()) == 0 {
 		podsContent = fmt.Sprintf("Pods (0)\n\n%s",
 			styles.MutedStyle.Render("No pods yet. Press 'n' to create one."))
 	} else {
-		podsContent = p.list.View()
+		podsContent = p.pods.View()
 	}
 
 	cardContent := lipgloss.JoinVertical(lipgloss.Left,
@@ -283,55 +274,4 @@ func (p ProjectDetailPage) Breadcrumbs() []string {
 		return []string{"Projects", p.project.Title}
 	}
 	return []string{"Projects", "Detail"}
-}
-
-func loadProjectDetail(projectID string) tea.Msg {
-	cfg, err := config.Load()
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-
-	// Load project
-	projectReq, err := http.NewRequest("GET", cfg.Server+"/api/projects/"+projectID, nil)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-	projectReq.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	client := http.Client{}
-	projectRes, err := client.Do(projectReq)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-	defer projectRes.Body.Close()
-
-	var project repo.Project
-	err = json.NewDecoder(projectRes.Body).Decode(&project)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-
-	// Load pods
-	podsReq, err := http.NewRequest("GET", cfg.Server+"/api/pods/project/"+projectID, nil)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-	podsReq.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	podsRes, err := client.Do(podsReq)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-	defer podsRes.Body.Close()
-
-	var pods []repo.Pod
-	err = json.NewDecoder(podsRes.Body).Decode(&pods)
-	if err != nil {
-		return projectDetailErrMsg{err: err}
-	}
-
-	return projectDetailDataMsg{
-		project: project,
-		pods:    pods,
-	}
 }

@@ -99,7 +99,7 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				i := item.(components.ProjectItem)
 				return p, func() tea.Msg {
 					return ChangePageMsg{
-						PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(i.ID) },
+						PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, i.ID) },
 					}
 				}
 			}
