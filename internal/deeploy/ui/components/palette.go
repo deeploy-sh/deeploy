@@ -1,7 +1,6 @@
 package components
 
 import (
-	"log"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -60,7 +59,6 @@ func (m Palette) Update(msg tea.Msg) (Palette, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch {
 		case msg.Code == tea.KeyUp || msg.String() == "ctrl+p":
-			log.Println(len(m.filtered))
 			if m.cursor > 0 {
 				m.cursor--
 			} else {

@@ -338,7 +338,6 @@ func (m app) getPaletteItems() []components.PaletteItem {
 		})
 	}
 
-	log.Println(m.pods)
 	return items
 }
 

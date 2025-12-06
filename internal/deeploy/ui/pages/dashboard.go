@@ -3,7 +3,6 @@ package pages
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"charm.land/bubbles/v2/help"
@@ -111,7 +110,6 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// List size for card content
 		listHeight := min((msg.Height-1)/2, 15)
 		p.list.SetSize(56, listHeight)
-		log.Println(p.list.Height(), p.list.Width())
 		return p, nil
 
 	case dashboardProjectsMsg:
