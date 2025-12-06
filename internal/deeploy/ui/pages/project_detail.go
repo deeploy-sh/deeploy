@@ -33,6 +33,10 @@ func (k projectDetailKeyMap) FullHelp() [][]key.Binding {
 	return nil
 }
 
+func (m ProjectDetailPage) HelpKeys() help.KeyMap {
+	return m.keys
+}
+
 func newProjectDetailKeyMap() projectDetailKeyMap {
 	return projectDetailKeyMap{
 		NewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
@@ -51,7 +55,6 @@ type ProjectDetailPage struct {
 	project *repo.Project
 	pods    list.Model
 	keys    projectDetailKeyMap
-	help    help.Model
 	loading bool
 	width   int
 	height  int
@@ -79,7 +82,7 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	}
 
 	l := list.New(components.PodsToItems(pods), delegate, 0, 0)
-	l.Title = "Pods"
+	l.Title = project.Title + " > Pods"
 	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
@@ -90,7 +93,6 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 		store:   s,
 		pods:    l,
 		keys:    newProjectDetailKeyMap(),
-		help:    styles.NewHelpModel(),
 		project: &project,
 	}
 }
@@ -222,8 +224,7 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ProjectDetailPage) View() tea.View {
-	helpView := m.help.View(m.keys)
-	contentHeight := m.height - 1
+	contentHeight := m.height
 
 	var content string
 
@@ -237,20 +238,10 @@ func (m ProjectDetailPage) View() tea.View {
 
 	centered := lipgloss.Place(m.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(centered)
 }
 
 func (m ProjectDetailPage) renderContent() string {
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorForeground)
-
-	// Project Header
-	header := titleStyle.Render(m.project.Title)
-	if m.project.Description != "" {
-		header += "\n" + styles.MutedStyle.Render(m.project.Description)
-	}
-
 	// Pods list
 	var podsContent string
 	if len(m.pods.Items()) == 0 {
@@ -260,11 +251,7 @@ func (m ProjectDetailPage) renderContent() string {
 		podsContent = m.pods.View()
 	}
 
-	cardContent := lipgloss.JoinVertical(lipgloss.Left,
-		header,
-		"",
-		podsContent,
-	)
+	cardContent := lipgloss.JoinVertical(lipgloss.Left, podsContent)
 
 	card := components.Card(components.CardProps{
 		Width:   50,

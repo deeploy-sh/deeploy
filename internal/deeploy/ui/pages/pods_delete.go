@@ -16,16 +16,18 @@ type PodDeletePage struct {
 	pod      *repo.Pod
 	decision int
 	keys     deleteKeyMap
-	help     help.Model
 	width    int
 	height   int
+}
+
+func (p PodDeletePage) HelpKeys() help.KeyMap {
+	return p.keys
 }
 
 func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
 	return PodDeletePage{
 		pod:  pod,
 		keys: newDeleteKeyMap(),
-		help: styles.NewHelpModel(),
 	}
 }
 
@@ -108,13 +110,12 @@ func (p PodDeletePage) View() tea.View {
 	buttons := lipgloss.JoinHorizontal(lipgloss.Center, noButton, yesButton)
 	content := lipgloss.JoinVertical(0.5, title, buttons)
 
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1 // 1 für help
+	contentHeight := p.height
 
 	centered := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, content)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(centered)
 }
 
 func (p PodDeletePage) Breadcrumbs() []string {

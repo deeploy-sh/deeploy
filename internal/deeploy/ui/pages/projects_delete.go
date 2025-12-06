@@ -29,7 +29,11 @@ func (k deleteKeyMap) ShortHelp() []key.Binding {
 }
 
 func (k deleteKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Select, k.Confirm, k.Cancel}}
+	return nil
+}
+
+func (p ProjectDeletePage) HelpKeys() help.KeyMap {
+	return p.keys
 }
 
 func newDeleteKeyMap() deleteKeyMap {
@@ -53,7 +57,6 @@ type ProjectDeletePage struct {
 	project  *repo.Project
 	decision int
 	keys     deleteKeyMap
-	help     help.Model
 	width    int
 	height   int
 }
@@ -66,7 +69,6 @@ func NewProjectDeletePage(project *repo.Project) ProjectDeletePage {
 	return ProjectDeletePage{
 		project: project,
 		keys:    newDeleteKeyMap(),
-		help:    styles.NewHelpModel(),
 	}
 }
 
@@ -155,14 +157,13 @@ func (p ProjectDeletePage) View() tea.View {
 		Padding: []int{2, 1},
 	}).Render(content)
 
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1 // 1 für help
+	contentHeight := p.height
 
 	// Card vertikal zentrieren
 	centeredCard := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centeredCard, helpView))
+	return tea.NewView(centeredCard)
 }
 
 func (p ProjectDeletePage) Breadcrumbs() []string {

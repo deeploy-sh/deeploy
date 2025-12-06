@@ -11,7 +11,6 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
@@ -30,7 +29,11 @@ func (k formKeyMap) ShortHelp() []key.Binding {
 }
 
 func (k formKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Save, k.Cancel}}
+	return nil
+}
+
+func (p ProjectFormPage) HelpKeys() help.KeyMap {
+	return p.keys
 }
 
 func newFormKeyMap() formKeyMap {
@@ -47,7 +50,6 @@ func newFormKeyMap() formKeyMap {
 type ProjectFormPage struct {
 	titleInput textinput.Model
 	keys       formKeyMap
-	help       help.Model
 	project    *repo.Project
 	width      int
 	height     int
@@ -68,7 +70,6 @@ func NewProjectFormPage(project *repo.Project) ProjectFormPage {
 	projectFormPage := ProjectFormPage{
 		titleInput: titleInput,
 		keys:       newFormKeyMap(),
-		help:       styles.NewHelpModel(),
 	}
 	if project != nil {
 		projectFormPage.project = project
@@ -123,14 +124,13 @@ func (p ProjectFormPage) View() tea.View {
 		Padding: []int{2, 3},
 	}).Render(p.titleInput.View())
 
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1 // 1 für help
+	contentHeight := p.height
 
 	// Card vertikal zentrieren
 	centeredCard := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centeredCard, helpView))
+	return tea.NewView(centeredCard)
 }
 
 func (p ProjectFormPage) Breadcrumbs() []string {

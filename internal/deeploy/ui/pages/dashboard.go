@@ -30,7 +30,7 @@ func (k dashboardKeyMap) ShortHelp() []key.Binding {
 }
 
 func (k dashboardKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Search, k.New, k.Select, k.Filter}}
+	return nil
 }
 
 func newDashboardKeyMap() dashboardKeyMap {
@@ -68,30 +68,30 @@ func NewDashboard(s Store) DashboardPage {
 	}
 }
 
-func (p DashboardPage) Init() tea.Cmd {
+func (m DashboardPage) Init() tea.Cmd {
 	return nil
 }
 
-func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		// Don't handle keys if filtering is active
-		if p.list.FilterState() == list.Filtering {
+		if m.list.FilterState() == list.Filtering {
 			break
 		}
 
 		switch {
-		case key.Matches(msg, p.keys.New):
-			return p, func() tea.Msg {
+		case key.Matches(msg, m.keys.New):
+			return m, func() tea.Msg {
 				return ChangePageMsg{
 					PageFactory: func(s Store) tea.Model { return NewProjectFormPage(nil) },
 				}
 			}
-		case key.Matches(msg, p.keys.Select):
-			item := p.list.SelectedItem()
+		case key.Matches(msg, m.keys.Select):
+			item := m.list.SelectedItem()
 			if item != nil {
 				i := item.(components.ProjectItem)
-				return p, func() tea.Msg {
+				return m, func() tea.Msg {
 					return ChangePageMsg{
 						PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, i.ID) },
 					}
@@ -100,80 +100,80 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		m.width = msg.Width
+		m.height = msg.Height
 		// List size for card content
 		listHeight := min((msg.Height-1)/2, 15)
-		p.list.SetSize(56, listHeight)
-		return p, nil
+		m.list.SetSize(56, listHeight)
+		return m, nil
 
 	case dashboardProjectsMsg:
 		items := make([]list.Item, len(msg))
 		for i, p := range msg {
 			items[i] = components.ProjectItem{Project: p}
 		}
-		cmd := p.list.SetItems(items)
-		return p, cmd
+		cmd := m.list.SetItems(items)
+		return m, cmd
 
 	case dashboardErrMsg:
-		p.err = msg.err
-		return p, nil
+		m.err = msg.err
+		return m, nil
 
 	case messages.ProjectCreatedMsg:
 		newItem := components.ProjectItem{Project: repo.Project(msg)}
-		cmd := p.list.InsertItem(len(p.list.Items()), newItem)
-		return p, cmd
+		cmd := m.list.InsertItem(len(m.list.Items()), newItem)
+		return m, cmd
 
 	case messages.ProjectUpdatedMsg:
 		project := msg
-		items := p.list.Items()
+		items := m.list.Items()
 		for i, item := range items {
 			if pi, ok := item.(components.ProjectItem); ok && pi.Project.ID == project.ID {
 				items[i] = components.ProjectItem{Project: repo.Project(project)}
 				break
 			}
 		}
-		cmd := p.list.SetItems(items)
-		return p, cmd
+		cmd := m.list.SetItems(items)
+		return m, cmd
 
 	case messages.ProjectDeleteMsg:
 		project := msg
-		items := p.list.Items()
+		items := m.list.Items()
 		for i, item := range items {
 			if pi, ok := item.(components.ProjectItem); ok && pi.Project.ID == project.ID {
 				items = append(items[:i], items[i+1:]...)
 				break
 			}
 		}
-		cmd := p.list.SetItems(items)
-		return p, cmd
+		cmd := m.list.SetItems(items)
+		return m, cmd
 	}
 
 	// Pass other messages to the list
 	var cmd tea.Cmd
-	p.list, cmd = p.list.Update(msg)
-	return p, cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
-func (p DashboardPage) View() tea.View {
-	contentHeight := p.height - 1
+func (m DashboardPage) View() tea.View {
+	contentHeight := m.height
 
 	var content string
 
-	if p.err != nil {
-		content = styles.ErrorStyle.Render("Error: " + p.err.Error())
-	} else if len(p.list.Items()) == 0 {
-		content = p.renderEmptyState()
+	if m.err != nil {
+		content = styles.ErrorStyle.Render("Error: " + m.err.Error())
+	} else if len(m.list.Items()) == 0 {
+		content = m.renderEmptyState()
 	} else {
-		content = p.renderList()
+		content = m.renderList()
 	}
 
-	centered := lipgloss.Place(p.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
+	centered := lipgloss.Place(m.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered))
 }
 
-func (p DashboardPage) renderEmptyState() string {
+func (m DashboardPage) renderEmptyState() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(styles.ColorForeground).
@@ -187,15 +187,15 @@ func (p DashboardPage) renderEmptyState() string {
 	)
 }
 
-func (p DashboardPage) renderList() string {
+func (m DashboardPage) renderList() string {
 	card := components.Card(components.CardProps{
 		Width:   50,
 		Padding: []int{1, 2},
-	}).Render(p.list.View())
+	}).Render(m.list.View())
 
 	return card
 }
 
-func (p DashboardPage) Breadcrumbs() []string {
+func (m DashboardPage) Breadcrumbs() []string {
 	return []string{"Dashboard"}
 }

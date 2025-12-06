@@ -6,7 +6,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -25,6 +24,10 @@ func (k podDetailKeyMap) FullHelp() [][]key.Binding {
 	return nil
 }
 
+func (m PodDetailPage) HelpKeys() help.KeyMap {
+	return m.keys
+}
+
 func newPodDetailKeyMap() podDetailKeyMap {
 	return podDetailKeyMap{
 		EditPod:   key.NewBinding(key.WithKeys("enter", "e"), key.WithHelp("enter", "edit pod")),
@@ -38,7 +41,6 @@ type PodDetailPage struct {
 	pod     *repo.Pod
 	project *repo.Project
 	keys    podDetailKeyMap
-	help    help.Model
 	loading bool
 	width   int
 	height  int
@@ -49,7 +51,6 @@ func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
 		pod:     pod,
 		project: project,
 		keys:    newPodDetailKeyMap(),
-		help:    styles.NewHelpModel(),
 		loading: true,
 	}
 }
@@ -131,8 +132,7 @@ func (m PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m PodDetailPage) View() tea.View {
-	helpView := m.help.View(m.keys)
-	contentHeight := m.height - 1
+	contentHeight := m.height
 
 	var content string
 
@@ -141,7 +141,7 @@ func (m PodDetailPage) View() tea.View {
 	centered := lipgloss.Place(m.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, content)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(centered)
 }
 
 func (m PodDetailPage) Breadcrumbs() []string {
