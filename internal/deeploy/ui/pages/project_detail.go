@@ -29,7 +29,6 @@ type projectDetailKeyMap struct {
 }
 
 func (k projectDetailKeyMap) ShortHelp() []key.Binding {
-	// return []key.Binding{k.NewPod, k.EditPod, k.DeletePod, k.Filter, k.Back}
 	return []key.Binding{k.NewPod, k.EditPod, k.SelectPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Filter, k.Back}
 }
 
