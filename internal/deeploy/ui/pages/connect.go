@@ -84,8 +84,8 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, func() tea.Msg {
-				return messages.ChangePageMsg{
-					Page: NewAuthPage(input),
+				return ChangePageMsg{
+					PageFactory: func(s Store) tea.Model { return NewAuthPage(input) },
 				}
 			}
 		}

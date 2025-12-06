@@ -92,7 +92,7 @@ func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Code {
 		case tea.KeyEscape:
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewDashboard()}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
 			}
 		}
 		switch {
@@ -101,7 +101,7 @@ func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return p, tea.Batch(
 					p.Submit,
 					func() tea.Msg {
-						return messages.ChangePageMsg{Page: NewDashboard()}
+						return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
 					},
 				)
 			}

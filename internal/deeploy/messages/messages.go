@@ -1,15 +1,8 @@
 package messages
 
 import (
-	tea "charm.land/bubbletea/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
-
-// Navigation Messages
-
-type ChangePageMsg struct {
-	Page tea.Model
-}
 
 // Auth Messages
 type AuthErrorMsg struct {

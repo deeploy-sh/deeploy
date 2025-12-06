@@ -89,14 +89,18 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, p.keys.New):
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewProjectFormPage(nil)}
+				return ChangePageMsg{
+					PageFactory: func(s Store) tea.Model { return NewProjectFormPage(nil) },
+				}
 			}
 		case key.Matches(msg, p.keys.Select):
 			item := p.list.SelectedItem()
 			if item != nil {
 				i := item.(components.ProjectItem)
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewProjectDetailPage(i.ID)}
+					return ChangePageMsg{
+						PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(i.ID) },
+					}
 				}
 			}
 		}

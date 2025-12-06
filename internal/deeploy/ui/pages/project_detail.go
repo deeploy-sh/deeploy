@@ -111,12 +111,12 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, p.keys.Back):
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewDashboard()}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
 			}
 		case key.Matches(msg, p.keys.NewPod):
 			projectID := p.project.ID
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewPodFormPage(projectID, nil)}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, nil) }}
 			}
 		case key.Matches(msg, p.keys.EditPod):
 			item := p.list.SelectedItem()
@@ -124,7 +124,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				pod := item.(components.PodItem).Pod
 				projectID := p.project.ID
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewPodFormPage(projectID, &pod)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
 				}
 			}
 		case key.Matches(msg, p.keys.SelectPod):
@@ -133,7 +133,7 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				pod := item.(components.PodItem).Pod
 				projectID := p.project.ID
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewPodDetailPage(projectID, &pod)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDetailPage(projectID, &pod) }}
 				}
 			}
 
@@ -142,21 +142,21 @@ func (p ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewPodDeletePage(&pod)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDeletePage(&pod) }}
 				}
 			}
 		case key.Matches(msg, p.keys.EditProject):
 			if p.project != nil {
 				project := p.project
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewProjectFormPage(project)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectFormPage(project) }}
 				}
 			}
 		case key.Matches(msg, p.keys.DeleteProject):
 			if p.project != nil {
 				project := p.project
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewProjectDeletePage(project)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDeletePage(project) }}
 				}
 			}
 		}

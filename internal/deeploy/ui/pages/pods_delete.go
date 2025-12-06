@@ -52,19 +52,19 @@ func (p PodDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEscape:
 			projectID := p.pod.ProjectID
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(projectID) }}
 			}
 		case tea.KeyEnter:
 			projectID := p.pod.ProjectID
 			if p.decision == confirmNo {
 				return p, func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(projectID) }}
 				}
 			}
 			return p, tea.Batch(
 				p.DeletePod,
 				func() tea.Msg {
-					return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(projectID) }}
 				},
 			)
 		}

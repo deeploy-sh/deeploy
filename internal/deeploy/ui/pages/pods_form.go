@@ -71,7 +71,7 @@ func (p PodFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEscape:
 			projectID := p.projectID
 			return p, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(projectID) }}
 			}
 		}
 		switch {
@@ -81,7 +81,7 @@ func (p PodFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return p, tea.Batch(
 					p.Submit,
 					func() tea.Msg {
-						return messages.ChangePageMsg{Page: NewProjectDetailPage(projectID)}
+						return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(projectID) }}
 					},
 				)
 			}

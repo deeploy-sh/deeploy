@@ -11,12 +11,15 @@ import (
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
+
+type ChangePageMsg struct {
+	PageFactory func(s Store) tea.Model
+}
 
 const headerHeight = 1
 const footerHeight = 1
@@ -74,11 +77,15 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case msg.NeedsSetup:
 			return m, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewConnectPage(nil)}
+				return ChangePageMsg{
+					PageFactory: func(s Store) tea.Model { return NewConnectPage(nil) },
+				}
 			}
 		case msg.NeedsAuth:
 			return m, func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewAuthPage("")}
+				return ChangePageMsg{
+					PageFactory: func(s Store) tea.Model { return NewAuthPage("") },
+				}
 			}
 		case msg.Offline:
 			m.offline = true
@@ -106,7 +113,9 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, tea.Batch(
 			func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewDashboard()}
+				return ChangePageMsg{
+					PageFactory: func(s Store) tea.Model { return NewDashboard() },
+				}
 			},
 			tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 				return utils.CheckConnection()
@@ -167,8 +176,8 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
 		return m, cmd
 
-	case messages.ChangePageMsg:
-		m.currentPage = msg.Page
+	case ChangePageMsg:
+		m.currentPage = msg.PageFactory(&m)
 		m.palette = nil // Close palette on page change
 
 		pageMsg := tea.WindowSizeMsg{
@@ -284,7 +293,9 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: "Go to dashboard",
 			Category:    "action",
 			Action: func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewDashboard()}
+				return ChangePageMsg{
+					PageFactory: func(m Store) tea.Model { return NewDashboard() },
+				}
 			},
 		},
 		{
@@ -292,7 +303,9 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: "Create a new project",
 			Category:    "action",
 			Action: func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewProjectFormPage(nil)}
+				return ChangePageMsg{
+					PageFactory: func(m Store) tea.Model { return NewProjectFormPage(nil) },
+				}
 			},
 		},
 	}
@@ -305,7 +318,10 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: project.Description,
 			Category:    "project",
 			Action: func() tea.Msg {
-				return messages.ChangePageMsg{Page: NewProjectDetailPage(project.ID)}
+				return ChangePageMsg{
+					PageFactory: func(m Store) tea.Model { return NewProjectDetailPage(project.ID) },
+				}
+
 			},
 		})
 	}

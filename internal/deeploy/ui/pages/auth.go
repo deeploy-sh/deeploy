@@ -211,6 +211,8 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 			return messages.AuthErrorMsg{Err: err}
 		}
 
-		return messages.ChangePageMsg{Page: NewDashboard()}
+		return ChangePageMsg{
+			PageFactory: func(s Store) tea.Model { return NewDashboard() },
+		}
 	}
 }
