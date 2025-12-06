@@ -212,7 +212,7 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 		}
 
 		return ChangePageMsg{
-			PageFactory: func(s Store) tea.Model { return NewDashboard() },
+			PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
 		}
 	}
 }

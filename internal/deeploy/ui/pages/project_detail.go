@@ -116,7 +116,7 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.Back):
 			return m, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
 			}
 		case key.Matches(msg, m.keys.NewPod):
 			projectID := m.project.ID
@@ -169,8 +169,8 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		// List height for card content
-		listHeight := min((msg.Height-1)/2, 12)
-		m.pods.SetSize(46, listHeight)
+		listHeight := min((msg.Height-1)/2, 15)
+		m.pods.SetSize(56, listHeight)
 		return m, nil
 
 	case projectDetailErrMsg:
@@ -235,8 +235,7 @@ func (m ProjectDetailPage) View() tea.View {
 		content = m.renderContent()
 	}
 
-	centered := lipgloss.Place(m.width, contentHeight,
-		lipgloss.Center, lipgloss.Center, content)
+	centered := lipgloss.Place(m.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
 }

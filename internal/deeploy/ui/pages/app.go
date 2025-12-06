@@ -63,6 +63,7 @@ func NewApp() tea.Model {
 
 func (m app) Init() tea.Cmd {
 	return tea.Batch(
+		initData,
 		m.currentPage.Init(),
 		// INFO: use tick here to show bootstrap(logo) min. 1 second
 		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
@@ -114,13 +115,12 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(
 			func() tea.Msg {
 				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewDashboard() },
+					PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
 				}
 			},
 			tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 				return utils.CheckConnection()
 			}),
-			initData,
 		)
 
 	case tea.KeyPressMsg:
@@ -293,7 +293,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "action",
 			Action: func() tea.Msg {
 				return ChangePageMsg{
-					PageFactory: func(m Store) tea.Model { return NewDashboard() },
+					PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
 				}
 			},
 		},

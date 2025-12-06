@@ -96,18 +96,18 @@ func (p ProjectDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyEscape:
 			return p, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
+				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
 			}
 		case tea.KeyEnter:
 			if p.decision == confirmNo {
 				return p, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
 				}
 			}
 			return p, tea.Batch(
 				p.DeleteProject,
 				func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard() }}
+					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
 				},
 			)
 		}

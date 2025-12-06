@@ -1,16 +1,11 @@
 package pages
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
@@ -48,17 +43,17 @@ func newDashboardKeyMap() dashboardKeyMap {
 }
 
 type DashboardPage struct {
-	list    list.Model
-	keys    dashboardKeyMap
-	loading bool
-	width   int
-	height  int
-	err     error
+	store  Store
+	list   list.Model
+	keys   dashboardKeyMap
+	width  int
+	height int
+	err    error
 }
 
-func NewDashboard() DashboardPage {
+func NewDashboard(s Store) DashboardPage {
 	delegate := components.NewProjectDelegate(40)
-	l := list.New([]list.Item{}, delegate, 0, 0)
+	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 0, 0)
 	l.Title = "Projects"
 	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground)
 	l.SetShowTitle(true)
@@ -67,14 +62,14 @@ func NewDashboard() DashboardPage {
 	l.SetShowHelp(false)
 
 	return DashboardPage{
-		list:    l,
-		keys:    newDashboardKeyMap(),
-		loading: true,
+		store: s,
+		list:  l,
+		keys:  newDashboardKeyMap(),
 	}
 }
 
 func (p DashboardPage) Init() tea.Cmd {
-	return loadDashboardProjects
+	return nil
 }
 
 func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -118,12 +113,10 @@ func (p DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items[i] = components.ProjectItem{Project: p}
 		}
 		cmd := p.list.SetItems(items)
-		p.loading = false
 		return p, cmd
 
 	case dashboardErrMsg:
 		p.err = msg.err
-		p.loading = false
 		return p, nil
 
 	case messages.ProjectCreatedMsg:
@@ -167,9 +160,7 @@ func (p DashboardPage) View() tea.View {
 
 	var content string
 
-	if p.loading {
-		content = styles.MutedStyle.Render("Loading projects...")
-	} else if p.err != nil {
+	if p.err != nil {
 		content = styles.ErrorStyle.Render("Error: " + p.err.Error())
 	} else if len(p.list.Items()) == 0 {
 		content = p.renderEmptyState()
@@ -198,7 +189,7 @@ func (p DashboardPage) renderEmptyState() string {
 
 func (p DashboardPage) renderList() string {
 	card := components.Card(components.CardProps{
-		Width:   60,
+		Width:   50,
 		Padding: []int{1, 2},
 	}).Render(p.list.View())
 
@@ -207,36 +198,4 @@ func (p DashboardPage) renderList() string {
 
 func (p DashboardPage) Breadcrumbs() []string {
 	return []string{"Dashboard"}
-}
-
-func loadDashboardProjects() tea.Msg {
-	cfg, err := config.Load()
-	if err != nil {
-		return dashboardErrMsg{err: err}
-	}
-
-	r, err := http.NewRequest("GET", cfg.Server+"/api/projects", nil)
-	if err != nil {
-		return dashboardErrMsg{err: err}
-	}
-	r.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	client := http.Client{}
-	res, err := client.Do(r)
-	if err != nil {
-		return dashboardErrMsg{err: err}
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode == http.StatusUnauthorized {
-		return dashboardErrMsg{err: fmt.Errorf("unauthorized")}
-	}
-
-	var projects []repo.Project
-	err = json.NewDecoder(res.Body).Decode(&projects)
-	if err != nil {
-		return dashboardErrMsg{err: err}
-	}
-
-	return dashboardProjectsMsg(projects)
 }
