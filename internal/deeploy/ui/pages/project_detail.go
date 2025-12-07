@@ -64,8 +64,7 @@ type ProjectDetailPage struct {
 type projectDetailErrMsg struct{ err error }
 
 func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
-	delegate := components.NewPodDelegate(40)
-
+	delegate := components.NewPodDelegate(46) // HACK: card inner list = 46 is minus padding and borders -> If set >46 no changes if <46 wierd bg colors
 	var project repo.Project
 	for _, p := range s.Projects() {
 		if p.ID == projectID {
@@ -84,6 +83,7 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	l := list.New(components.PodsToItems(pods), delegate, 0, 0)
 	l.Title = project.Title + " > Pods"
 	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
+	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)

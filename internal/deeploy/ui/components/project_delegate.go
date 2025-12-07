@@ -45,7 +45,7 @@ func (d ProjectDelegate) Render(w io.Writer, m list.Model, index int, item list.
 
 	isSelected := index == m.Index()
 
-	// Base style für die gesamte Zeile
+	// Base style
 	lineStyle := lipgloss.NewStyle().
 		Width(d.width).
 		Background(styles.ColorBackgroundPanel())

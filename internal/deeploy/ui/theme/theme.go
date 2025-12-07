@@ -36,7 +36,7 @@ func Color(s string) color.Color {
 }
 
 // Current is the active theme - defaults to OpenCode
-var Current Theme = Dracula()
+var Current Theme = OpenCode()
 
 // Available themes registry
 var Available = map[string]Theme{
