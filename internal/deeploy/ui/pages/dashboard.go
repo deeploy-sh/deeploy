@@ -53,16 +53,13 @@ type DashboardPage struct {
 
 func NewDashboard(s Store) DashboardPage {
 	delegate := components.NewProjectDelegate()
-	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 46, 0)
-	l.Title = "Projects"
-	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
-	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
-	l.SetShowTitle(true)
-	l.InfiniteScrolling = true
+	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 47, 15)
+	l.SetShowTitle(false)
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
+	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)
+	l.InfiniteScrolling = true
 
 	return DashboardPage{
 		store: s,
@@ -105,9 +102,6 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// List size for card content
-		listHeight := min((msg.Height-1)/2, 15)
-		m.list.SetSize(56, listHeight)
 		return m, nil
 
 	case dashboardProjectsMsg:
@@ -191,13 +185,30 @@ func (m DashboardPage) renderEmptyState() string {
 }
 
 func (m DashboardPage) renderList() string {
-	card := components.Card(components.CardProps{
-		Width:   50,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(m.list.View())
+	// Custom title (Bubbles built-in title has layout bugs)
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Width(47).
+		Background(styles.ColorBackgroundPanel()).
+		Foreground(styles.ColorPrimary()).
+		PaddingLeft(1).
+		PaddingBottom(1).
+		Render("Projects")
 
-	return card
+	// List with background (like Crush does)
+	list := lipgloss.NewStyle().
+		Width(47).
+		Height(m.list.Height()).
+		Background(styles.ColorBackgroundPanel()).
+		Render(m.list.View())
+
+	content := lipgloss.JoinVertical(lipgloss.Left, title, list)
+
+	return components.Card(components.CardProps{
+		Width:   50,
+		Padding: []int{1, 1},
+		Accent:  true,
+	}).Render(content)
 }
 
 func (m DashboardPage) Breadcrumbs() []string {

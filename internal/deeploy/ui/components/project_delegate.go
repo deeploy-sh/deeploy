@@ -51,12 +51,12 @@ func (d ProjectDelegate) Render(w io.Writer, m list.Model, index int, item list.
 			Background(styles.ColorPrimary()).
 			Foreground(styles.ColorBackground()).
 			Bold(true).
-			Render(fmt.Sprintf("%s", project.Title))
+			Render(fmt.Sprintf(" %s", project.Title))
 	} else {
 		line = lineStyle.
 			Background(styles.ColorBackgroundPanel()).
 			Foreground(styles.ColorForeground()).
-			Render(fmt.Sprintf("%s", project.Title))
+			Render(fmt.Sprintf(" %s", project.Title))
 	}
 
 	fmt.Fprint(w, line)

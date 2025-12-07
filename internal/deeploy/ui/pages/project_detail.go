@@ -1,8 +1,6 @@
 package pages
 
 import (
-	"fmt"
-
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
@@ -80,11 +78,8 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 		}
 	}
 
-	l := list.New(components.PodsToItems(pods), delegate, 46, 15)
-	l.Title = project.Title + " > Pods"
-	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
-	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
-	l.SetShowTitle(true)
+	l := list.New(components.PodsToItems(pods), delegate, 45, 15)
+	l.SetShowTitle(false)
 	l.InfiniteScrolling = true
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
@@ -174,7 +169,7 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		// List height for card content
 		listHeight := min((msg.Height-1)/2, 15)
-		m.pods.SetSize(56, listHeight)
+		m.pods.SetSize(45, listHeight)
 		return m, nil
 
 	case projectDetailErrMsg:
@@ -244,24 +239,34 @@ func (m ProjectDetailPage) View() tea.View {
 }
 
 func (m ProjectDetailPage) renderContent() string {
+	// Custom title
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Width(45).
+		Background(styles.ColorBackgroundPanel()).
+		Foreground(styles.ColorForeground()).
+		PaddingLeft(1).
+		Render(m.project.Title + " > Pods")
+
 	// Pods list
 	var podsContent string
 	if len(m.pods.Items()) == 0 {
-		podsContent = fmt.Sprintf("Pods (0)\n\n%s",
-			styles.MutedStyle().Render("No pods yet. Press 'n' to create one."))
+		podsContent = styles.MutedStyle().Render("No pods yet. Press 'n' to create one.")
 	} else {
-		podsContent = m.pods.View()
+		podsContent = lipgloss.NewStyle().
+			Width(45).
+			Height(m.pods.Height()).
+			Background(styles.ColorBackgroundPanel()).
+			Render(m.pods.View())
 	}
 
-	cardContent := lipgloss.JoinVertical(lipgloss.Left, podsContent)
+	content := lipgloss.JoinVertical(lipgloss.Left, title, podsContent)
 
-	card := components.Card(components.CardProps{
+	return components.Card(components.CardProps{
 		Width:   50,
-		Padding: []int{1, 2},
+		Padding: []int{1, 1},
 		Accent:  true,
-	}).Render(cardContent)
-
-	return card
+	}).Render(content)
 }
 
 func (m ProjectDetailPage) Breadcrumbs() []string {

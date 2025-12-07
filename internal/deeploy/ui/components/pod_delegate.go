@@ -43,20 +43,20 @@ func (d PodDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 
 	isSelected := index == m.Index()
 
-	lineStyle := lipgloss.NewStyle().
-		Width(m.Width()).
-		Background(styles.ColorBackgroundPanel())
+	lineStyle := lipgloss.NewStyle().Width(m.Width())
 
 	var line string
 	if isSelected {
 		line = lineStyle.
-			Foreground(styles.ColorPrimary()).
+			Background(styles.ColorPrimary()).
+			Foreground(styles.ColorBackground()).
 			Bold(true).
-			Render(fmt.Sprintf("%s", pod.Title))
+			Render(fmt.Sprintf(" %s", pod.Title))
 	} else {
 		line = lineStyle.
+			Background(styles.ColorBackgroundPanel()).
 			Foreground(styles.ColorForeground()).
-			Render(fmt.Sprintf("%s", pod.Title))
+			Render(fmt.Sprintf(" %s", pod.Title))
 	}
 
 	fmt.Fprint(w, line)
