@@ -3,7 +3,6 @@ package pages
 import (
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
@@ -19,14 +18,13 @@ type dashboardKeyMap struct {
 	Search key.Binding
 	New    key.Binding
 	Select key.Binding
-	Filter key.Binding
 }
 
 func (m DashboardPage) HelpKeys() help.KeyMap {
-	return m.keys // gibt einfach den existierenden KeyMap zurück
+	return m.keys
 }
 func (k dashboardKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Search, k.New, k.Select, k.Filter}
+	return []key.Binding{k.Search, k.New, k.Select}
 }
 
 func (k dashboardKeyMap) FullHelp() [][]key.Binding {
@@ -38,13 +36,12 @@ func newDashboardKeyMap() dashboardKeyMap {
 		Search: key.NewBinding(key.WithKeys("ctrl+k"), key.WithHelp("ctrl+k", "search")),
 		New:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new project")),
 		Select: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
-		Filter: key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "filter")),
 	}
 }
 
 type DashboardPage struct {
 	store  Store
-	list   list.Model
+	list   components.ScrollList
 	keys   dashboardKeyMap
 	width  int
 	height int
@@ -53,15 +50,7 @@ type DashboardPage struct {
 
 func NewDashboard(s Store) DashboardPage {
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
-
-	delegate := components.NewProjectDelegate()
-	l := list.New(components.ProjectsToItems(s.Projects()), delegate, card.InnerWidth(), 15)
-	l.SetShowTitle(false)
-	l.SetShowPagination(false)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
-	l.InfiniteScrolling = true
+	l := components.NewScrollList(components.ProjectsToItems(s.Projects()), card.InnerWidth(), 15)
 
 	return DashboardPage{
 		store: s,
@@ -77,11 +66,6 @@ func (m DashboardPage) Init() tea.Cmd {
 func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		// Don't handle keys if filtering is active
-		if m.list.FilterState() == list.Filtering {
-			break
-		}
-
 		switch {
 		case key.Matches(msg, m.keys.New):
 			return m, func() tea.Msg {
@@ -99,6 +83,12 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
+		case msg.Code == tea.KeyUp:
+			m.list.CursorUp()
+			return m, nil
+		case msg.Code == tea.KeyDown:
+			m.list.CursorDown()
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -107,21 +97,22 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case dashboardProjectsMsg:
-		items := make([]list.Item, len(msg))
+		items := make([]components.ScrollItem, len(msg))
 		for i, p := range msg {
 			items[i] = components.ProjectItem{Project: p}
 		}
-		cmd := m.list.SetItems(items)
-		return m, cmd
+		m.list.SetItems(items)
+		return m, nil
 
 	case dashboardErrMsg:
 		m.err = msg.err
 		return m, nil
 
 	case messages.ProjectCreatedMsg:
-		newItem := components.ProjectItem{Project: repo.Project(msg)}
-		cmd := m.list.InsertItem(len(m.list.Items()), newItem)
-		return m, cmd
+		items := m.list.Items()
+		items = append(items, components.ProjectItem{Project: repo.Project(msg)})
+		m.list.SetItems(items)
+		return m, nil
 
 	case messages.ProjectUpdatedMsg:
 		project := msg
@@ -132,8 +123,8 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := m.list.SetItems(items)
-		return m, cmd
+		m.list.SetItems(items)
+		return m, nil
 
 	case messages.ProjectDeleteMsg:
 		project := msg
@@ -144,14 +135,11 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := m.list.SetItems(items)
-		return m, cmd
+		m.list.SetItems(items)
+		return m, nil
 	}
 
-	// Pass other messages to the list
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 func (m DashboardPage) View() tea.View {

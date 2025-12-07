@@ -1,10 +1,6 @@
 package components
 
 import (
-	"fmt"
-	"io"
-
-	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
@@ -22,58 +18,22 @@ type OpenThemeSwitcherMsg struct{}
 
 // themeItem represents a theme in the list
 type themeItem struct {
-	name string
+	name     string
+	isActive bool
 }
 
+func (i themeItem) Title() string       { return i.name }
 func (i themeItem) FilterValue() string { return i.name }
-
-// themeDelegate handles rendering of theme items
-type themeDelegate struct {
-	activeTheme string
-}
-
-func (d themeDelegate) Height() int                             { return 1 }
-func (d themeDelegate) Spacing() int                            { return 0 }
-func (d themeDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
-
-func (d themeDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	item, ok := listItem.(themeItem)
-	if !ok {
-		return
+func (i themeItem) Prefix() string {
+	if i.isActive {
+		return "●"
 	}
-
-	isSelected := index == m.Index()
-	isActive := item.name == d.activeTheme
-
-	// Dot for active theme
-	dot := " "
-	if isActive {
-		dot = "●"
-	}
-	content := fmt.Sprintf(" %s %s", dot, item.name)
-
-	lineStyle := lipgloss.NewStyle().Width(m.Width())
-
-	var line string
-	if isSelected {
-		line = lineStyle.
-			Background(styles.ColorPrimary()).
-			Foreground(styles.ColorBackground()).
-			Bold(true).
-			Render(content)
-	} else {
-		line = lineStyle.
-			Background(styles.ColorBackgroundPanel()).
-			Foreground(styles.ColorForeground()).
-			Render(content)
-	}
-
-	fmt.Fprint(w, line)
+	return " "
 }
 
 // ThemeSwitcher is an overlay component for selecting themes with live preview
 type ThemeSwitcher struct {
-	list          list.Model
+	list          ScrollList
 	originalTheme string
 }
 
@@ -83,21 +43,13 @@ func NewThemeSwitcher() ThemeSwitcher {
 	currentTheme := theme.Current.Name()
 
 	// Create list items
-	items := make([]list.Item, len(themes))
+	items := make([]ScrollItem, len(themes))
 	for i, t := range themes {
-		items[i] = themeItem{name: t}
+		items[i] = themeItem{name: t, isActive: t == currentTheme}
 	}
 
-	delegate := themeDelegate{activeTheme: currentTheme}
-
 	card := CardProps{Width: 50, Padding: []int{1, 1}}
-	l := list.New(items, delegate, card.InnerWidth(), 15)
-	l.SetShowTitle(false)
-	l.SetShowPagination(false)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
-	l.InfiniteScrolling = true
+	l := NewScrollList(items, card.InnerWidth(), 15)
 
 	// Find and select current theme
 	for i, t := range themes {
@@ -129,17 +81,19 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 		// Select theme and save
 		case tea.KeyEnter:
 			// Get selected theme
-			if item, ok := m.list.SelectedItem().(themeItem); ok {
-				// Save to config
-				cfg, err := config.Load()
-				if err != nil {
-					cfg = &config.Config{}
-				}
-				cfg.Theme = item.name
-				_ = config.Save(cfg)
+			if item := m.list.SelectedItem(); item != nil {
+				if ti, ok := item.(themeItem); ok {
+					// Save to config
+					cfg, err := config.Load()
+					if err != nil {
+						cfg = &config.Config{}
+					}
+					cfg.Theme = ti.name
+					_ = config.Save(cfg)
 
-				return m, func() tea.Msg {
-					return ThemeSwitcherCloseMsg{Selected: true}
+					return m, func() tea.Msg {
+						return ThemeSwitcherCloseMsg{Selected: true}
+					}
 				}
 			}
 
@@ -150,22 +104,34 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 			return m, func() tea.Msg {
 				return ThemeSwitcherCloseMsg{Selected: false}
 			}
+
+		case tea.KeyUp:
+			prevIndex := m.list.Index()
+			m.list.CursorUp()
+			if m.list.Index() != prevIndex {
+				if item := m.list.SelectedItem(); item != nil {
+					if ti, ok := item.(themeItem); ok {
+						theme.SetTheme(ti.name)
+					}
+				}
+			}
+			return m, nil
+
+		case tea.KeyDown:
+			prevIndex := m.list.Index()
+			m.list.CursorDown()
+			if m.list.Index() != prevIndex {
+				if item := m.list.SelectedItem(); item != nil {
+					if ti, ok := item.(themeItem); ok {
+						theme.SetTheme(ti.name)
+					}
+				}
+			}
+			return m, nil
 		}
 	}
 
-	// Update list and apply live preview
-	var cmd tea.Cmd
-	prevIndex := m.list.Index()
-	m.list, cmd = m.list.Update(msg)
-
-	// If selection changed, apply live preview
-	if m.list.Index() != prevIndex {
-		if item, ok := m.list.SelectedItem().(themeItem); ok {
-			theme.SetTheme(item.name)
-		}
-	}
-
-	return m, cmd
+	return m, nil
 }
 
 func (m ThemeSwitcher) View() string {

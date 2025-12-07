@@ -3,7 +3,6 @@ package pages
 import (
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
@@ -19,12 +18,11 @@ type projectDetailKeyMap struct {
 	DeletePod     key.Binding
 	EditProject   key.Binding
 	DeleteProject key.Binding
-	Filter        key.Binding
 	Back          key.Binding
 }
 
 func (k projectDetailKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.NewPod, k.EditPod, k.SelectPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Filter, k.Back}
+	return []key.Binding{k.NewPod, k.EditPod, k.SelectPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Back}
 }
 
 func (k projectDetailKeyMap) FullHelp() [][]key.Binding {
@@ -38,12 +36,11 @@ func (m ProjectDetailPage) HelpKeys() help.KeyMap {
 func newProjectDetailKeyMap() projectDetailKeyMap {
 	return projectDetailKeyMap{
 		NewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
-		EditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("ej", "edit pod")),
+		EditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
 		DeletePod:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
 		SelectPod:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
 		EditProject:   key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
 		DeleteProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "delete project")),
-		Filter:        key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "filter")),
 		Back:          key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
@@ -51,7 +48,7 @@ func newProjectDetailKeyMap() projectDetailKeyMap {
 type ProjectDetailPage struct {
 	store   Store
 	project *repo.Project
-	pods    list.Model
+	pods    components.ScrollList
 	keys    projectDetailKeyMap
 	loading bool
 	width   int
@@ -62,7 +59,6 @@ type ProjectDetailPage struct {
 type projectDetailErrMsg struct{ err error }
 
 func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
-	delegate := components.NewPodDelegate()
 	var project repo.Project
 	for _, p := range s.Projects() {
 		if p.ID == projectID {
@@ -79,13 +75,7 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	}
 
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
-	l := list.New(components.PodsToItems(pods), delegate, card.InnerWidth(), 15)
-	l.SetShowTitle(false)
-	l.SetShowPagination(false)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
-	l.InfiniteScrolling = true
+	l := components.NewScrollList(components.PodsToItems(pods), card.InnerWidth(), 15)
 
 	return ProjectDetailPage{
 		store:   s,
@@ -102,17 +92,6 @@ func (m ProjectDetailPage) Init() tea.Cmd {
 func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		// Don't handle keys if filtering is active
-		if m.pods.FilterState() == list.Filtering {
-			// But allow esc to cancel filter
-			if msg.Code == tea.KeyEscape {
-				var cmd tea.Cmd
-				m.pods, cmd = m.pods.Update(msg)
-				return m, cmd
-			}
-			break
-		}
-
 		switch {
 		case key.Matches(msg, m.keys.Back):
 			return m, func() tea.Msg {
@@ -163,6 +142,12 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDeletePage(project) }}
 				}
 			}
+		case msg.Code == tea.KeyUp:
+			m.pods.CursorUp()
+			return m, nil
+		case msg.Code == tea.KeyDown:
+			m.pods.CursorDown()
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -176,9 +161,10 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case messages.PodCreatedMsg:
-		newItem := components.PodItem{Pod: repo.Pod(msg)}
-		cmd := m.pods.InsertItem(len(m.pods.Items()), newItem)
-		return m, cmd
+		items := m.pods.Items()
+		items = append(items, components.PodItem{Pod: repo.Pod(msg)})
+		m.pods.SetItems(items)
+		return m, nil
 
 	case messages.PodUpdatedMsg:
 		pod := msg
@@ -190,8 +176,8 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := m.pods.SetItems(items)
-		return m, cmd
+		m.pods.SetItems(items)
+		return m, nil
 
 	case messages.PodDeleteMsg:
 		pod := msg
@@ -203,8 +189,8 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
-		cmd := m.pods.SetItems(items)
-		return m, cmd
+		m.pods.SetItems(items)
+		return m, nil
 
 	case messages.ProjectUpdatedMsg:
 		project := repo.Project(msg)
@@ -212,10 +198,7 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Pass other messages to the list
-	var cmd tea.Cmd
-	m.pods, cmd = m.pods.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 func (m ProjectDetailPage) View() tea.View {

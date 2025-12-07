@@ -236,6 +236,13 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, switcher.Init()
 
 	default:
+		// Forward to palette if open (for cursor blink, etc.)
+		if m.palette != nil {
+			var cmd tea.Cmd
+			*m.palette, cmd = m.palette.Update(msg)
+			return m, cmd
+		}
+
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(msg)
 		return m, cmd
@@ -326,7 +333,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 	items := []components.PaletteItem{
 		// Actions
 		{
-			Title:       "Dashboard",
+			ItemTitle:   "Dashboard",
 			Description: "Go to dashboard",
 			Category:    "action",
 			Action: func() tea.Msg {
@@ -336,7 +343,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			},
 		},
 		{
-			Title:       "New Project",
+			ItemTitle:   "New Project",
 			Description: "Create a new project",
 			Category:    "action",
 			Action: func() tea.Msg {
@@ -346,7 +353,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			},
 		},
 		{
-			Title:       "Change Theme",
+			ItemTitle:   "Change Theme",
 			Description: "Switch color theme",
 			Category:    "settings",
 			Action: func() tea.Msg {
@@ -359,7 +366,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 	for _, p := range m.projects {
 		project := p // Capture for closure
 		items = append(items, components.PaletteItem{
-			Title:       project.Title,
+			ItemTitle:   project.Title,
 			Description: project.Description,
 			Category:    "project",
 			Action: func() tea.Msg {
@@ -374,7 +381,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 	for _, p := range m.pods {
 		pod := p // Capture for closure
 		items = append(items, components.PaletteItem{
-			Title:       pod.Title,
+			ItemTitle:   pod.Title,
 			Description: pod.Description,
 			Category:    "pod",
 			Action: func() tea.Msg {

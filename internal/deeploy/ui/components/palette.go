@@ -11,23 +11,35 @@ import (
 
 // PaletteItem represents a single item in the command palette
 type PaletteItem struct {
-	Title       string
+	ItemTitle   string
 	Description string
-	Category    string         // "project", "pod", "action"
+	Category    string         // "project", "pod", "action", "settings"
 	Action      func() tea.Msg // Action to execute on selection
 }
 
-// FilterValue returns the filterable content for this item
-func (i PaletteItem) FilterValue() string {
-	return i.Title + " " + i.Description
+func (i PaletteItem) Title() string       { return i.ItemTitle }
+func (i PaletteItem) FilterValue() string { return i.ItemTitle + " " + i.Description }
+
+func (i PaletteItem) Prefix() string {
+	switch i.Category {
+	case "project":
+		return "[P]"
+	case "pod":
+		return "[D]"
+	case "action":
+		return "[A]"
+	case "settings":
+		return "[S]"
+	default:
+		return "   "
+	}
 }
 
 // Palette is a command palette component
 type Palette struct {
 	textinput textinput.Model
 	items     []PaletteItem
-	filtered  []PaletteItem
-	cursor    int
+	list      ScrollList
 	width     int
 	height    int
 }
@@ -37,12 +49,39 @@ func NewPalette(items []PaletteItem) Palette {
 	ti.Placeholder = "Type to search..."
 	ti.Focus()
 	ti.CharLimit = 100
+	ti.Prompt = ""
+	ti.SetWidth(20)
+
+	// Style with panel background
+	bgStyle := lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
+	inputStyles := textinput.Styles{
+		Focused: textinput.StyleState{
+			Text:        bgStyle.Foreground(styles.ColorForeground()),
+			Placeholder: bgStyle.Foreground(styles.ColorMuted()),
+		},
+		Blurred: textinput.StyleState{
+			Text:        bgStyle.Foreground(styles.ColorForeground()),
+			Placeholder: bgStyle.Foreground(styles.ColorMuted()),
+		},
+		Cursor: textinput.CursorStyle{
+			Blink: true,
+		},
+	}
+	ti.SetStyles(inputStyles)
+
+	// Convert to ScrollItems
+	scrollItems := make([]ScrollItem, len(items))
+	for i, item := range items {
+		scrollItems[i] = item
+	}
+
+	card := CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
+	list := NewScrollList(scrollItems, card.InnerWidth(), 10)
 
 	p := Palette{
 		textinput: ti,
 		items:     items,
-		filtered:  items,
-		cursor:    0,
+		list:      list,
 	}
 
 	return p
@@ -55,35 +94,27 @@ func (m Palette) Init() tea.Cmd {
 func (m Palette) Update(msg tea.Msg) (Palette, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// Always update textinput first (for blink, typing, etc.)
+	m.textinput, cmd = m.textinput.Update(msg)
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch {
 		case msg.Code == tea.KeyUp || msg.String() == "ctrl+p":
-			if m.cursor > 0 {
-				m.cursor--
-			} else {
-				m.cursor = len(m.filtered) - 1
-			}
-			return m, nil
+			m.list.CursorUp()
+			return m, cmd
 		case msg.Code == tea.KeyDown || msg.String() == "ctrl+n":
-			if m.cursor < len(m.filtered)-1 {
-				m.cursor++
-			} else {
-				m.cursor = 0
-			}
-			return m, nil
+			m.list.CursorDown()
+			return m, cmd
 		case msg.Code == tea.KeyEnter:
-			if len(m.filtered) > 0 && m.cursor < len(m.filtered) {
-				item := m.filtered[m.cursor]
-				if item.Action != nil {
-					return m, item.Action
+			if item := m.list.SelectedItem(); item != nil {
+				if pi, ok := item.(PaletteItem); ok && pi.Action != nil {
+					return m, pi.Action
 				}
 			}
-			return m, nil
+			return m, cmd
 		}
 	}
-
-	m.textinput, cmd = m.textinput.Update(msg)
 
 	// Filter items based on input
 	m.filterItems()
@@ -94,23 +125,22 @@ func (m Palette) Update(msg tea.Msg) (Palette, tea.Cmd) {
 // filterItems filters the items based on the current input
 func (m *Palette) filterItems() {
 	query := strings.ToLower(m.textinput.Value())
-	if query == "" {
-		m.filtered = m.items
-		return
-	}
 
-	filtered := make([]PaletteItem, 0)
-	for _, item := range m.items {
-		if strings.Contains(strings.ToLower(item.FilterValue()), query) {
-			filtered = append(filtered, item)
+	var filtered []ScrollItem
+	if query == "" {
+		filtered = make([]ScrollItem, len(m.items))
+		for i, item := range m.items {
+			filtered[i] = item
+		}
+	} else {
+		for _, item := range m.items {
+			if strings.Contains(strings.ToLower(item.FilterValue()), query) {
+				filtered = append(filtered, item)
+			}
 		}
 	}
-	m.filtered = filtered
 
-	// Reset cursor if out of bounds
-	if m.cursor >= len(m.filtered) {
-		m.cursor = max(0, len(m.filtered)-1)
-	}
+	m.list.SetItems(filtered)
 }
 
 func (m *Palette) SetSize(width, height int) {
@@ -119,74 +149,42 @@ func (m *Palette) SetSize(width, height int) {
 }
 
 func (m Palette) View() string {
-	card := CardProps{Width: 54, Padding: []int{1, 2}, Accent: true}
+	card := CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
-	var b strings.Builder
+	// Title (like other lists)
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Width(w).
+		Background(styles.ColorBackgroundPanel()).
+		Foreground(styles.ColorPrimary()).
+		PaddingLeft(1).
+		PaddingBottom(1).
+		Render("Command Palette")
 
-	// Input with left accent border (OpenCode style)
-	inputStyle := lipgloss.NewStyle().
-		Width(w-2).
-		Padding(0, 1).
-		Background(styles.ColorBackgroundElement()).
-		BorderLeft(true).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderLeftForeground(styles.ColorPrimary())
+	// Search input
+	input := lipgloss.NewStyle().
+		Width(w).
+		Background(styles.ColorBackgroundPanel()).
+		PaddingLeft(1).
+		PaddingBottom(1).
+		Render(m.textinput.View())
 
-	b.WriteString(inputStyle.Render(m.textinput.View()))
-	b.WriteString("\n\n")
-
-	maxVisible := min(8, len(m.filtered))
-	if maxVisible == 0 {
-		b.WriteString(styles.MutedStyle().Render("  No results"))
+	// List with background
+	var listContent string
+	if len(m.list.Items()) == 0 {
+		listContent = styles.MutedStyle().Render(" No results")
 	} else {
-		for i := range maxVisible {
-			item := m.filtered[i]
-
-			var categoryBadge string
-			switch item.Category {
-			case "project":
-				categoryBadge = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("33")).
-					Render("[P]")
-			case "pod":
-				categoryBadge = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("35")).
-					Render("[D]")
-			case "action":
-				categoryBadge = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("208")).
-					Render("[A]")
-			case "settings":
-				categoryBadge = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("141")).
-					Render("[S]")
-			default:
-				categoryBadge = "   "
-			}
-
-			var line string
-			if i == m.cursor {
-				line = lipgloss.NewStyle().
-					Foreground(styles.ColorPrimary()).
-					Bold(true).
-					Render("> " + categoryBadge + " " + item.Title)
-			} else {
-				line = "  " + categoryBadge + " " + item.Title
-			}
-
-			if item.Description != "" && i == m.cursor {
-				line += styles.MutedStyle().Render(" - " + item.Description)
-			}
-
-			b.WriteString(line + "\n")
-		}
-
-		if len(m.filtered) > maxVisible {
-			b.WriteString(styles.MutedStyle().Render(
-				"\n  ..." + string(rune(len(m.filtered)-maxVisible)) + " more"))
-		}
+		listContent = m.list.View()
 	}
 
-	return Card(card).Render(b.String())
+	list := lipgloss.NewStyle().
+		Width(w).
+		Height(m.list.Height()).
+		Background(styles.ColorBackgroundPanel()).
+		Render(listContent)
+
+	content := lipgloss.JoinVertical(lipgloss.Left, title, input, list)
+
+	return Card(card).Render(content)
 }
