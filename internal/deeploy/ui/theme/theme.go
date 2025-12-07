@@ -38,10 +38,34 @@ func Color(s string) color.Color {
 // Current is the active theme - defaults to OpenCode
 var Current Theme = Dracula()
 
-// Available themes registry
+// Available themes registry (26 themes)
 var Available = map[string]Theme{
-	"opencode": OpenCode(),
-	"dracula":  Dracula(),
+	"aura":        Aura(),
+	"ayu":         Ayu(),
+	"catppuccin":  Catppuccin(),
+	"cobalt2":     Cobalt2(),
+	"dracula":     Dracula(),
+	"everforest":  Everforest(),
+	"flexoki":     Flexoki(),
+	"github":      GitHub(),
+	"gruvbox":     Gruvbox(),
+	"kanagawa":    Kanagawa(),
+	"material":    Material(),
+	"matrix":      Matrix(),
+	"mercury":     Mercury(),
+	"monokai":     Monokai(),
+	"nightowl":    NightOwl(),
+	"nord":        Nord(),
+	"one-dark":    OneDark(),
+	"opencode":    OpenCode(),
+	"palenight":   Palenight(),
+	"rose-pine":   RosePine(),
+	"solarized":   Solarized(),
+	"synthwave84": Synthwave84(),
+	"tokyonight":  TokyoNight(),
+	"vercel":      Vercel(),
+	"vesper":      Vesper(),
+	"zenburn":     Zenburn(),
 }
 
 // SetTheme switches the active theme by name
@@ -54,11 +78,34 @@ func SetTheme(name string) bool {
 	return false
 }
 
-// ThemeNames returns a list of available theme names
+// ThemeNames returns an alphabetically sorted list of available theme names
 func ThemeNames() []string {
-	names := make([]string, 0, len(Available))
-	for name := range Available {
-		names = append(names, name)
+	return []string{
+		"aura",
+		"ayu",
+		"catppuccin",
+		"cobalt2",
+		"dracula",
+		"everforest",
+		"flexoki",
+		"github",
+		"gruvbox",
+		"kanagawa",
+		"material",
+		"matrix",
+		"mercury",
+		"monokai",
+		"nightowl",
+		"nord",
+		"one-dark",
+		"opencode",
+		"palenight",
+		"rose-pine",
+		"solarized",
+		"synthwave84",
+		"tokyonight",
+		"vercel",
+		"vesper",
+		"zenburn",
 	}
-	return names
 }

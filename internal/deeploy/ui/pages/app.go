@@ -37,6 +37,7 @@ type HelpProvider interface {
 type app struct {
 	currentPage      tea.Model
 	palette          *components.Palette
+	themeSwitcher    *components.ThemeSwitcher
 	projects         []repo.Project
 	pods             []repo.Pod
 	width            int
@@ -150,10 +151,36 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Esc closes palette
-		if msg.Code == tea.KeyEscape && m.palette != nil {
-			m.palette = nil
+		// Ctrl+T toggles theme switcher
+		if msg.String() == "ctrl+t" && m.bootstrapped {
+			if m.themeSwitcher != nil {
+				m.themeSwitcher = nil
+			} else {
+				m.palette = nil // Close palette if open
+				switcher := components.NewThemeSwitcher()
+				m.themeSwitcher = &switcher
+				return m, switcher.Init()
+			}
 			return m, nil
+		}
+
+		// Esc closes palette or theme switcher
+		if msg.Code == tea.KeyEscape {
+			if m.themeSwitcher != nil {
+				m.themeSwitcher = nil
+				return m, nil
+			}
+			if m.palette != nil {
+				m.palette = nil
+				return m, nil
+			}
+		}
+
+		// Forward to theme switcher if open
+		if m.themeSwitcher != nil {
+			var cmd tea.Cmd
+			*m.themeSwitcher, cmd = m.themeSwitcher.Update(msg)
+			return m, cmd
 		}
 
 		// Forward to palette if open
@@ -202,6 +229,16 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.projects = msg.projects
 		m.pods = msg.pods
 		return m, nil
+
+	case components.ThemeSwitcherCloseMsg:
+		m.themeSwitcher = nil
+		return m, nil
+
+	case components.OpenThemeSwitcherMsg:
+		m.palette = nil
+		switcher := components.NewThemeSwitcher()
+		m.themeSwitcher = &switcher
+		return m, switcher.Init()
 
 	default:
 		var cmd tea.Cmd
@@ -313,6 +350,14 @@ func (m app) getPaletteItems() []components.PaletteItem {
 				}
 			},
 		},
+		{
+			Title:       "Change Theme",
+			Description: "Switch color theme (Ctrl+T)",
+			Category:    "action",
+			Action: func() tea.Msg {
+				return components.OpenThemeSwitcherMsg{}
+			},
+		},
 	}
 
 	// Add projects dynamically
@@ -400,6 +445,33 @@ func (m app) View() tea.View {
 	}
 
 	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea, helpView)
+
+	// Render theme switcher overlay if open
+	if m.themeSwitcher != nil {
+		switcherContent := m.themeSwitcher.View()
+		switcherCard := components.Card(components.CardProps{
+			Width:   44,
+			Padding: []int{1, 2},
+			Accent:  true,
+		}).Render(switcherContent)
+
+		// Calculate position (completely centered - both X and Y)
+		switcherWidth := lipgloss.Width(switcherCard)
+		switcherHeight := lipgloss.Height(switcherCard)
+		switcherX := (m.width - switcherWidth) / 2
+		switcherY := (m.height - switcherHeight) / 2
+
+		// Create layers with proper z-ordering
+		baseLayer := lipgloss.NewLayer(base)
+		switcherLayer := lipgloss.NewLayer(switcherCard).
+			X(switcherX).
+			Y(switcherY).
+			Z(1)
+
+		// Compose with Canvas
+		canvas := lipgloss.NewCanvas(baseLayer, switcherLayer)
+		return tea.NewView(canvas.Render())
+	}
 
 	// Render palette overlay if open
 	if m.palette != nil {
