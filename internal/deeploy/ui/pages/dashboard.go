@@ -50,7 +50,10 @@ type DashboardPage struct {
 
 func NewDashboard(s Store) DashboardPage {
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
-	l := components.NewScrollList(components.ProjectsToItems(s.Projects()), card.InnerWidth(), 15)
+	l := components.NewScrollList(components.ProjectsToItems(s.Projects()), components.ScrollListConfig{
+		Width:  card.InnerWidth(),
+		Height: 15,
+	})
 
 	return DashboardPage{
 		store: s,
@@ -64,6 +67,10 @@ func (m DashboardPage) Init() tea.Cmd {
 }
 
 func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// ScrollList handles navigation (Up/Down/Ctrl+N/P)
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch {
@@ -83,18 +90,12 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-		case msg.Code == tea.KeyUp:
-			m.list.CursorUp()
-			return m, nil
-		case msg.Code == tea.KeyDown:
-			m.list.CursorDown()
-			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		return m, nil
+		return m, cmd
 
 	case dashboardProjectsMsg:
 		items := make([]components.ScrollItem, len(msg))
@@ -102,17 +103,17 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items[i] = components.ProjectItem{Project: p}
 		}
 		m.list.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case dashboardErrMsg:
 		m.err = msg.err
-		return m, nil
+		return m, cmd
 
 	case messages.ProjectCreatedMsg:
 		items := m.list.Items()
 		items = append(items, components.ProjectItem{Project: repo.Project(msg)})
 		m.list.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case messages.ProjectUpdatedMsg:
 		project := msg
@@ -124,7 +125,7 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.list.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case messages.ProjectDeleteMsg:
 		project := msg
@@ -136,10 +137,10 @@ func (m DashboardPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.list.SetItems(items)
-		return m, nil
+		return m, cmd
 	}
 
-	return m, nil
+	return m, cmd
 }
 
 func (m DashboardPage) View() tea.View {

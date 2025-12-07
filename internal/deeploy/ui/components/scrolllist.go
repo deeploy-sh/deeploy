@@ -3,6 +3,7 @@ package components
 import (
 	"strings"
 
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
@@ -19,21 +20,61 @@ type PrefixedItem interface {
 	Prefix() string
 }
 
-// ScrollList ist eine einfache scrollbare Liste mit echtem Zeile-für-Zeile Scrolling
-type ScrollList struct {
-	items     []ScrollItem
-	cursor    int // selected item
-	viewStart int // erstes sichtbares item
-	width     int
-	height    int // anzahl sichtbarer items
+// ScrollListConfig für NewScrollList
+type ScrollListConfig struct {
+	Width       int
+	Height      int
+	WithInput   bool
+	Placeholder string
 }
 
-func NewScrollList(items []ScrollItem, width, height int) ScrollList {
-	return ScrollList{
-		items:  items,
-		width:  width,
-		height: height,
+// ScrollList ist eine einfache scrollbare Liste mit echtem Zeile-für-Zeile Scrolling
+type ScrollList struct {
+	allItems  []ScrollItem // original items (für filter)
+	items     []ScrollItem // filtered items
+	cursor    int          // selected item
+	viewStart int          // erstes sichtbares item
+	width     int
+	height    int // anzahl sichtbarer items
+	input     *textinput.Model
+}
+
+func NewScrollList(items []ScrollItem, cfg ScrollListConfig) ScrollList {
+	l := ScrollList{
+		allItems: items,
+		items:    items,
+		width:    cfg.Width,
+		height:   cfg.Height,
 	}
+
+	if cfg.WithInput {
+		ti := textinput.New()
+		ti.Placeholder = cfg.Placeholder
+		if ti.Placeholder == "" {
+			ti.Placeholder = "Type to search..."
+		}
+		ti.Focus()
+		ti.CharLimit = 100
+		ti.Prompt = ""
+		ti.SetWidth(20)
+
+		bgStyle := lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
+		inputStyles := textinput.Styles{
+			Focused: textinput.StyleState{
+				Text:        bgStyle.Foreground(styles.ColorForeground()),
+				Placeholder: bgStyle.Foreground(styles.ColorMuted()),
+			},
+			Blurred: textinput.StyleState{
+				Text:        bgStyle.Foreground(styles.ColorForeground()),
+				Placeholder: bgStyle.Foreground(styles.ColorMuted()),
+			},
+			Cursor: textinput.CursorStyle{Blink: true},
+		}
+		ti.SetStyles(inputStyles)
+		l.input = &ti
+	}
+
+	return l
 }
 
 func (m *ScrollList) CursorUp() {
@@ -88,6 +129,7 @@ func (m *ScrollList) Select(index int) {
 }
 
 func (m *ScrollList) SetItems(items []ScrollItem) {
+	m.allItems = items
 	m.items = items
 	if m.cursor >= len(items) {
 		m.cursor = max(0, len(items)-1)
@@ -97,55 +139,125 @@ func (m *ScrollList) SetItems(items []ScrollItem) {
 	}
 }
 
+func (m ScrollList) Init() tea.Cmd {
+	if m.input != nil {
+		return textinput.Blink
+	}
+	return nil
+}
+
+func (m *ScrollList) filter() {
+	if m.input == nil {
+		return
+	}
+
+	query := strings.ToLower(m.input.Value())
+	if query == "" {
+		m.items = m.allItems
+	} else {
+		var filtered []ScrollItem
+		for _, item := range m.allItems {
+			if strings.Contains(strings.ToLower(item.FilterValue()), query) {
+				filtered = append(filtered, item)
+			}
+		}
+		m.items = filtered
+	}
+
+	// Reset cursor wenn nötig
+	if m.cursor >= len(m.items) {
+		m.cursor = max(0, len(m.items)-1)
+	}
+	m.viewStart = 0
+}
+
 func (m ScrollList) Update(msg tea.Msg) (ScrollList, tea.Cmd) {
+	var cmd tea.Cmd
+
+	// Input updaten wenn vorhanden (für Blink und Typing)
+	if m.input != nil {
+		*m.input, cmd = m.input.Update(msg)
+		m.filter()
+	}
+
+	// Navigation (vim-style)
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
-		case tea.KeyUp:
+		key := msg.String()
+
+		// Mit Input: Ctrl+P/N, Tab/Shift+Tab, Pfeiltasten
+		// Ohne Input: zusätzlich j/k
+		isUp := msg.Code == tea.KeyUp || key == "ctrl+p" || key == "shift+tab" || (m.input == nil && key == "k")
+		isDown := msg.Code == tea.KeyDown || key == "ctrl+n" || key == "tab" || (m.input == nil && key == "j")
+
+		switch {
+		case isUp:
 			m.CursorUp()
-		case tea.KeyDown:
+		case isDown:
 			m.CursorDown()
 		}
 	}
-	return m, nil
+
+	return m, cmd
+}
+
+func (m ScrollList) HasInput() bool {
+	return m.input != nil
+}
+
+func (m ScrollList) InputView() string {
+	if m.input == nil {
+		return ""
+	}
+	return lipgloss.NewStyle().
+		Width(m.width).
+		Background(styles.ColorBackgroundPanel()).
+		PaddingLeft(1).
+		PaddingBottom(1).
+		Render(m.input.View())
 }
 
 func (m ScrollList) View() string {
-	if len(m.items) == 0 {
-		return ""
-	}
-
 	var lines []string
-	end := min(m.viewStart+m.height, len(m.items))
 
-	for i := m.viewStart; i < end; i++ {
-		item := m.items[i]
-		selected := i == m.cursor
+	// Items rendern
+	if len(m.items) == 0 {
+		empty := lipgloss.NewStyle().
+			Width(m.width).
+			Background(styles.ColorBackgroundPanel()).
+			Render(styles.MutedStyle().Render(" No results"))
+		lines = append(lines, empty)
+	} else {
+		end := min(m.viewStart+m.height, len(m.items))
+		for i := m.viewStart; i < end; i++ {
+			item := m.items[i]
+			selected := i == m.cursor
 
-		// Get prefix if item implements PrefixedItem
-		prefix := ""
-		if pi, ok := item.(PrefixedItem); ok {
-			prefix = pi.Prefix() + " "
+			// Get prefix if item implements PrefixedItem
+			prefix := ""
+			if pi, ok := item.(PrefixedItem); ok {
+				prefix = pi.Prefix() + " "
+			}
+
+			content := " " + prefix + item.Title()
+			lineStyle := lipgloss.NewStyle().Width(m.width)
+
+			var line string
+			if selected {
+				line = lineStyle.
+					Background(styles.ColorPrimary()).
+					Foreground(styles.ColorBackground()).
+					Bold(true).
+					Render(content)
+			} else {
+				line = lineStyle.
+					Background(styles.ColorBackgroundPanel()).
+					Foreground(styles.ColorForeground()).
+					Render(content)
+			}
+
+			lines = append(lines, line)
 		}
-
-		content := " " + prefix + item.Title()
-		lineStyle := lipgloss.NewStyle().Width(m.width)
-
-		var line string
-		if selected {
-			line = lineStyle.
-				Background(styles.ColorPrimary()).
-				Foreground(styles.ColorBackground()).
-				Bold(true).
-				Render(content)
-		} else {
-			line = lineStyle.
-				Background(styles.ColorBackgroundPanel()).
-				Foreground(styles.ColorForeground()).
-				Render(content)
-		}
-
-		lines = append(lines, line)
 	}
 
 	return strings.Join(lines, "\n")

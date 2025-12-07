@@ -75,7 +75,10 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 	}
 
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
-	l := components.NewScrollList(components.PodsToItems(pods), card.InnerWidth(), 15)
+	l := components.NewScrollList(components.PodsToItems(pods), components.ScrollListConfig{
+		Width:  card.InnerWidth(),
+		Height: 15,
+	})
 
 	return ProjectDetailPage{
 		store:   s,
@@ -90,6 +93,10 @@ func (m ProjectDetailPage) Init() tea.Cmd {
 }
 
 func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// ScrollList handles navigation (Up/Down/Ctrl+N/P)
+	var cmd tea.Cmd
+	m.pods, cmd = m.pods.Update(msg)
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch {
@@ -119,7 +126,6 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDetailPage(&pod, m.project) }}
 				}
 			}
-
 		case key.Matches(msg, m.keys.DeletePod):
 			item := m.pods.SelectedItem()
 			if item != nil {
@@ -142,29 +148,23 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDeletePage(project) }}
 				}
 			}
-		case msg.Code == tea.KeyUp:
-			m.pods.CursorUp()
-			return m, nil
-		case msg.Code == tea.KeyDown:
-			m.pods.CursorDown()
-			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		return m, nil
+		return m, cmd
 
 	case projectDetailErrMsg:
 		m.err = msg.err
 		m.loading = false
-		return m, nil
+		return m, cmd
 
 	case messages.PodCreatedMsg:
 		items := m.pods.Items()
 		items = append(items, components.PodItem{Pod: repo.Pod(msg)})
 		m.pods.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case messages.PodUpdatedMsg:
 		pod := msg
@@ -177,7 +177,7 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.pods.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case messages.PodDeleteMsg:
 		pod := msg
@@ -190,15 +190,15 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.pods.SetItems(items)
-		return m, nil
+		return m, cmd
 
 	case messages.ProjectUpdatedMsg:
 		project := repo.Project(msg)
 		m.project = &project
-		return m, nil
+		return m, cmd
 	}
 
-	return m, nil
+	return m, cmd
 }
 
 func (m ProjectDetailPage) View() tea.View {

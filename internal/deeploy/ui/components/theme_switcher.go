@@ -49,7 +49,10 @@ func NewThemeSwitcher() ThemeSwitcher {
 	}
 
 	card := CardProps{Width: 50, Padding: []int{1, 1}}
-	l := NewScrollList(items, card.InnerWidth(), 15)
+	l := NewScrollList(items, ScrollListConfig{
+		Width:  card.InnerWidth(),
+		Height: 15,
+	})
 
 	// Find and select current theme
 	for i, t := range themes {
@@ -75,63 +78,47 @@ func (m ThemeSwitcher) OriginalTheme() string {
 }
 
 func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
+	prevIndex := m.list.Index()
+
+	// ScrollList handles navigation (Up/Down/Ctrl+N/P)
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+
+	// Live preview: apply theme when selection changes
+	if m.list.Index() != prevIndex {
+		if item := m.list.SelectedItem(); item != nil {
+			if ti, ok := item.(themeItem); ok {
+				theme.SetTheme(ti.name)
+			}
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.Code {
-		// Select theme and save
 		case tea.KeyEnter:
-			// Get selected theme
 			if item := m.list.SelectedItem(); item != nil {
 				if ti, ok := item.(themeItem); ok {
-					// Save to config
 					cfg, err := config.Load()
 					if err != nil {
 						cfg = &config.Config{}
 					}
 					cfg.Theme = ti.name
 					_ = config.Save(cfg)
-
 					return m, func() tea.Msg {
 						return ThemeSwitcherCloseMsg{Selected: true}
 					}
 				}
 			}
-
-		// Cancel and revert
 		case tea.KeyEscape:
-			// Revert to original theme
 			theme.SetTheme(m.originalTheme)
 			return m, func() tea.Msg {
 				return ThemeSwitcherCloseMsg{Selected: false}
 			}
-
-		case tea.KeyUp:
-			prevIndex := m.list.Index()
-			m.list.CursorUp()
-			if m.list.Index() != prevIndex {
-				if item := m.list.SelectedItem(); item != nil {
-					if ti, ok := item.(themeItem); ok {
-						theme.SetTheme(ti.name)
-					}
-				}
-			}
-			return m, nil
-
-		case tea.KeyDown:
-			prevIndex := m.list.Index()
-			m.list.CursorDown()
-			if m.list.Index() != prevIndex {
-				if item := m.list.SelectedItem(); item != nil {
-					if ti, ok := item.(themeItem); ok {
-						theme.SetTheme(ti.name)
-					}
-				}
-			}
-			return m, nil
 		}
 	}
 
-	return m, nil
+	return m, cmd
 }
 
 func (m ThemeSwitcher) View() string {

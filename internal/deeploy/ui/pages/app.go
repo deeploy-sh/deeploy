@@ -138,23 +138,18 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		// Ctrl+P toggles command palette
-		if msg.String() == "ctrl+p" && m.bootstrapped {
+		// : opens palette (vim-style)
+		if msg.String() == ":" && m.bootstrapped && m.palette == nil {
 			// Close theme switcher first (and revert theme)
 			if m.themeSwitcher != nil {
 				theme.SetTheme(m.themeSwitcher.OriginalTheme())
 				m.themeSwitcher = nil
 			}
-			// Toggle palette
-			if m.palette != nil {
-				m.palette = nil
-			} else {
-				palette := components.NewPalette(m.getPaletteItems())
-				palette.SetSize(50, 20)
-				m.palette = &palette
-				return m, palette.Init()
-			}
-			return m, nil
+			// Open palette
+			palette := components.NewPalette(m.getPaletteItems())
+			palette.SetSize(50, 20)
+			m.palette = &palette
+			return m, palette.Init()
 		}
 
 		// Esc closes palette or theme switcher
