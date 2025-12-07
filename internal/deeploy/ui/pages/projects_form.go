@@ -11,6 +11,7 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
@@ -63,6 +64,14 @@ func NewProjectFormPage(project *repo.Project) ProjectFormPage {
 	titleInput := textinput.New()
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
+	titleInput.Prompt = ""
+	titleInput.SetWidth(35) // card width - border & padding
+
+	s := titleInput.Styles()
+	s.Focused.Placeholder = lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
+	s.Focused.Text = lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
+	titleInput.SetStyles(s)
+
 	if project != nil {
 		titleInput.SetValue(project.Title)
 	}
@@ -119,11 +128,18 @@ func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p ProjectFormPage) View() tea.View {
+	cardContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.NewStyle().Bold(true).Render("New Project"),
+		"",
+		p.titleInput.View(),
+	)
+
 	card := components.Card(components.CardProps{
 		Width:   40,
-		Padding: []int{2, 3},
+		Padding: []int{1, 2},
 		Accent:  true,
-	}).Render(p.titleInput.View())
+	}).Render(cardContent)
 
 	contentHeight := p.height
 
