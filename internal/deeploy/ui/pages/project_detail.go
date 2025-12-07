@@ -83,7 +83,7 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 
 	l := list.New(components.PodsToItems(pods), delegate, 0, 0)
 	l.Title = project.Title + " > Pods"
-	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground)
+	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
@@ -229,9 +229,9 @@ func (m ProjectDetailPage) View() tea.View {
 	var content string
 
 	if m.loading {
-		content = styles.MutedStyle.Render("Loading...")
+		content = styles.MutedStyle().Render("Loading...")
 	} else if m.err != nil {
-		content = styles.ErrorStyle.Render("Error: " + m.err.Error())
+		content = styles.ErrorStyle().Render("Error: " + m.err.Error())
 	} else {
 		content = m.renderContent()
 	}
@@ -246,7 +246,7 @@ func (m ProjectDetailPage) renderContent() string {
 	var podsContent string
 	if len(m.pods.Items()) == 0 {
 		podsContent = fmt.Sprintf("Pods (0)\n\n%s",
-			styles.MutedStyle.Render("No pods yet. Press 'n' to create one."))
+			styles.MutedStyle().Render("No pods yet. Press 'n' to create one."))
 	} else {
 		podsContent = m.pods.View()
 	}
@@ -256,6 +256,7 @@ func (m ProjectDetailPage) renderContent() string {
 	card := components.Card(components.CardProps{
 		Width:   50,
 		Padding: []int{1, 2},
+		Accent:  true,
 	}).Render(cardContent)
 
 	return card

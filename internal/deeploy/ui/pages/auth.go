@@ -117,7 +117,7 @@ func (p authPage) View() tea.View {
 		}
 	}
 
-	card := components.Card(components.CardProps{Width: 50}).Render(b.String())
+	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
 	helpView := p.help.View(p.keys)
 	contentHeight := p.height - 1 // 1 für help
 

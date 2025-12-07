@@ -48,7 +48,7 @@ func (d PodDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 	var line string
 	if isSelected {
 		line = lipgloss.NewStyle().
-			Foreground(styles.ColorPrimary).
+			Foreground(styles.ColorPrimary()).
 			Bold(true).
 			Render(fmt.Sprintf("> %s", pod.Title))
 	} else {

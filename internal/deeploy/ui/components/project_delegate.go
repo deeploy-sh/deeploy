@@ -45,14 +45,21 @@ func (d ProjectDelegate) Render(w io.Writer, m list.Model, index int, item list.
 
 	isSelected := index == m.Index()
 
+	// Base style für die gesamte Zeile
+	lineStyle := lipgloss.NewStyle().
+		Width(d.width).
+		Background(styles.ColorBackgroundPanel())
+
 	var line string
 	if isSelected {
-		line = lipgloss.NewStyle().
-			Foreground(styles.ColorPrimary).
+		line = lineStyle.
+			Foreground(styles.ColorPrimary()).
 			Bold(true).
-			Render(fmt.Sprintf("> %s", project.Title))
+			Render(fmt.Sprintf("%s", project.Title))
 	} else {
-		line = fmt.Sprintf("  %s", project.Title)
+		line = lineStyle.
+			Foreground(styles.ColorForeground()).
+			Render(fmt.Sprintf("%s", project.Title))
 	}
 
 	fmt.Fprint(w, line)

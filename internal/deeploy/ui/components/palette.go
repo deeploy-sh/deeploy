@@ -121,20 +121,23 @@ func (m *Palette) SetSize(width, height int) {
 func (m Palette) View() string {
 	var b strings.Builder
 
+	// Input with left accent border (OpenCode style)
 	inputStyle := lipgloss.NewStyle().
 		Width(m.width-4).
 		Padding(0, 1).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary)
+		Background(styles.ColorBackgroundElement()).
+		BorderLeft(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderLeftForeground(styles.ColorPrimary())
 
 	b.WriteString(inputStyle.Render(m.textinput.View()))
 	b.WriteString("\n\n")
 
 	maxVisible := min(8, len(m.filtered))
 	if maxVisible == 0 {
-		b.WriteString(styles.MutedStyle.Render("  No results"))
+		b.WriteString(styles.MutedStyle().Render("  No results"))
 	} else {
-		for i := 0; i < maxVisible; i++ {
+		for i := range maxVisible {
 			item := m.filtered[i]
 
 			var categoryBadge string
@@ -158,7 +161,7 @@ func (m Palette) View() string {
 			var line string
 			if i == m.cursor {
 				line = lipgloss.NewStyle().
-					Foreground(styles.ColorPrimary).
+					Foreground(styles.ColorPrimary()).
 					Bold(true).
 					Render("> " + categoryBadge + " " + item.Title)
 			} else {
@@ -166,25 +169,17 @@ func (m Palette) View() string {
 			}
 
 			if item.Description != "" && i == m.cursor {
-				line += styles.MutedStyle.Render(" - " + item.Description)
+				line += styles.MutedStyle().Render(" - " + item.Description)
 			}
 
 			b.WriteString(line + "\n")
 		}
 
 		if len(m.filtered) > maxVisible {
-			b.WriteString(styles.MutedStyle.Render(
+			b.WriteString(styles.MutedStyle().Render(
 				"\n  ..." + string(rune(len(m.filtered)-maxVisible)) + " more"))
 		}
 	}
 
 	return b.String()
 }
-
-// // SelectedItem returns the currently selected item, or nil if none
-// func (m Palette) SelectedItem() *PaletteItem {
-// 	if len(m.filtered) == 0 || m.cursor >= len(m.filtered) {
-// 		return nil
-// 	}
-// 	return &m.filtered[m.cursor]
-// }

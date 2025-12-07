@@ -91,7 +91,7 @@ func (p PodDeletePage) View() tea.View {
 		MarginRight(1)
 
 	activeButton := baseButton.
-		Background(styles.ColorPrimary).
+		Background(styles.ColorPrimary()).
 		Foreground(lipgloss.Color("0"))
 
 	inactiveButton := baseButton.

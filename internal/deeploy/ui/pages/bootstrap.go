@@ -17,7 +17,7 @@ type bootstrap struct {
 func NewBootstrap() tea.Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(styles.ColorPrimary)
+	s.Style = lipgloss.NewStyle().Foreground(styles.ColorPrimary())
 
 	return &bootstrap{
 		spinner: s,

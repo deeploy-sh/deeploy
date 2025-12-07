@@ -134,7 +134,7 @@ func (p ProjectDeletePage) View() tea.View {
 		MarginRight(1)
 
 	activeButton := baseButton.
-		Background(styles.ColorPrimary).
+		Background(styles.ColorPrimary()).
 		Foreground(lipgloss.Color("0"))
 
 	inactiveButton := baseButton.
@@ -155,6 +155,7 @@ func (p ProjectDeletePage) View() tea.View {
 
 	card := components.Card(components.CardProps{
 		Padding: []int{2, 1},
+		Accent:  true,
 	}).Render(content)
 
 	contentHeight := p.height

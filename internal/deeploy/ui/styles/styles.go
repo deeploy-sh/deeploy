@@ -2,52 +2,62 @@ package styles
 
 import (
 	"fmt"
+	"image/color"
 
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/theme"
 )
 
-// Colors - Modern, muted palette
-var (
-	ColorPrimary    = lipgloss.Color("#FF79C6") // Dracula Pink - Brand
-	ColorForeground = lipgloss.Color("252")     // Hell - Primary text
-	ColorSuccess    = lipgloss.Color("78")      // Grün - Online, Deployed
-	ColorError      = lipgloss.Color("204")     // Rosa/Red - Fehler
-	ColorWarning    = lipgloss.Color("214")     // Orange - Pending, In Progress
-	ColorMuted      = lipgloss.Color("241")     // Grau - Secondary text
-	ColorDim        = lipgloss.Color("238")     // Dunkelgrau - Disabled
-)
+// Color accessors - always use current theme
+func ColorPrimary() color.Color    { return theme.Current.Primary() }
+func ColorForeground() color.Color { return theme.Current.Foreground() }
+func ColorSuccess() color.Color    { return theme.Current.Success() }
+func ColorError() color.Color      { return theme.Current.Error() }
+func ColorWarning() color.Color    { return theme.Current.Warning() }
+func ColorMuted() color.Color      { return theme.Current.ForegroundMuted() }
+func ColorDim() color.Color        { return theme.Current.ForegroundDim() }
 
-// Text Styles
-var (
-	// Status
-	SuccessStyle = lipgloss.NewStyle().Foreground(ColorSuccess)
-	ErrorStyle   = lipgloss.NewStyle().Foreground(ColorError)
-	WarningStyle = lipgloss.NewStyle().Foreground(ColorWarning)
+// Background colors
+func ColorBackground() color.Color        { return theme.Current.Background() }
+func ColorBackgroundPanel() color.Color   { return theme.Current.BackgroundPanel() }
+func ColorBackgroundElement() color.Color { return theme.Current.BackgroundElement() }
 
-	// Interactive
-	PrimaryStyle = lipgloss.NewStyle().Foreground(ColorPrimary)
-	FocusedStyle = lipgloss.NewStyle().Foreground(ColorPrimary)
-	MutedStyle   = lipgloss.NewStyle().Foreground(ColorMuted)
-	DimStyle     = lipgloss.NewStyle().Foreground(ColorDim)
+// Accent border color
+func ColorAccentBorder() color.Color { return theme.Current.AccentBorder() }
 
-	// Semantic aliases
-	OnlineStyle  = SuccessStyle
-	OfflineStyle = ErrorStyle
+// Style factories - call these to get fresh styles with current theme
+func SuccessStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorSuccess()) }
+func ErrorStyle() lipgloss.Style   { return lipgloss.NewStyle().Foreground(ColorError()) }
+func WarningStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorWarning()) }
+func PrimaryStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorPrimary()) }
+func MutedStyle() lipgloss.Style   { return lipgloss.NewStyle().Foreground(ColorMuted()) }
+func DimStyle() lipgloss.Style     { return lipgloss.NewStyle().Foreground(ColorDim()) }
 
-	// Legacy (für Kompatibilität)
-	BlurredStyle        = DimStyle
-	CursorStyle         = FocusedStyle
-	NoStyle             = lipgloss.NewStyle()
-	HelpStyle           = MutedStyle
-	CursorModeHelpStyle = MutedStyle
-	LabelStyle          = MutedStyle
+// Semantic aliases
+func OnlineStyle() lipgloss.Style  { return SuccessStyle() }
+func OfflineStyle() lipgloss.Style { return ErrorStyle() }
+func FocusedStyle() lipgloss.Style { return PrimaryStyle() }
+func BlurredStyle() lipgloss.Style { return DimStyle() }
 
-	// Components
-	AuthCard = lipgloss.NewStyle().
-			Width(35).
-			Padding(1, 2).
-			Border(lipgloss.RoundedBorder())
+// Legacy aliases (for compatibility during migration)
+func CursorStyle() lipgloss.Style         { return FocusedStyle() }
+func HelpStyle() lipgloss.Style           { return MutedStyle() }
+func CursorModeHelpStyle() lipgloss.Style { return MutedStyle() }
+func LabelStyle() lipgloss.Style          { return MutedStyle() }
+func NoStyle() lipgloss.Style             { return lipgloss.NewStyle() }
 
-	FocusedButton = FocusedStyle.Render("[ Submit ]")
-	BlurredButton = fmt.Sprintf("[ %s ]", DimStyle.Render("Submit"))
-)
+// Component helpers
+func FocusedButton() string { return FocusedStyle().Render("[ Submit ]") }
+func BlurredButton() string { return fmt.Sprintf("[ %s ]", DimStyle().Render("Submit")) }
+
+// AuthCard returns a card style for auth pages
+// Uses panel background with left accent border
+func AuthCard() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Width(35).
+		Padding(1, 2).
+		Background(ColorBackgroundPanel()).
+		BorderLeft(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderLeftForeground(ColorAccentBorder())
+}

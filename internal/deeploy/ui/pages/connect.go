@@ -101,10 +101,10 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m connectPage) View() tea.View {
 	content := "Connect to deeploy.sh server\n\n" + m.serverInput.View()
 	if m.err != nil {
-		content += styles.ErrorStyle.Render("\n* " + m.err.Error())
+		content += styles.ErrorStyle().Render("\n* " + m.err.Error())
 	}
 
-	card := components.Card(components.CardProps{Width: 50}).Render(content)
+	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
 	helpView := m.help.View(m.keys)
 	contentHeight := m.height - 1 // 1 für help
 

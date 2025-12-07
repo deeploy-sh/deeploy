@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Server string `json:"server"`
 	Token  string `json:"token"`
+	Theme  string `json:"theme,omitempty"`
 }
 
 func Save(cfg *Config) error {

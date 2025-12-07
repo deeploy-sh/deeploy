@@ -55,7 +55,7 @@ func NewDashboard(s Store) DashboardPage {
 	delegate := components.NewProjectDelegate(40)
 	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 0, 0)
 	l.Title = "Projects"
-	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground)
+	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
@@ -161,7 +161,7 @@ func (m DashboardPage) View() tea.View {
 	var content string
 
 	if m.err != nil {
-		content = styles.ErrorStyle.Render("Error: " + m.err.Error())
+		content = styles.ErrorStyle().Render("Error: " + m.err.Error())
 	} else if len(m.list.Items()) == 0 {
 		content = m.renderEmptyState()
 	} else {
@@ -176,14 +176,14 @@ func (m DashboardPage) View() tea.View {
 func (m DashboardPage) renderEmptyState() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorForeground).
+		Foreground(styles.ColorForeground()).
 		MarginBottom(1)
 
 	return lipgloss.JoinVertical(lipgloss.Center,
 		titleStyle.Render("No projects yet"),
-		styles.MutedStyle.Render("Press 'n' to create your first project"),
+		styles.MutedStyle().Render("Press 'n' to create your first project"),
 		"",
-		styles.MutedStyle.Render("or use Ctrl+K to search"),
+		styles.MutedStyle().Render("or use Ctrl+K to search"),
 	)
 }
 
@@ -191,6 +191,7 @@ func (m DashboardPage) renderList() string {
 	card := components.Card(components.CardProps{
 		Width:   50,
 		Padding: []int{1, 2},
+		Accent:  true,
 	}).Render(m.list.View())
 
 	return card

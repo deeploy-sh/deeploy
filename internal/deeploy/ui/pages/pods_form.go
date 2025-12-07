@@ -102,6 +102,7 @@ func (p PodFormPage) View() tea.View {
 	card := components.Card(components.CardProps{
 		Width:   40,
 		Padding: []int{2, 3},
+		Accent:  true,
 	}).Render(p.titleInput.View())
 
 	contentHeight := p.height

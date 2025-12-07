@@ -13,6 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/theme"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
@@ -55,6 +56,11 @@ func (m *app) Pods() []repo.Pod {
 }
 
 func NewApp() tea.Model {
+	cfg, err := config.Load()
+	if err == nil && cfg.Theme != "" {
+		theme.SetTheme(cfg.Theme)
+	}
+
 	return &app{
 		currentPage: NewBootstrap(),
 		help:        styles.NewHelpModel(),
@@ -352,10 +358,10 @@ func (m app) View() tea.View {
 	var statusStyle lipgloss.Style
 	if m.offline {
 		status = "● reconnecting"
-		statusStyle = styles.OfflineStyle
+		statusStyle = styles.OfflineStyle()
 	} else {
 		status = "● online"
-		statusStyle = styles.OnlineStyle
+		statusStyle = styles.OnlineStyle()
 	}
 
 	// Breadcrumbs
@@ -364,7 +370,7 @@ func (m app) View() tea.View {
 	if p, ok := m.currentPage.(PageInfo); ok {
 		breadcrumbParts = append(breadcrumbParts, p.Breadcrumbs()...)
 	}
-	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle.Render("  >  "))
+	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render("  >  "))
 
 	// Header - minimal, ohne Border
 	gap := max(m.width-lipgloss.Width(breadcrumbs)-lipgloss.Width(status)-2, 1)
@@ -401,6 +407,7 @@ func (m app) View() tea.View {
 		paletteCard := components.Card(components.CardProps{
 			Width:   54,
 			Padding: []int{1, 2},
+			Accent:  true,
 		}).Render(paletteContent)
 
 		// Calculate palette position (centered horizontally, 30% from top)
@@ -420,5 +427,7 @@ func (m app) View() tea.View {
 		return tea.NewView(canvas.Render())
 	}
 
-	return tea.NewView(base)
+	x := tea.NewView(base)
+	x.BackgroundColor = styles.ColorBackground()
+	return x
 }
