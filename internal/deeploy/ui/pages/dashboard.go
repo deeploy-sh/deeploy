@@ -52,8 +52,10 @@ type DashboardPage struct {
 }
 
 func NewDashboard(s Store) DashboardPage {
+	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+
 	delegate := components.NewProjectDelegate()
-	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 47, 15)
+	l := list.New(components.ProjectsToItems(s.Projects()), delegate, card.InnerWidth(), 15)
 	l.SetShowTitle(false)
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
@@ -185,10 +187,13 @@ func (m DashboardPage) renderEmptyState() string {
 }
 
 func (m DashboardPage) renderList() string {
+	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	w := card.InnerWidth()
+
 	// Custom title (Bubbles built-in title has layout bugs)
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Width(47).
+		Width(w).
 		Background(styles.ColorBackgroundPanel()).
 		Foreground(styles.ColorPrimary()).
 		PaddingLeft(1).
@@ -197,18 +202,14 @@ func (m DashboardPage) renderList() string {
 
 	// List with background (like Crush does)
 	list := lipgloss.NewStyle().
-		Width(47).
+		Width(w).
 		Height(m.list.Height()).
 		Background(styles.ColorBackgroundPanel()).
 		Render(m.list.View())
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, list)
 
-	return components.Card(components.CardProps{
-		Width:   50,
-		Padding: []int{1, 1},
-		Accent:  true,
-	}).Render(content)
+	return components.Card(card).Render(content)
 }
 
 func (m DashboardPage) Breadcrumbs() []string {

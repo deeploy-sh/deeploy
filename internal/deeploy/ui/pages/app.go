@@ -443,11 +443,7 @@ func (m app) View() tea.View {
 
 	// Render theme switcher overlay if open
 	if m.themeSwitcher != nil {
-		switcherContent := m.themeSwitcher.View()
-		switcherCard := components.Card(components.CardProps{
-			Width:   52,
-			Padding: []int{1, 1},
-		}).Render(switcherContent)
+		switcherCard := m.themeSwitcher.View() // View() rendert schon die Card
 
 		// Calculate position (completely centered - both X and Y)
 		switcherWidth := lipgloss.Width(switcherCard)
@@ -469,12 +465,7 @@ func (m app) View() tea.View {
 
 	// Render palette overlay if open
 	if m.palette != nil {
-		paletteContent := m.palette.View()
-		paletteCard := components.Card(components.CardProps{
-			Width:   54,
-			Padding: []int{1, 2},
-			Accent:  true,
-		}).Render(paletteContent)
+		paletteCard := m.palette.View() // View() rendert schon die Card
 
 		// Calculate palette position (centered horizontally, 30% from top)
 		paletteWidth := lipgloss.Width(paletteCard)

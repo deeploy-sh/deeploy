@@ -90,16 +90,14 @@ func NewThemeSwitcher() ThemeSwitcher {
 
 	delegate := themeDelegate{activeTheme: currentTheme}
 
-	l := list.New(items, delegate, 50, 15)
-	l.Title = "Select Theme"
-	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
-	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
-	l.SetShowTitle(true)
-	l.InfiniteScrolling = true
+	card := CardProps{Width: 50, Padding: []int{1, 1}}
+	l := list.New(items, delegate, card.InnerWidth(), 15)
+	l.SetShowTitle(false)
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
+	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)
+	l.InfiniteScrolling = true
 
 	// Find and select current theme
 	for i, t := range themes {
@@ -171,5 +169,27 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 }
 
 func (m ThemeSwitcher) View() string {
-	return m.list.View()
+	card := CardProps{Width: 50, Padding: []int{1, 1}}
+	w := card.InnerWidth()
+
+	// Custom title
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Width(w).
+		Background(styles.ColorBackgroundPanel()).
+		Foreground(styles.ColorPrimary()).
+		PaddingLeft(1).
+		PaddingBottom(1).
+		Render("Select Theme")
+
+	// List with background
+	list := lipgloss.NewStyle().
+		Width(w).
+		Height(m.list.Height()).
+		Background(styles.ColorBackgroundPanel()).
+		Render(m.list.View())
+
+	content := lipgloss.JoinVertical(lipgloss.Left, title, list)
+
+	return Card(card).Render(content)
 }

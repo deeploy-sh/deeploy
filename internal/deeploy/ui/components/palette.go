@@ -119,11 +119,14 @@ func (m *Palette) SetSize(width, height int) {
 }
 
 func (m Palette) View() string {
+	card := CardProps{Width: 54, Padding: []int{1, 2}, Accent: true}
+	w := card.InnerWidth()
+
 	var b strings.Builder
 
 	// Input with left accent border (OpenCode style)
 	inputStyle := lipgloss.NewStyle().
-		Width(m.width-4).
+		Width(w-2).
 		Padding(0, 1).
 		Background(styles.ColorBackgroundElement()).
 		BorderLeft(true).
@@ -185,5 +188,5 @@ func (m Palette) View() string {
 		}
 	}
 
-	return b.String()
+	return Card(card).Render(b.String())
 }

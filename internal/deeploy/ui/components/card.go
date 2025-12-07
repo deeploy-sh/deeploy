@@ -15,6 +15,18 @@ type CardProps struct {
 	AccentColor color.Color // Optional: override accent color
 }
 
+// InnerWidth berechnet die verfügbare Breite innerhalb der Card
+func (p CardProps) InnerWidth() int {
+	inner := p.Width
+	if len(p.Padding) > 1 {
+		inner -= p.Padding[1] * 2 // horizontal padding (links + rechts)
+	}
+	if p.Accent {
+		inner -= 1 // Accent border
+	}
+	return inner
+}
+
 // Card creates a card style with panel background and optional left accent border
 // OpenCode style: no rounded borders, separation via background color
 func Card(p CardProps) lipgloss.Style {

@@ -78,13 +78,14 @@ func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
 		}
 	}
 
-	l := list.New(components.PodsToItems(pods), delegate, 45, 15)
+	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	l := list.New(components.PodsToItems(pods), delegate, card.InnerWidth(), 15)
 	l.SetShowTitle(false)
-	l.InfiniteScrolling = true
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
+	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)
+	l.InfiniteScrolling = true
 
 	return ProjectDetailPage{
 		store:   s,
@@ -167,9 +168,6 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// List height for card content
-		listHeight := min((msg.Height-1)/2, 15)
-		m.pods.SetSize(45, listHeight)
 		return m, nil
 
 	case projectDetailErrMsg:
@@ -239,22 +237,26 @@ func (m ProjectDetailPage) View() tea.View {
 }
 
 func (m ProjectDetailPage) renderContent() string {
-	// Custom title
+	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	w := card.InnerWidth()
+
+	// Custom title (like dashboard)
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Width(45).
+		Width(w).
 		Background(styles.ColorBackgroundPanel()).
-		Foreground(styles.ColorForeground()).
+		Foreground(styles.ColorPrimary()).
 		PaddingLeft(1).
+		PaddingBottom(1).
 		Render(m.project.Title + " > Pods")
 
-	// Pods list
+	// Pods list with background (like dashboard)
 	var podsContent string
 	if len(m.pods.Items()) == 0 {
 		podsContent = styles.MutedStyle().Render("No pods yet. Press 'n' to create one.")
 	} else {
 		podsContent = lipgloss.NewStyle().
-			Width(45).
+			Width(w).
 			Height(m.pods.Height()).
 			Background(styles.ColorBackgroundPanel()).
 			Render(m.pods.View())
@@ -262,11 +264,7 @@ func (m ProjectDetailPage) renderContent() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, podsContent)
 
-	return components.Card(components.CardProps{
-		Width:   50,
-		Padding: []int{1, 1},
-		Accent:  true,
-	}).Render(content)
+	return components.Card(card).Render(content)
 }
 
 func (m ProjectDetailPage) Breadcrumbs() []string {
