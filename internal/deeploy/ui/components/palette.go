@@ -154,6 +154,10 @@ func (m Palette) View() string {
 				categoryBadge = lipgloss.NewStyle().
 					Foreground(lipgloss.Color("208")).
 					Render("[A]")
+			case "settings":
+				categoryBadge = lipgloss.NewStyle().
+					Foreground(lipgloss.Color("141")).
+					Render("[S]")
 			default:
 				categoryBadge = "   "
 			}

@@ -138,8 +138,14 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		// Ctrl+K toggles palette
-		if msg.String() == "ctrl+k" && m.bootstrapped {
+		// Ctrl+P toggles command palette
+		if msg.String() == "ctrl+p" && m.bootstrapped {
+			// Close theme switcher first (and revert theme)
+			if m.themeSwitcher != nil {
+				theme.SetTheme(m.themeSwitcher.OriginalTheme())
+				m.themeSwitcher = nil
+			}
+			// Toggle palette
 			if m.palette != nil {
 				m.palette = nil
 			} else {
@@ -151,22 +157,11 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Ctrl+T toggles theme switcher
-		if msg.String() == "ctrl+t" && m.bootstrapped {
-			if m.themeSwitcher != nil {
-				m.themeSwitcher = nil
-			} else {
-				m.palette = nil // Close palette if open
-				switcher := components.NewThemeSwitcher()
-				m.themeSwitcher = &switcher
-				return m, switcher.Init()
-			}
-			return m, nil
-		}
-
 		// Esc closes palette or theme switcher
 		if msg.Code == tea.KeyEscape {
 			if m.themeSwitcher != nil {
+				// Revert to original theme
+				theme.SetTheme(m.themeSwitcher.OriginalTheme())
 				m.themeSwitcher = nil
 				return m, nil
 			}
@@ -352,8 +347,8 @@ func (m app) getPaletteItems() []components.PaletteItem {
 		},
 		{
 			Title:       "Change Theme",
-			Description: "Switch color theme (Ctrl+T)",
-			Category:    "action",
+			Description: "Switch color theme",
+			Category:    "settings",
 			Action: func() tea.Msg {
 				return components.OpenThemeSwitcherMsg{}
 			},
@@ -450,7 +445,7 @@ func (m app) View() tea.View {
 	if m.themeSwitcher != nil {
 		switcherContent := m.themeSwitcher.View()
 		switcherCard := components.Card(components.CardProps{
-			Width:   44,
+			Width:   52,
 			Padding: []int{1, 2},
 			Accent:  true,
 		}).Render(switcherContent)
