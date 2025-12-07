@@ -25,12 +25,10 @@ func PodsToItems(pods []repo.Pod) []list.Item {
 	return items
 }
 
-type PodDelegate struct {
-	width int
-}
+type PodDelegate struct{}
 
-func NewPodDelegate(width int) PodDelegate {
-	return PodDelegate{width: width}
+func NewPodDelegate() PodDelegate {
+	return PodDelegate{}
 }
 
 func (d PodDelegate) Height() int                             { return 1 }
@@ -45,9 +43,8 @@ func (d PodDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 
 	isSelected := index == m.Index()
 
-	// Base style
 	lineStyle := lipgloss.NewStyle().
-		Width(d.width).
+		Width(m.Width()).
 		Background(styles.ColorBackgroundPanel())
 
 	var line string

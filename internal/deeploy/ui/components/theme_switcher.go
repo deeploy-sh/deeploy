@@ -3,7 +3,6 @@ package components
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
@@ -30,7 +29,7 @@ func (i themeItem) FilterValue() string { return i.name }
 
 // themeDelegate handles rendering of theme items
 type themeDelegate struct {
-	activeTheme string // The theme currently saved in config
+	activeTheme string
 }
 
 func (d themeDelegate) Height() int                             { return 1 }
@@ -43,44 +42,29 @@ func (d themeDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 		return
 	}
 
-	themeName := item.name
-	t, exists := theme.Available[themeName]
-	if !exists {
-		return
-	}
+	isSelected := index == m.Index()
+	isActive := item.name == d.activeTheme
 
-	isFocused := index == m.Index()
-	isActive := themeName == d.activeTheme
-
-	// Dot column - fixed width, always takes same space
-	var dot string
+	// Dot for active theme
+	dot := " "
 	if isActive {
-		dot = lipgloss.NewStyle().
-			Foreground(t.Primary()).
-			Render("●")
-	} else {
-		dot = " " // Space placeholder to keep alignment
+		dot = "●"
 	}
+	content := fmt.Sprintf(" %s %s", dot, item.name)
 
-	// Format: "●  themename" - dot is in its own column, name always starts at same position
-	content := fmt.Sprintf("%s  %s", dot, themeName)
-
-	// Width: Card(52) - Padding(4) - Border(1) = 47
-	const listWidth = 47
+	lineStyle := lipgloss.NewStyle().Width(m.Width())
 
 	var line string
-	if isFocused {
-		// Focused: background highlight with theme colors
-		line = lipgloss.NewStyle().
-			Background(t.BackgroundElement()).
-			Foreground(t.Primary()).
+	if isSelected {
+		line = lineStyle.
+			Background(styles.ColorPrimary()).
+			Foreground(styles.ColorBackground()).
 			Bold(true).
-			Width(listWidth).
 			Render(content)
 	} else {
-		// Normal item
-		line = lipgloss.NewStyle().
-			Width(listWidth).
+		line = lineStyle.
+			Background(styles.ColorBackgroundPanel()).
+			Foreground(styles.ColorForeground()).
 			Render(content)
 	}
 
@@ -91,8 +75,6 @@ func (d themeDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 type ThemeSwitcher struct {
 	list          list.Model
 	originalTheme string
-	width         int
-	height        int
 }
 
 // NewThemeSwitcher creates a new theme switcher overlay
@@ -106,29 +88,18 @@ func NewThemeSwitcher() ThemeSwitcher {
 		items[i] = themeItem{name: t}
 	}
 
-	// Create delegate
 	delegate := themeDelegate{activeTheme: currentTheme}
 
-	// Card dimensions: Width=52, Padding=2 left/right, Border=1
-	// Inner width: 52 - 4 - 1 = 47
-	const listWidth = 47
-	const listHeight = 18 // More items visible
-
-	// Create list
-	l := list.New(items, delegate, listWidth, listHeight)
+	l := list.New(items, delegate, 50, 15)
 	l.Title = "Select Theme"
+	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
+	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
+	l.SetShowTitle(true)
+	l.InfiniteScrolling = true
+	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
-	l.SetShowTitle(true)
-
-	// Style the list - align title with the theme names (after dot column)
-	l.Styles.TitleBar = lipgloss.NewStyle().
-		Padding(0, 0, 1, 0)
-	l.Styles.Title = lipgloss.NewStyle().
-		Foreground(styles.ColorPrimary()).
-		Bold(true).
-		PaddingLeft(3) // Align with theme names (after "●  ")
 
 	// Find and select current theme
 	for i, t := range themes {
@@ -141,8 +112,6 @@ func NewThemeSwitcher() ThemeSwitcher {
 	return ThemeSwitcher{
 		list:          l,
 		originalTheme: currentTheme,
-		width:         listWidth,
-		height:        listHeight,
 	}
 }
 
@@ -158,9 +127,9 @@ func (m ThemeSwitcher) OriginalTheme() string {
 func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch {
+		switch msg.Code {
 		// Select theme and save
-		case msg.Code == tea.KeyEnter:
+		case tea.KeyEnter:
 			// Get selected theme
 			if item, ok := m.list.SelectedItem().(themeItem); ok {
 				// Save to config
@@ -177,7 +146,7 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 			}
 
 		// Cancel and revert
-		case msg.Code == tea.KeyEscape:
+		case tea.KeyEscape:
 			// Revert to original theme
 			theme.SetTheme(m.originalTheme)
 			return m, func() tea.Msg {
@@ -201,24 +170,6 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *ThemeSwitcher) SetSize(width, height int) {
-	m.width = width
-	m.height = height
-	m.list.SetSize(width, height-4) // Account for title and help
-}
-
 func (m ThemeSwitcher) View() string {
-	var b strings.Builder
-
-	// List (with native title)
-	b.WriteString(m.list.View())
-
-	// Help text - aligned with content
-	b.WriteString("\n")
-	helpStyle := styles.MutedStyle().
-		Italic(true).
-		PaddingLeft(3) // Align with theme names
-	b.WriteString(helpStyle.Render("↑/↓ navigate • enter • esc"))
-
-	return b.String()
+	return m.list.View()
 }

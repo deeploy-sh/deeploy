@@ -52,12 +52,14 @@ type DashboardPage struct {
 }
 
 func NewDashboard(s Store) DashboardPage {
-	delegate := components.NewProjectDelegate(46) // HACK: card inner list = 46 is minus padding and borders -> If set >46 no changes if <46 wierd bg colors
-	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 0, 0)
+	delegate := components.NewProjectDelegate()
+	l := list.New(components.ProjectsToItems(s.Projects()), delegate, 46, 0)
 	l.Title = "Projects"
 	l.Styles.Title = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorForeground())
 	l.Styles.TitleBar = lipgloss.NewStyle().Padding(0, 0, 1, 0)
 	l.SetShowTitle(true)
+	l.InfiniteScrolling = true
+	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)

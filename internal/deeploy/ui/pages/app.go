@@ -446,8 +446,7 @@ func (m app) View() tea.View {
 		switcherContent := m.themeSwitcher.View()
 		switcherCard := components.Card(components.CardProps{
 			Width:   52,
-			Padding: []int{1, 2},
-			Accent:  true,
+			Padding: []int{1, 1},
 		}).Render(switcherContent)
 
 		// Calculate position (completely centered - both X and Y)

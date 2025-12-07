@@ -25,12 +25,10 @@ func ProjectsToItems(projects []repo.Project) []list.Item {
 	return items
 }
 
-type ProjectDelegate struct {
-	width int
-}
+type ProjectDelegate struct{}
 
-func NewProjectDelegate(width int) ProjectDelegate {
-	return ProjectDelegate{width: width}
+func NewProjectDelegate() ProjectDelegate {
+	return ProjectDelegate{}
 }
 
 func (d ProjectDelegate) Height() int                             { return 1 }
@@ -45,9 +43,8 @@ func (d ProjectDelegate) Render(w io.Writer, m list.Model, index int, item list.
 
 	isSelected := index == m.Index()
 
-	// Base style
 	lineStyle := lipgloss.NewStyle().
-		Width(d.width).
+		Width(m.Width()).
 		Background(styles.ColorBackgroundPanel())
 
 	var line string
