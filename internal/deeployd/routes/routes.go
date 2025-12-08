@@ -52,8 +52,8 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("PUT /api/pods", auth.Auth(podHandler.Update))
 	mux.HandleFunc("DELETE /api/pods/{id}", auth.Auth(podHandler.Delete))
 
-	// Health
-	mux.HandleFunc("GET /api/health", auth.Auth(healthHandler))
+	// Health (public - used by TUI for connection check + heartbeat)
+	mux.HandleFunc("GET /api/health", healthHandler)
 
 	// Middleware
 	return mw.Chain(mux,
