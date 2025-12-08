@@ -1,14 +1,12 @@
 package pages
 
 import (
-	"log"
-
 	"charm.land/bubbles/v2/help"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -35,10 +33,10 @@ func (p PodDeletePage) Init() tea.Cmd {
 	return nil
 }
 
-func (p PodDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyLeft, 'h':
 			p.decision = confirmNo
 			return p, nil
@@ -54,25 +52,25 @@ func (p PodDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEscape:
 			projectID := p.pod.ProjectID
 			return p, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 			}
 		case tea.KeyEnter:
 			projectID := p.pod.ProjectID
 			if p.decision == confirmNo {
 				return p, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 				}
 			}
 			return p, tea.Batch(
-				p.DeletePod,
+				api.DeletePod(p.pod.ID),
 				func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 				},
 			)
 		}
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		p.width = tmsg.Width
+		p.height = tmsg.Height
 		return p, nil
 	}
 	return p, nil
@@ -84,7 +82,6 @@ func (p PodDeletePage) View() tea.View {
 		Padding(0, 0, 1, 0).
 		Render("Delete " + p.pod.Title + "?")
 
-	// Button Styles
 	baseButton := lipgloss.NewStyle().
 		Padding(0, 3).
 		Width(1).
@@ -97,7 +94,6 @@ func (p PodDeletePage) View() tea.View {
 	inactiveButton := baseButton.
 		Background(lipgloss.Color("237"))
 
-	// Render Buttons based on decision
 	var noButton, yesButton string
 	if p.decision == confirmNo {
 		noButton = activeButton.Render("NO")
@@ -120,15 +116,4 @@ func (p PodDeletePage) View() tea.View {
 
 func (p PodDeletePage) Breadcrumbs() []string {
 	return []string{"Projects", "Pods", "Delete"}
-}
-
-func (p PodDeletePage) DeletePod() tea.Msg {
-	res, err := utils.Request("DELETE", "/pods/"+p.pod.ID, nil)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	return messages.PodDeleteMsg(p.pod)
 }

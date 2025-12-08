@@ -5,7 +5,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -41,7 +41,6 @@ type PodDetailPage struct {
 	pod     *repo.Pod
 	project *repo.Project
 	keys    podDetailKeyMap
-	loading bool
 	width   int
 	height  int
 }
@@ -51,7 +50,6 @@ func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
 		pod:     pod,
 		project: project,
 		keys:    newPodDetailKeyMap(),
-		loading: true,
 	}
 }
 
@@ -59,84 +57,33 @@ func (m PodDetailPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m PodDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(msg, m.keys.Back):
+		case key.Matches(tmsg, m.keys.Back):
+			projectID := m.project.ID
 			return m, func() tea.Msg {
-				return ChangePageMsg{
-					// Page: NewDashboard()
-					PageFactory: func(s Store) tea.Model {
-						return NewProjectDetailPage(s, m.project.ID)
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewProjectDetailPage(s, projectID)
 					},
 				}
 			}
-		case key.Matches(msg, m.keys.EditPod):
-			// item := p.list.SelectedItem()
-			// if item != nil {
-			// 	pod := item.(components.PodItem).Pod
-			// 	projectID := p.project.ID
-			// 	return p, func() tea.Msg {
-			// 		return messages.ChangePageMsg{Page: NewPodFormPage(projectID, &pod)}
-			// 	}
-			// }
-		case key.Matches(msg, m.keys.DeletePod):
-			// item := p.list.SelectedItem()
-			// if item != nil {
-			// 	pod := item.(components.PodItem).Pod
-			// 	return p, func() tea.Msg {
-			// 		return messages.ChangePageMsg{Page: NewPodDeletePage(&pod)}
-			// 	}
-			// }
 		}
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		// List height for card content
-		// listHeight := min((msg.Height-1)/2, 12)
-		return m, nil
-
-	case messages.PodUpdatedMsg:
-		// pod := msg
-		// items := p.list.Items()
-		// for i, item := range items {
-		// 	pi, ok := item.(components.PodItem)
-		// 	if ok && pi.ID == pod.ID {
-		// 		items[i] = components.PodItem{Pod: repo.Pod(pod)}
-		// 		break
-		// 	}
-		// }
-		// cmd := p.list.SetItems(items)
-		return m, nil
-
-	case messages.PodDeleteMsg:
-		// pod := msg
-		// items := p.list.Items()
-		// for i, item := range items {
-		// 	pi, ok := item.(components.PodItem)
-		// 	if ok && pi.ID == pod.ID {
-		// 		items = append(items[:i], items[i+1:]...)
-		// 		break
-		// 	}
-		// }
-		// cmd := p.list.SetItems(items)
-		// return p, cmd
+		m.width = tmsg.Width
+		m.height = tmsg.Height
 		return m, nil
 	}
 
-	// Pass other messages to the list
-	var cmd tea.Cmd
-	return m, cmd
+	return m, nil
 }
 
 func (m PodDetailPage) View() tea.View {
 	contentHeight := m.height
-
-	var content string
-
-	content = m.pod.Title
+	content := m.pod.Title
 
 	centered := lipgloss.Place(m.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, content)

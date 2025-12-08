@@ -5,7 +5,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
@@ -46,19 +46,15 @@ func newProjectDetailKeyMap() projectDetailKeyMap {
 }
 
 type ProjectDetailPage struct {
-	store   Store
+	store   msg.Store
 	project *repo.Project
 	pods    components.ScrollList
 	keys    projectDetailKeyMap
-	loading bool
 	width   int
 	height  int
-	err     error
 }
 
-type projectDetailErrMsg struct{ err error }
-
-func NewProjectDetailPage(s Store, projectID string) ProjectDetailPage {
+func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 	var project repo.Project
 	for _, p := range s.Projects() {
 		if p.ID == projectID {
@@ -92,109 +88,85 @@ func (m ProjectDetailPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// ScrollList handles navigation (Up/Down/Ctrl+N/P)
+func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.pods, cmd = m.pods.Update(msg)
+	m.pods, cmd = m.pods.Update(tmsg)
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
+	case msg.DataLoaded:
+		// Filter pods for this project
+		var pods []repo.Pod
+		for _, p := range tmsg.Pods {
+			if p.ProjectID == m.project.ID {
+				pods = append(pods, p)
+			}
+		}
+		m.pods.SetItems(components.PodsToItems(pods))
+
+		// Update project data too (for title changes)
+		for _, p := range tmsg.Projects {
+			if p.ID == m.project.ID {
+				m.project = &p
+				break
+			}
+		}
+		return m, cmd
+
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(msg, m.keys.Back):
+		case key.Matches(tmsg, m.keys.Back):
 			return m, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 			}
-		case key.Matches(msg, m.keys.NewPod):
+		case key.Matches(tmsg, m.keys.NewPod):
 			projectID := m.project.ID
 			return m, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, nil) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, nil) }}
 			}
-		case key.Matches(msg, m.keys.EditPod):
+		case key.Matches(tmsg, m.keys.EditPod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				projectID := m.project.ID
 				return m, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
 				}
 			}
-		case key.Matches(msg, m.keys.SelectPod):
+		case key.Matches(tmsg, m.keys.SelectPod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return m, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDetailPage(&pod, m.project) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(&pod, m.project) }}
 				}
 			}
-		case key.Matches(msg, m.keys.DeletePod):
+		case key.Matches(tmsg, m.keys.DeletePod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return m, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewPodDeletePage(&pod) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDeletePage(&pod) }}
 				}
 			}
-		case key.Matches(msg, m.keys.EditProject):
+		case key.Matches(tmsg, m.keys.EditProject):
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectFormPage(project) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(project) }}
 				}
 			}
-		case key.Matches(msg, m.keys.DeleteProject):
+		case key.Matches(tmsg, m.keys.DeleteProject):
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDeletePage(project) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(project) }}
 				}
 			}
 		}
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, cmd
-
-	case projectDetailErrMsg:
-		m.err = msg.err
-		m.loading = false
-		return m, cmd
-
-	case messages.PodCreatedMsg:
-		items := m.pods.Items()
-		items = append(items, components.PodItem{Pod: repo.Pod(msg)})
-		m.pods.SetItems(items)
-		return m, cmd
-
-	case messages.PodUpdatedMsg:
-		pod := msg
-		items := m.pods.Items()
-		for i, item := range items {
-			pi, ok := item.(components.PodItem)
-			if ok && pi.ID == pod.ID {
-				items[i] = components.PodItem{Pod: repo.Pod(pod)}
-				break
-			}
-		}
-		m.pods.SetItems(items)
-		return m, cmd
-
-	case messages.PodDeleteMsg:
-		pod := msg
-		items := m.pods.Items()
-		for i, item := range items {
-			pi, ok := item.(components.PodItem)
-			if ok && pi.ID == pod.ID {
-				items = append(items[:i], items[i+1:]...)
-				break
-			}
-		}
-		m.pods.SetItems(items)
-		return m, cmd
-
-	case messages.ProjectUpdatedMsg:
-		project := repo.Project(msg)
-		m.project = &project
+		m.width = tmsg.Width
+		m.height = tmsg.Height
 		return m, cmd
 	}
 
@@ -203,19 +175,8 @@ func (m ProjectDetailPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m ProjectDetailPage) View() tea.View {
 	contentHeight := m.height
-
-	var content string
-
-	if m.loading {
-		content = styles.MutedStyle().Render("Loading...")
-	} else if m.err != nil {
-		content = styles.ErrorStyle().Render("Error: " + m.err.Error())
-	} else {
-		content = m.renderContent()
-	}
-
+	content := m.renderContent()
 	centered := lipgloss.Place(m.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
-
 	return tea.NewView(centered)
 }
 

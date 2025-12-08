@@ -4,19 +4,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/theme"
 )
 
-// ThemeSwitcherCloseMsg is sent when the theme switcher should close
-type ThemeSwitcherCloseMsg struct {
-	Selected bool // true if a theme was selected, false if cancelled
-}
-
-// OpenThemeSwitcherMsg is sent to open the theme switcher from palette
-type OpenThemeSwitcherMsg struct{}
-
-// themeItem represents a theme in the list
 type themeItem struct {
 	name     string
 	isActive bool
@@ -31,18 +23,15 @@ func (i themeItem) Prefix() string {
 	return " "
 }
 
-// ThemeSwitcher is an overlay component for selecting themes with live preview
 type ThemeSwitcher struct {
 	list          ScrollList
 	originalTheme string
 }
 
-// NewThemeSwitcher creates a new theme switcher overlay
 func NewThemeSwitcher() ThemeSwitcher {
 	themes := theme.ThemeNames()
 	currentTheme := theme.Current.Name()
 
-	// Create list items
 	items := make([]ScrollItem, len(themes))
 	for i, t := range themes {
 		items[i] = themeItem{name: t, isActive: t == currentTheme}
@@ -54,7 +43,6 @@ func NewThemeSwitcher() ThemeSwitcher {
 		Height: 15,
 	})
 
-	// Find and select current theme
 	for i, t := range themes {
 		if t == currentTheme {
 			l.Select(i)
@@ -72,19 +60,16 @@ func (m ThemeSwitcher) Init() tea.Cmd {
 	return nil
 }
 
-// OriginalTheme returns the theme that was active when the switcher was opened
 func (m ThemeSwitcher) OriginalTheme() string {
 	return m.originalTheme
 }
 
-func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
+func (m ThemeSwitcher) Update(tmsg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 	prevIndex := m.list.Index()
 
-	// ScrollList handles navigation (Up/Down/Ctrl+N/P)
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.list, cmd = m.list.Update(tmsg)
 
-	// Live preview: apply theme when selection changes
 	if m.list.Index() != prevIndex {
 		if item := m.list.SelectedItem(); item != nil {
 			if ti, ok := item.(themeItem); ok {
@@ -93,9 +78,9 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 		}
 	}
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyEnter:
 			if item := m.list.SelectedItem(); item != nil {
 				if ti, ok := item.(themeItem); ok {
@@ -106,14 +91,14 @@ func (m ThemeSwitcher) Update(msg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 					cfg.Theme = ti.name
 					_ = config.Save(cfg)
 					return m, func() tea.Msg {
-						return ThemeSwitcherCloseMsg{Selected: true}
+						return msg.ThemeSwitcherClose{Theme: ti.name}
 					}
 				}
 			}
 		case tea.KeyEscape:
 			theme.SetTheme(m.originalTheme)
 			return m, func() tea.Msg {
-				return ThemeSwitcherCloseMsg{Selected: false}
+				return msg.ThemeSwitcherClose{Theme: m.originalTheme}
 			}
 		}
 	}
@@ -125,7 +110,6 @@ func (m ThemeSwitcher) View() string {
 	card := CardProps{Width: 50, Padding: []int{1, 1}}
 	w := card.InnerWidth()
 
-	// Custom title
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Width(w).
@@ -135,7 +119,6 @@ func (m ThemeSwitcher) View() string {
 		PaddingBottom(1).
 		Render("Select Theme")
 
-	// List with background
 	list := lipgloss.NewStyle().
 		Width(w).
 		Height(m.list.Height()).

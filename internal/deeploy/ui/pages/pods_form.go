@@ -1,17 +1,14 @@
 package pages
 
 import (
-	"encoding/json"
-	"log"
-
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -51,38 +48,45 @@ func (p PodFormPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p PodFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyEscape:
 			projectID := p.projectID
 			return p, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 			}
 		}
 		switch {
-		case key.Matches(msg, p.keys.Save):
+		case key.Matches(tmsg, p.keys.Save):
 			if len(p.titleInput.Value()) > 0 {
 				projectID := p.projectID
+				var apiCmd tea.Cmd
+				if p.pod != nil {
+					p.pod.Title = p.titleInput.Value()
+					apiCmd = api.UpdatePod(p.pod)
+				} else {
+					apiCmd = api.CreatePod(p.titleInput.Value(), p.projectID)
+				}
 				return p, tea.Batch(
-					p.Submit,
+					apiCmd,
 					func() tea.Msg {
-						return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+						return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 					},
 				)
 			}
 		}
 
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		p.width = tmsg.Width
+		p.height = tmsg.Height
 		return p, nil
 	}
 
-	p.titleInput, cmd = p.titleInput.Update(msg)
+	p.titleInput, cmd = p.titleInput.Update(tmsg)
 	return p, cmd
 }
 
@@ -95,7 +99,6 @@ func (p PodFormPage) View() tea.View {
 
 	contentHeight := p.height
 
-	// Card vertikal zentrieren
 	centeredCard := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
@@ -111,56 +114,4 @@ func (p PodFormPage) Breadcrumbs() []string {
 
 func (p PodFormPage) HasFocusedInput() bool {
 	return p.titleInput.Focused()
-}
-
-func (p PodFormPage) Submit() tea.Msg {
-	if p.pod != nil {
-		return p.UpdatePod()
-	}
-	return p.CreatePod()
-}
-
-func (p PodFormPage) CreatePod() tea.Msg {
-	postData := struct {
-		Title     string `json:"title"`
-		ProjectID string `json:"project_id"`
-	}{
-		Title:     p.titleInput.Value(),
-		ProjectID: p.projectID,
-	}
-
-	res, err := utils.Request("POST", "/pods", postData)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	var pod repo.Pod
-	err = json.NewDecoder(res.Body).Decode(&pod)
-	if err != nil {
-		return nil
-	}
-
-	return messages.PodCreatedMsg(pod)
-}
-
-func (p PodFormPage) UpdatePod() tea.Msg {
-	postData := p.pod
-	postData.Title = p.titleInput.Value()
-
-	res, err := utils.Request("PUT", "/pods", postData)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	var pod repo.Pod
-	err = json.NewDecoder(res.Body).Decode(&pod)
-	if err != nil {
-		return nil
-	}
-
-	return messages.PodUpdatedMsg(pod)
 }

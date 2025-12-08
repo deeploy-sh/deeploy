@@ -1,16 +1,14 @@
 package pages
 
 import (
-	"log"
-
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -64,10 +62,10 @@ func (p ProjectDeletePage) Init() tea.Cmd {
 	return nil
 }
 
-func (p ProjectDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyLeft, 'h':
 			p.decision = confirmNo
 			return p, nil
@@ -82,24 +80,24 @@ func (p ProjectDeletePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyEscape:
 			return p, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 			}
 		case tea.KeyEnter:
 			if p.decision == confirmNo {
 				return p, func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 				}
 			}
 			return p, tea.Batch(
-				p.DeleteProject,
+				api.DeleteProject(p.project.ID),
 				func() tea.Msg {
-					return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 				},
 			)
 		}
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		p.width = tmsg.Width
+		p.height = tmsg.Height
 		return p, nil
 	}
 	return p, nil
@@ -111,7 +109,6 @@ func (p ProjectDeletePage) View() tea.View {
 		Padding(0, 0, 1, 0).
 		Render("Delete " + p.project.Title + "?")
 
-	// Button Styles
 	baseButton := lipgloss.NewStyle().
 		Padding(0, 3).
 		Width(1).
@@ -124,7 +121,6 @@ func (p ProjectDeletePage) View() tea.View {
 	inactiveButton := baseButton.
 		Background(lipgloss.Color("237"))
 
-	// Render Buttons based on decision
 	var noButton, yesButton string
 	if p.decision == confirmNo {
 		noButton = activeButton.Render("NO")
@@ -144,7 +140,6 @@ func (p ProjectDeletePage) View() tea.View {
 
 	contentHeight := p.height
 
-	// Card vertikal zentrieren
 	centeredCard := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
@@ -153,15 +148,4 @@ func (p ProjectDeletePage) View() tea.View {
 
 func (p ProjectDeletePage) Breadcrumbs() []string {
 	return []string{"Projects", "Delete"}
-}
-
-func (p ProjectDeletePage) DeleteProject() tea.Msg {
-	res, err := utils.Request("DELETE", "/projects/"+p.project.ID, nil)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	return messages.ProjectDeleteMsg(p.project)
 }

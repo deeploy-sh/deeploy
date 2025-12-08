@@ -1,34 +1,23 @@
 package pages
 
 import (
-	"encoding/json"
-	"log"
-	"net/http"
 	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/help"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/theme"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-type ChangePageMsg struct {
-	PageFactory func(s Store) tea.Model
-}
-
 const headerHeight = 1
 const footerHeight = 1
-
-type Store interface {
-	Projects() []repo.Project
-	Pods() []repo.Pod
-}
 
 type HelpProvider interface {
 	HelpKeys() help.KeyMap
@@ -71,30 +60,29 @@ func NewApp() tea.Model {
 func (m app) Init() tea.Cmd {
 	return tea.Batch(
 		m.currentPage.Init(),
-		// INFO: use tick here to show bootstrap(logo) min. 1 second
 		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
-			return utils.CheckConnection()
+			return api.CheckConnection()()
 		}),
 	)
 }
 
-func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case utils.ConnectionResultMsg:
+func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tmsg := tmsg.(type) {
+	case msg.ConnectionResult:
 		switch {
-		case msg.NeedsSetup:
+		case tmsg.NeedsSetup:
 			return m, func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewConnectPage(nil) },
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewConnectPage(nil) },
 				}
 			}
-		case msg.NeedsAuth:
+		case tmsg.NeedsAuth:
 			return m, func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewAuthPage("") },
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage("") },
 				}
 			}
-		case msg.Offline:
+		case tmsg.Offline:
 			m.offline = true
 			if !m.bootstrapped {
 				bp, ok := m.currentPage.(*bootstrap)
@@ -102,60 +90,51 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					bp.offline = true
 				}
 				return m, tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-					return utils.CheckConnection()
+					return api.CheckConnection()()
 				})
 			}
-		case msg.Online:
+		case tmsg.Online:
 			m.offline = false
 		}
 
 		if m.heartbeatStarted {
 			return m, tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-				return utils.CheckConnection()
+				return api.CheckConnection()()
 			})
 		}
 
 		m.heartbeatStarted = true
 		m.bootstrapped = true
 
+		// Load data - Dashboard will be created in DataLoaded handler
 		return m, tea.Batch(
-			initData,
-			func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
-				}
-			},
+			api.LoadData(),
 			tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-				return utils.CheckConnection()
+				return api.CheckConnection()()
 			}),
 		)
 
 	case tea.KeyPressMsg:
-		if m.offline && msg.String() != "ctrl+c" {
-			return m, nil // block app
+		if m.offline && tmsg.String() != "ctrl+c" {
+			return m, nil
 		}
-		if msg.String() == "ctrl+c" {
+		if tmsg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
 
-		// : opens palette (vim-style)
-		if msg.String() == ":" && m.bootstrapped && m.palette == nil {
-			// Close theme switcher first (and revert theme)
+		if tmsg.String() == ":" && m.bootstrapped && m.palette == nil {
 			if m.themeSwitcher != nil {
 				theme.SetTheme(m.themeSwitcher.OriginalTheme())
 				m.themeSwitcher = nil
 			}
-			// Open palette
 			palette := components.NewPalette(m.getPaletteItems())
 			palette.SetSize(50, 20)
 			m.palette = &palette
 			return m, palette.Init()
 		}
 
-		// Esc closes palette or theme switcher
-		if msg.Code == tea.KeyEscape {
+		if tmsg.Code == tea.KeyEscape {
 			if m.themeSwitcher != nil {
-				// Revert to original theme
 				theme.SetTheme(m.themeSwitcher.OriginalTheme())
 				m.themeSwitcher = nil
 				return m, nil
@@ -166,27 +145,25 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Forward to theme switcher if open
 		if m.themeSwitcher != nil {
 			var cmd tea.Cmd
-			*m.themeSwitcher, cmd = m.themeSwitcher.Update(msg)
+			*m.themeSwitcher, cmd = m.themeSwitcher.Update(tmsg)
 			return m, cmd
 		}
 
-		// Forward to palette if open
 		if m.palette != nil {
 			var cmd tea.Cmd
-			*m.palette, cmd = m.palette.Update(msg)
+			*m.palette, cmd = m.palette.Update(tmsg)
 			return m, cmd
 		}
 
 		var cmd tea.Cmd
-		m.currentPage, cmd = m.currentPage.Update(msg)
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		m.width = tmsg.Width
+		m.height = tmsg.Height
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
@@ -199,9 +176,9 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentPage, cmd = m.currentPage.Update(pageMsg)
 		return m, cmd
 
-	case ChangePageMsg:
-		m.currentPage = msg.PageFactory(&m)
-		m.palette = nil // Close palette on page change
+	case msg.ChangePage:
+		m.currentPage = tmsg.PageFactory(&m)
+		m.palette = nil
 
 		pageMsg := tea.WindowSizeMsg{
 			Width:  m.width,
@@ -215,125 +192,65 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd,
 		)
 
-	case InitDataMsg:
-		m.projects = msg.projects
-		m.pods = msg.pods
-		return m, nil
+	case msg.DataLoaded:
+		m.projects = tmsg.Projects
+		m.pods = tmsg.Pods
 
-	case components.ThemeSwitcherCloseMsg:
+		// Forward to current page so it can update its list
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
+
+		// If still on bootstrap, switch to dashboard now
+		if _, onBootstrap := m.currentPage.(*bootstrap); onBootstrap {
+			return m, func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+				}
+			}
+		}
+		return m, cmd
+
+	// CRUD Success -> Reload data
+	case msg.ProjectCreated, msg.ProjectUpdated, msg.ProjectDeleted,
+		msg.PodCreated, msg.PodUpdated, msg.PodDeleted:
+		return m, api.LoadData()
+
+	case msg.ThemeSwitcherClose:
 		m.themeSwitcher = nil
 		return m, nil
 
-	case components.OpenThemeSwitcherMsg:
+	case msg.OpenThemeSwitcher:
 		m.palette = nil
 		switcher := components.NewThemeSwitcher()
 		m.themeSwitcher = &switcher
 		return m, switcher.Init()
 
 	default:
-		// Forward to palette if open (for cursor blink, etc.)
 		if m.palette != nil {
 			var cmd tea.Cmd
-			*m.palette, cmd = m.palette.Update(msg)
+			*m.palette, cmd = m.palette.Update(tmsg)
 			return m, cmd
 		}
 
 		var cmd tea.Cmd
-		m.currentPage, cmd = m.currentPage.Update(msg)
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 	}
 }
 
-// InitDataMsg holds loaded projects for the palette
-type InitDataMsg struct {
-	projects []repo.Project
-	pods     []repo.Pod
-	// later we add settings, domains, etc.
-}
-
-func initData() tea.Msg {
-	cfg, err := config.Load()
-	if err != nil {
-		return nil
-	}
-
-	projects, err := initProjects(*cfg)
-	if err != nil {
-		log.Fatal("something went wrong: ", err)
-	}
-
-	pods, err := initPods(*cfg)
-	if err != nil {
-		log.Fatal("something went wrong: ", err)
-	}
-	return InitDataMsg{
-		projects: projects,
-		pods:     pods,
-	}
-}
-
-func initProjects(cfg config.Config) ([]repo.Project, error) {
-	req, err := http.NewRequest("GET", cfg.Server+"/api/projects", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	client := http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	var projects []repo.Project
-	err = json.NewDecoder(res.Body).Decode(&projects)
-	if err != nil {
-		return nil, err
-	}
-
-	return projects, nil
-}
-
-func initPods(cfg config.Config) ([]repo.Pod, error) {
-	req, err := http.NewRequest("GET", cfg.Server+"/api/pods", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	client := http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	var pods []repo.Pod
-	err = json.NewDecoder(res.Body).Decode(&pods)
-	if err != nil {
-		return nil, err
-	}
-
-	return pods, nil
-}
-
-// PageInfo interface for pages to provide breadcrumbs
 type PageInfo interface {
 	Breadcrumbs() []string
 }
 
-// getPaletteItems returns the items for the command palette
 func (m app) getPaletteItems() []components.PaletteItem {
 	items := []components.PaletteItem{
-		// Actions
 		{
 			ItemTitle:   "Dashboard",
 			Description: "Go to dashboard",
 			Category:    "action",
 			Action: func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
 				}
 			},
 		},
@@ -342,8 +259,8 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: "Create a new project",
 			Category:    "action",
 			Action: func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(m Store) tea.Model { return NewProjectFormPage(nil) },
+				return msg.ChangePage{
+					PageFactory: func(m msg.Store) tea.Model { return NewProjectFormPage(nil) },
 				}
 			},
 		},
@@ -352,36 +269,33 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: "Switch color theme",
 			Category:    "settings",
 			Action: func() tea.Msg {
-				return components.OpenThemeSwitcherMsg{}
+				return msg.OpenThemeSwitcher{}
 			},
 		},
 	}
 
-	// Add projects dynamically
 	for _, p := range m.projects {
-		project := p // Capture for closure
+		project := p
 		items = append(items, components.PaletteItem{
 			ItemTitle:   project.Title,
 			Description: project.Description,
 			Category:    "project",
 			Action: func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewProjectDetailPage(s, project.ID) },
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, project.ID) },
 				}
-
 			},
 		})
 	}
 
 	for _, p := range m.pods {
-		pod := p // Capture for closure
+		pod := p
 		items = append(items, components.PaletteItem{
 			ItemTitle:   pod.Title,
 			Description: pod.Description,
 			Category:    "pod",
 			Action: func() tea.Msg {
 				return nil
-				// return messages.ChangePageMsg{Page: NewProjectDetailPage(project.ID)}
 			},
 		})
 	}
@@ -395,7 +309,6 @@ func (m app) View() tea.View {
 		return m.currentPage.View()
 	}
 
-	// Status
 	var status string
 	var statusStyle lipgloss.Style
 	if m.offline {
@@ -406,7 +319,6 @@ func (m app) View() tea.View {
 		statusStyle = styles.OnlineStyle()
 	}
 
-	// Breadcrumbs
 	logo := "⚡ deeploy.sh"
 	breadcrumbParts := []string{logo}
 	if p, ok := m.currentPage.(PageInfo); ok {
@@ -414,7 +326,6 @@ func (m app) View() tea.View {
 	}
 	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render("  >  "))
 
-	// Header - minimal, ohne Border
 	gap := max(m.width-lipgloss.Width(breadcrumbs)-lipgloss.Width(status)-2, 1)
 	headerContent := breadcrumbs + strings.Repeat(" ", gap) + statusStyle.Render(status)
 	header := lipgloss.NewStyle().
@@ -422,7 +333,6 @@ func (m app) View() tea.View {
 		Padding(0, 1).
 		Render(headerContent)
 
-	// Content - Pages render their own help footer
 	content := m.currentPage.View().Content
 	contentHeight := m.height - headerHeight - footerHeight
 
@@ -443,45 +353,37 @@ func (m app) View() tea.View {
 
 	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea, helpView)
 
-	// Render theme switcher overlay if open
 	if m.themeSwitcher != nil {
-		switcherCard := m.themeSwitcher.View() // View() rendert schon die Card
+		switcherCard := m.themeSwitcher.View()
 
-		// Calculate position (completely centered - both X and Y)
 		switcherWidth := lipgloss.Width(switcherCard)
 		switcherHeight := lipgloss.Height(switcherCard)
 		switcherX := (m.width - switcherWidth) / 2
 		switcherY := (m.height - switcherHeight) / 2
 
-		// Create layers with proper z-ordering
 		baseLayer := lipgloss.NewLayer(base)
 		switcherLayer := lipgloss.NewLayer(switcherCard).
 			X(switcherX).
 			Y(switcherY).
 			Z(1)
 
-		// Compose with Canvas
 		canvas := lipgloss.NewCanvas(baseLayer, switcherLayer)
 		return tea.NewView(canvas.Render())
 	}
 
-	// Render palette overlay if open
 	if m.palette != nil {
-		paletteCard := m.palette.View() // View() rendert schon die Card
+		paletteCard := m.palette.View()
 
-		// Calculate palette position (centered horizontally, 30% from top)
 		paletteWidth := lipgloss.Width(paletteCard)
 		paletteX := (m.width - paletteWidth) / 2
 		paletteY := m.height * 3 / 10
 
-		// Create layers with proper z-ordering
 		baseLayer := lipgloss.NewLayer(base)
 		paletteLayer := lipgloss.NewLayer(paletteCard).
 			X(paletteX).
 			Y(paletteY).
 			Z(1)
 
-		// Compose with Canvas
 		canvas := lipgloss.NewCanvas(baseLayer, paletteLayer)
 		return tea.NewView(canvas.Render())
 	}

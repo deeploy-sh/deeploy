@@ -1,18 +1,15 @@
 package pages
 
 import (
-	"encoding/json"
-	"log"
-
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -53,7 +50,7 @@ func NewProjectFormPage(project *repo.Project) ProjectFormPage {
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
 	titleInput.Prompt = ""
-	titleInput.SetWidth(35) // card width - border & padding
+	titleInput.SetWidth(35)
 
 	s := titleInput.Styles()
 	s.Focused.Placeholder = lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
@@ -78,36 +75,43 @@ func (p ProjectFormPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p ProjectFormPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyEscape:
 			return p, func() tea.Msg {
-				return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 			}
 		}
 		switch {
-		case key.Matches(msg, p.keys.Save):
+		case key.Matches(tmsg, p.keys.Save):
 			if len(p.titleInput.Value()) > 0 {
+				var apiCmd tea.Cmd
+				if p.project != nil {
+					p.project.Title = p.titleInput.Value()
+					apiCmd = api.UpdateProject(p.project)
+				} else {
+					apiCmd = api.CreateProject(p.titleInput.Value())
+				}
 				return p, tea.Batch(
-					p.Submit,
+					apiCmd,
 					func() tea.Msg {
-						return ChangePageMsg{PageFactory: func(s Store) tea.Model { return NewDashboard(s) }}
+						return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 					},
 				)
 			}
 		}
 
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
+		p.width = tmsg.Width
+		p.height = tmsg.Height
 		return p, nil
 	}
 
-	p.titleInput, cmd = p.titleInput.Update(msg)
+	p.titleInput, cmd = p.titleInput.Update(tmsg)
 	return p, cmd
 }
 
@@ -127,7 +131,6 @@ func (p ProjectFormPage) View() tea.View {
 
 	contentHeight := p.height
 
-	// Card vertikal zentrieren
 	centeredCard := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
@@ -143,54 +146,4 @@ func (p ProjectFormPage) Breadcrumbs() []string {
 
 func (p ProjectFormPage) HasFocusedInput() bool {
 	return p.titleInput.Focused()
-}
-
-func (p ProjectFormPage) Submit() tea.Msg {
-	if p.project != nil {
-		return p.UpdateProject()
-	}
-	return p.CreateProject()
-}
-
-func (p ProjectFormPage) CreateProject() tea.Msg {
-	postData := struct {
-		Title string
-	}{
-		Title: p.titleInput.Value(),
-	}
-
-	res, err := utils.Request("POST", "/projects", postData)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	var project repo.Project
-	err = json.NewDecoder(res.Body).Decode(&project)
-	if err != nil {
-		return nil
-	}
-
-	return messages.ProjectCreatedMsg(project)
-}
-
-func (p ProjectFormPage) UpdateProject() tea.Msg {
-	postData := p.project
-	postData.Title = p.titleInput.Value()
-
-	res, err := utils.Request("PUT", "/projects", postData)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-
-	var project repo.Project
-	err = json.NewDecoder(res.Body).Decode(&project)
-	if err != nil {
-		return nil
-	}
-
-	return messages.ProjectUpdatedMsg(project)
 }

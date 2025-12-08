@@ -14,10 +14,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
 )
 
 type authKeyMap struct {
@@ -74,25 +73,27 @@ func (p authPage) Init() tea.Cmd {
 	return nil
 }
 
-func (m authPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m authPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		m.width = tmsg.Width
+		m.height = tmsg.Height
 	case tea.KeyPressMsg:
 		m.resetErr()
 		switch {
-		case msg.String() == "ctrl+c" || msg.Code == tea.KeyEscape:
+		case tmsg.String() == "ctrl+c" || tmsg.Code == tea.KeyEscape:
 			return m, tea.Quit
-		case msg.Code == tea.KeyEnter:
+		case tmsg.Code == tea.KeyEnter:
 			m.waiting = true
 			return m, m.startBrowserAuth()
 		}
-	case messages.AuthSuccessMsg:
+	case msg.AuthSuccess:
 		return m, func() tea.Msg {
-			return viewtypes.Dashboard
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+			}
 		}
 	}
 	return m, cmd
@@ -115,9 +116,8 @@ func (p authPage) View() tea.View {
 
 	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
 	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1 // 1 für help
+	contentHeight := p.height - 1
 
-	// Card vertikal zentrieren
 	centered := lipgloss.Place(p.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
@@ -132,7 +132,6 @@ func (p *authPage) resetErr() {
 	p.err = ""
 }
 
-// Starts a local server for ayth callback
 func startLocalAuthServer() (int, chan authCallback) {
 	callback := make(chan authCallback)
 
@@ -150,7 +149,6 @@ func startLocalAuthServer() (int, chan authCallback) {
 		w.Write([]byte("OK"))
 	})
 
-	// Get a free random port
 	listener, _ := net.Listen("tcp", "localhost:0")
 	port := listener.Addr().(*net.TCPAddr).Port
 
@@ -169,7 +167,7 @@ func openBrowser(url string) error {
 		args = []string{"/c", "start"}
 	case "darwin":
 		cmd = "open"
-	default: // "linux", "bsd", etc.
+	default:
 		cmd = "xdg-open"
 	}
 
@@ -180,7 +178,6 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 	return func() tea.Msg {
 		port, callback := startLocalAuthServer()
 
-		// Open browser
 		authURL := fmt.Sprintf(
 			"%s?cli=true&port=%d",
 			m.serverURL,
@@ -188,23 +185,21 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 		)
 		openBrowser(authURL)
 
-		// Waiting for token
 		result := <-callback
 		if result.err != nil {
-			return messages.AuthErrorMsg{Err: result.err}
+			return msg.AuthError{Err: result.err}
 		}
 
-		// Save config
 		cfg := config.Config{
 			Server: m.serverURL,
 			Token:  result.token,
 		}
 		if err := config.Save(&cfg); err != nil {
-			return messages.AuthErrorMsg{Err: err}
+			return msg.AuthError{Err: err}
 		}
 
-		return ChangePageMsg{
-			PageFactory: func(s Store) tea.Model { return NewDashboard(s) },
+		return msg.ChangePage{
+			PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
 		}
 	}
 }

@@ -8,11 +8,10 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/messages"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/viewtypes"
 )
 
 type connectKeyMap struct {
@@ -62,16 +61,16 @@ func (m connectPage) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m connectPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	switch msg := msg.(type) {
+	switch tmsg := tmsg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		m.width = tmsg.Width
+		m.height = tmsg.Height
 	case tea.KeyPressMsg:
 		m.resetErr()
-		switch msg.Code {
+		switch tmsg.Code {
 		case tea.KeyEnter:
 			input := m.serverInput.Value()
 			err := utils.ValidateServer(input)
@@ -80,17 +79,19 @@ func (m connectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, func() tea.Msg {
-				return ChangePageMsg{
-					PageFactory: func(s Store) tea.Model { return NewAuthPage(input) },
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage(input) },
 				}
 			}
 		}
-	case messages.AuthSuccessMsg:
+	case msg.AuthSuccess:
 		return m, func() tea.Msg {
-			return viewtypes.Dashboard
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+			}
 		}
 	}
-	m.serverInput, cmd = m.serverInput.Update(msg)
+	m.serverInput, cmd = m.serverInput.Update(tmsg)
 	return m, cmd
 }
 
@@ -102,9 +103,8 @@ func (m connectPage) View() tea.View {
 
 	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
 	helpView := m.help.View(m.keys)
-	contentHeight := m.height - 1 // 1 für help
+	contentHeight := m.height - 1
 
-	// Card vertikal zentrieren
 	centered := lipgloss.Place(m.width, contentHeight,
 		lipgloss.Center, lipgloss.Center, card)
 
