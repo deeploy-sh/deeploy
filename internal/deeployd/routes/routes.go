@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/assets"
-	apihandler "github.com/deeploy-sh/deeploy/internal/deeploy/handler"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/app"
 	handlers "github.com/deeploy-sh/deeploy/internal/deeployd/handler"
 	mw "github.com/deeploy-sh/deeploy/internal/deeployd/middleware"
@@ -19,8 +18,8 @@ func Setup(app *app.App) http.Handler {
 	auth := mw.NewAuthMiddleware(app.UserService)
 	userHandler := handlers.NewUserHandler(app.UserService)
 	dashboardHandler := handlers.NewDashboardHandler()
-	projectHandler := apihandler.NewProjectHandler(app.ProjectService)
-	podHandler := apihandler.NewPodHandler(app.PodService)
+	projectHandler := handlers.NewProjectHandler(app.ProjectService)
+	podHandler := handlers.NewPodHandler(app.PodService)
 
 	// Assets
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
