@@ -146,8 +146,6 @@ func (m DashboardPage) renderEmptyState() string {
 	return lipgloss.JoinVertical(lipgloss.Center,
 		titleStyle.Render("No projects yet"),
 		styles.MutedStyle().Render("Press 'n' to create your first project"),
-		"",
-		styles.MutedStyle().Render("or use Ctrl+K to search"),
 	)
 }
 

@@ -181,6 +181,10 @@ func (m ProjectDetailPage) View() tea.View {
 }
 
 func (m ProjectDetailPage) renderContent() string {
+	if len(m.pods.Items()) == 0 {
+		return m.renderEmptyState()
+	}
+
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
@@ -193,20 +197,27 @@ func (m ProjectDetailPage) renderContent() string {
 		PaddingBottom(1).
 		Render(m.project.Title + " > Pods")
 
-	var podsContent string
-	if len(m.pods.Items()) == 0 {
-		podsContent = styles.MutedStyle().Render("No pods yet. Press 'n' to create one.")
-	} else {
-		podsContent = lipgloss.NewStyle().
-			Width(w).
-			Height(m.pods.Height()).
-			Background(styles.ColorBackgroundPanel()).
-			Render(m.pods.View())
-	}
+	podsContent := lipgloss.NewStyle().
+		Width(w).
+		Height(m.pods.Height()).
+		Background(styles.ColorBackgroundPanel()).
+		Render(m.pods.View())
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, podsContent)
 
 	return components.Card(card).Render(content)
+}
+
+func (m ProjectDetailPage) renderEmptyState() string {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorForeground()).
+		MarginBottom(1)
+
+	return lipgloss.JoinVertical(lipgloss.Center,
+		titleStyle.Render("No pods yet"),
+		styles.MutedStyle().Render("Press 'n' to create your first pod"),
+	)
 }
 
 func (m ProjectDetailPage) Breadcrumbs() []string {
