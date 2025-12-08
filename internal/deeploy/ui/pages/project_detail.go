@@ -159,7 +159,7 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(project) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(s, project) }}
 				}
 			}
 		}

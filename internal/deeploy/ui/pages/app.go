@@ -295,7 +295,20 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Description: pod.Description,
 			Category:    "pod",
 			Action: func() tea.Msg {
-				return nil
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						// Find project for this pod
+						var project *repo.Project
+						for _, pr := range s.Projects() {
+							if pr.ID == pod.ProjectID {
+								proj := pr
+								project = &proj
+								break
+							}
+						}
+						return NewPodDetailPage(&pod, project)
+					},
+				}
 			},
 		})
 	}

@@ -116,9 +116,19 @@ func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p ProjectFormPage) View() tea.View {
-	cardContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		lipgloss.NewStyle().Bold(true).Render("New Project"),
+	var titleText string
+	if p.project != nil {
+		titleText = "Edit Project"
+	} else {
+		titleText = "New Project"
+	}
+
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Render(titleText)
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		title,
 		"",
 		p.titleInput.View(),
 	)
@@ -127,14 +137,12 @@ func (p ProjectFormPage) View() tea.View {
 		Width:   40,
 		Padding: []int{1, 2},
 		Accent:  true,
-	}).Render(cardContent)
+	}).Render(content)
 
-	contentHeight := p.height
-
-	centeredCard := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(centeredCard)
+	return tea.NewView(centered)
 }
 
 func (p ProjectFormPage) Breadcrumbs() []string {

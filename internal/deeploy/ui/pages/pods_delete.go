@@ -2,20 +2,42 @@ package pages
 
 import (
 	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
+type podDeleteKeyMap struct {
+	Confirm key.Binding
+	Cancel  key.Binding
+}
+
+func (k podDeleteKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Confirm, k.Cancel}
+}
+
+func (k podDeleteKeyMap) FullHelp() [][]key.Binding {
+	return nil
+}
+
+type podToDelete struct {
+	ID        string
+	Title     string
+	ProjectID string
+}
+
 type PodDeletePage struct {
-	pod      *repo.Pod
-	decision int
-	keys     deleteKeyMap
-	width    int
-	height   int
+	pod    podToDelete
+	input  textinput.Model
+	keys   podDeleteKeyMap
+	width  int
+	height int
 }
 
 func (p PodDeletePage) HelpKeys() help.KeyMap {
@@ -23,32 +45,31 @@ func (p PodDeletePage) HelpKeys() help.KeyMap {
 }
 
 func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
+	ti := textinput.New()
+	ti.Placeholder = pod.Title
+	ti.Focus()
+	ti.CharLimit = 100
+
 	return PodDeletePage{
-		pod:  pod,
-		keys: newDeleteKeyMap(),
+		pod:   podToDelete{ID: pod.ID, Title: pod.Title, ProjectID: pod.ProjectID},
+		input: ti,
+		keys: podDeleteKeyMap{
+			Confirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
+			Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+		},
 	}
 }
 
 func (p PodDeletePage) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
-		case tea.KeyLeft, 'h':
-			p.decision = confirmNo
-			return p, nil
-		case tea.KeyRight, 'l':
-			p.decision = confirmYes
-			return p, nil
-		case tea.KeyTab:
-			if p.decision == confirmNo {
-				p.decision = confirmYes
-			} else {
-				p.decision = confirmNo
-			}
 		case tea.KeyEscape:
 			projectID := p.pod.ProjectID
 			return p, func() tea.Msg {
@@ -56,10 +77,9 @@ func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyEnter:
 			projectID := p.pod.ProjectID
-			if p.decision == confirmNo {
-				return p, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
-				}
+			// Only delete if input matches pod title exactly
+			if p.input.Value() != p.pod.Title {
+				return p, nil
 			}
 			return p, tea.Batch(
 				api.DeletePod(p.pod.ID),
@@ -73,43 +93,35 @@ func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		p.height = tmsg.Height
 		return p, nil
 	}
-	return p, nil
+
+	p.input, cmd = p.input.Update(tmsg)
+	return p, cmd
 }
 
 func (p PodDeletePage) View() tea.View {
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Padding(0, 0, 1, 0).
-		Render("Delete " + p.pod.Title + "?")
+		Render("Delete Pod")
 
-	baseButton := lipgloss.NewStyle().
-		Padding(0, 3).
-		Width(1).
-		MarginRight(1)
+	name := lipgloss.NewStyle().
+		PaddingTop(1).
+		Render(p.pod.Title)
 
-	activeButton := baseButton.
-		Background(styles.ColorPrimary()).
-		Foreground(lipgloss.Color("0"))
+	hint := styles.MutedStyle().
+		PaddingTop(1).
+		PaddingBottom(1).
+		Render("Type '" + p.pod.Title + "' to confirm")
 
-	inactiveButton := baseButton.
-		Background(lipgloss.Color("237"))
+	content := lipgloss.JoinVertical(lipgloss.Left, title, name, hint, p.input.View())
 
-	var noButton, yesButton string
-	if p.decision == confirmNo {
-		noButton = activeButton.Render("NO")
-		yesButton = inactiveButton.Render("YES")
-	} else {
-		noButton = inactiveButton.Render("NO")
-		yesButton = activeButton.Render("YES")
-	}
+	card := components.Card(components.CardProps{
+		Width:   40,
+		Padding: []int{1, 2},
+		Accent:  true,
+	}).Render(content)
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Center, noButton, yesButton)
-	content := lipgloss.JoinVertical(0.5, title, buttons)
-
-	contentHeight := p.height
-
-	centered := lipgloss.Place(p.width, contentHeight,
-		lipgloss.Center, lipgloss.Center, content)
+	centered := lipgloss.Place(p.width, p.height,
+		lipgloss.Center, lipgloss.Center, card)
 
 	return tea.NewView(centered)
 }

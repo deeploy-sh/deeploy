@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"fmt"
+
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -12,17 +14,16 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-type deleteKeyMap struct {
-	Select  key.Binding
+type projectDeleteKeyMap struct {
 	Confirm key.Binding
 	Cancel  key.Binding
 }
 
-func (k deleteKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Select, k.Confirm, k.Cancel}
+func (k projectDeleteKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Confirm, k.Cancel}
 }
 
-func (k deleteKeyMap) FullHelp() [][]key.Binding {
+func (k projectDeleteKeyMap) FullHelp() [][]key.Binding {
 	return nil
 }
 
@@ -30,31 +31,34 @@ func (p ProjectDeletePage) HelpKeys() help.KeyMap {
 	return p.keys
 }
 
-func newDeleteKeyMap() deleteKeyMap {
-	return deleteKeyMap{
-		Select:  key.NewBinding(key.WithKeys("left", "right", "h", "l", "tab"), key.WithHelp("←/→", "select")),
-		Confirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
-		Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
-	}
+type projectToDelete struct {
+	ID    string
+	Title string
 }
 
-const (
-	confirmNo = iota
-	confirmYes
-)
-
 type ProjectDeletePage struct {
-	project  *repo.Project
-	decision int
-	keys     deleteKeyMap
+	project  projectToDelete
+	podCount int
+	keys     projectDeleteKeyMap
 	width    int
 	height   int
 }
 
-func NewProjectDeletePage(project *repo.Project) ProjectDeletePage {
+func NewProjectDeletePage(s msg.Store, project *repo.Project) ProjectDeletePage {
+	podCount := 0
+	for _, p := range s.Pods() {
+		if p.ProjectID == project.ID {
+			podCount++
+		}
+	}
+
 	return ProjectDeletePage{
-		project: project,
-		keys:    newDeleteKeyMap(),
+		project:  projectToDelete{ID: project.ID, Title: project.Title},
+		podCount: podCount,
+		keys: projectDeleteKeyMap{
+			Confirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
+			Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+		},
 	}
 }
 
@@ -66,27 +70,13 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
-		case tea.KeyLeft, 'h':
-			p.decision = confirmNo
-			return p, nil
-		case tea.KeyRight, 'l':
-			p.decision = confirmYes
-			return p, nil
-		case tea.KeyTab:
-			if p.decision == confirmNo {
-				p.decision = confirmYes
-			} else {
-				p.decision = confirmNo
-			}
 		case tea.KeyEscape:
 			return p, func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 			}
 		case tea.KeyEnter:
-			if p.decision == confirmNo {
-				return p, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
-				}
+			if p.podCount > 0 {
+				return p, nil
 			}
 			return p, tea.Batch(
 				api.DeleteProject(p.project.ID),
@@ -106,44 +96,35 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (p ProjectDeletePage) View() tea.View {
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Padding(0, 0, 1, 0).
-		Render("Delete " + p.project.Title + "?")
+		Render("Delete Project")
 
-	baseButton := lipgloss.NewStyle().
-		Padding(0, 3).
-		Width(1).
-		MarginRight(1)
+	name := lipgloss.NewStyle().
+		PaddingTop(1).
+		Render(p.project.Title)
 
-	activeButton := baseButton.
-		Background(styles.ColorPrimary()).
-		Foreground(lipgloss.Color("0"))
-
-	inactiveButton := baseButton.
-		Background(lipgloss.Color("237"))
-
-	var noButton, yesButton string
-	if p.decision == confirmNo {
-		noButton = activeButton.Render("NO")
-		yesButton = inactiveButton.Render("YES")
+	var hint string
+	if p.podCount > 0 {
+		hint = styles.MutedStyle().
+			PaddingTop(1).
+			Render(fmt.Sprintf("Delete all %d pods first", p.podCount))
 	} else {
-		noButton = inactiveButton.Render("NO")
-		yesButton = activeButton.Render("YES")
+		hint = styles.MutedStyle().
+			PaddingTop(1).
+			Render("Press enter to confirm")
 	}
 
-	buttons := lipgloss.JoinHorizontal(lipgloss.Center, noButton, yesButton)
-	content := lipgloss.JoinVertical(0.5, title, buttons)
+	content := lipgloss.JoinVertical(lipgloss.Left, title, name, hint)
 
 	card := components.Card(components.CardProps{
-		Padding: []int{2, 1},
+		Width:   40,
+		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)
 
-	contentHeight := p.height
-
-	centeredCard := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(centeredCard)
+	return tea.NewView(centered)
 }
 
 func (p ProjectDeletePage) Breadcrumbs() []string {

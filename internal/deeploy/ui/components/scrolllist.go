@@ -20,6 +20,11 @@ type PrefixedItem interface {
 	Prefix() string
 }
 
+// SuffixedItem optionales Interface für Items mit Suffix (count, status, etc.)
+type SuffixedItem interface {
+	Suffix() string
+}
+
 // ScrollListConfig für NewScrollList
 type ScrollListConfig struct {
 	Width       int
@@ -239,7 +244,18 @@ func (m ScrollList) View() string {
 				prefix = pi.Prefix() + " "
 			}
 
-			content := " " + prefix + item.Title()
+			// Get suffix if item implements SuffixedItem
+			suffix := ""
+			if si, ok := item.(SuffixedItem); ok {
+				suffix = si.Suffix()
+			}
+
+			title := item.Title()
+			// Calculate space-between padding (1 leading + 1 trailing space)
+			usedWidth := 2 + len(prefix) + len(title) + len(suffix)
+			padding := max(1, m.width-usedWidth)
+
+			content := " " + prefix + title + strings.Repeat(" ", padding) + suffix + " "
 			lineStyle := lipgloss.NewStyle().Width(m.width)
 
 			var line string

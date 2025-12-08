@@ -91,18 +91,33 @@ func (p PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (p PodFormPage) View() tea.View {
+	var titleText string
+	if p.pod != nil {
+		titleText = "Edit Pod"
+	} else {
+		titleText = "New Pod"
+	}
+
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Render(titleText)
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		title,
+		"",
+		p.titleInput.View(),
+	)
+
 	card := components.Card(components.CardProps{
 		Width:   40,
-		Padding: []int{2, 3},
+		Padding: []int{1, 2},
 		Accent:  true,
-	}).Render(p.titleInput.View())
+	}).Render(content)
 
-	contentHeight := p.height
-
-	centeredCard := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(centeredCard)
+	return tea.NewView(centered)
 }
 
 func (p PodFormPage) Breadcrumbs() []string {

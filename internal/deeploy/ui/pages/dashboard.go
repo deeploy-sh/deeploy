@@ -11,8 +11,9 @@ import (
 )
 
 type dashboardKeyMap struct {
-	Search key.Binding
 	New    key.Binding
+	Edit   key.Binding
+	Delete key.Binding
 	Select key.Binding
 }
 
@@ -20,7 +21,7 @@ func (m DashboardPage) HelpKeys() help.KeyMap {
 	return m.keys
 }
 func (k dashboardKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Search, k.New, k.Select}
+	return []key.Binding{k.New, k.Edit, k.Delete, k.Select}
 }
 
 func (k dashboardKeyMap) FullHelp() [][]key.Binding {
@@ -29,8 +30,9 @@ func (k dashboardKeyMap) FullHelp() [][]key.Binding {
 
 func newDashboardKeyMap() dashboardKeyMap {
 	return dashboardKeyMap{
-		Search: key.NewBinding(key.WithKeys("ctrl+k"), key.WithHelp("ctrl+k", "search")),
 		New:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new project")),
+		Edit:   key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit project")),
+		Delete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete project")),
 		Select: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 	}
 }
@@ -45,7 +47,7 @@ type DashboardPage struct {
 
 func NewDashboard(s msg.Store) DashboardPage {
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
-	l := components.NewScrollList(components.ProjectsToItems(s.Projects()), components.ScrollListConfig{
+	l := components.NewScrollList(components.ProjectsToItems(s.Projects(), s.Pods()), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
 	})
@@ -67,7 +69,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch tmsg := tmsg.(type) {
 	case msg.DataLoaded:
-		m.list.SetItems(components.ProjectsToItems(tmsg.Projects))
+		m.list.SetItems(components.ProjectsToItems(tmsg.Projects, tmsg.Pods))
 		return m, cmd
 
 	case tea.KeyPressMsg:
@@ -76,6 +78,26 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(nil) },
+				}
+			}
+		case key.Matches(tmsg, m.keys.Edit):
+			item := m.list.SelectedItem()
+			if item != nil {
+				project := item.(components.ProjectItem).Project
+				return m, func() tea.Msg {
+					return msg.ChangePage{
+						PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(&project) },
+					}
+				}
+			}
+		case key.Matches(tmsg, m.keys.Delete):
+			item := m.list.SelectedItem()
+			if item != nil {
+				project := item.(components.ProjectItem).Project
+				return m, func() tea.Msg {
+					return msg.ChangePage{
+						PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(s, &project) },
+					}
 				}
 			}
 		case key.Matches(tmsg, m.keys.Select):
