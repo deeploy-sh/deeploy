@@ -3,7 +3,6 @@ package pages
 import (
 	"log"
 
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -14,32 +13,17 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/utils"
 )
 
-type connectKeyMap struct {
-	Connect key.Binding
-}
-
-func (k connectKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Connect}
-}
-
-func (k connectKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Connect}}
-}
-
-func newConnectKeyMap() connectKeyMap {
-	return connectKeyMap{
-		Connect: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "connect")),
-	}
-}
-
 type connectPage struct {
 	serverInput textinput.Model
-	keys        connectKeyMap
-	help        help.Model
+	keyConnect  key.Binding
 	status      string
 	width       int
 	height      int
 	err         error
+}
+
+func (p connectPage) HelpKeys() []key.Binding {
+	return []key.Binding{p.keyConnect}
 }
 
 func NewConnectPage(err error) connectPage {
@@ -52,8 +36,7 @@ func NewConnectPage(err error) connectPage {
 
 	return connectPage{
 		serverInput: ti,
-		keys:        newConnectKeyMap(),
-		help:        styles.NewHelpModel(),
+		keyConnect:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "connect")),
 		err:         err,
 	}
 }
@@ -103,13 +86,11 @@ func (m connectPage) View() tea.View {
 	}
 
 	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
-	helpView := m.help.View(m.keys)
-	contentHeight := m.height - 1
 
-	centered := lipgloss.Place(m.width, contentHeight,
+	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(centered)
 }
 
 func (m connectPage) Breadcrumbs() []string {

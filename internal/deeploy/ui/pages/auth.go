@@ -9,45 +9,27 @@ import (
 	"runtime"
 	"strings"
 
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
 
-type authKeyMap struct {
-	Authenticate key.Binding
-	Quit         key.Binding
-}
-
-func (k authKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Authenticate, k.Quit}
-}
-
-func (k authKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{k.Authenticate, k.Quit}}
-}
-
-func newAuthKeyMap() authKeyMap {
-	return authKeyMap{
-		Authenticate: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "authenticate")),
-		Quit:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "quit")),
-	}
-}
-
 type authPage struct {
-	keys      authKeyMap
-	help      help.Model
-	isReauth  bool
-	waiting   bool
-	width     int
-	height    int
-	serverURL string
-	err       string
+	keyAuthenticate key.Binding
+	keyQuit         key.Binding
+	isReauth        bool
+	waiting         bool
+	width           int
+	height          int
+	serverURL       string
+	err             string
+}
+
+func (p authPage) HelpKeys() []key.Binding {
+	return []key.Binding{p.keyAuthenticate, p.keyQuit}
 }
 
 type authCallback struct {
@@ -62,10 +44,10 @@ func NewAuthPage(server string) authPage {
 		server = cfg.Server
 	}
 	return authPage{
-		keys:      newAuthKeyMap(),
-		help:      styles.NewHelpModel(),
-		isReauth:  isReauth,
-		serverURL: server,
+		keyAuthenticate: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "authenticate")),
+		keyQuit:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "quit")),
+		isReauth:        isReauth,
+		serverURL:       server,
 	}
 }
 
@@ -115,13 +97,11 @@ func (p authPage) View() tea.View {
 	}
 
 	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
-	helpView := p.help.View(p.keys)
-	contentHeight := p.height - 1
 
-	centered := lipgloss.Place(p.width, contentHeight,
+	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered, helpView))
+	return tea.NewView(centered)
 }
 
 func (p authPage) Breadcrumbs() []string {

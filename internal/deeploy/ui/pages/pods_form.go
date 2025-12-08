@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -15,15 +14,16 @@ import (
 
 type PodFormPage struct {
 	titleInput textinput.Model
-	keys       formKeyMap
+	keySave    key.Binding
+	keyCancel  key.Binding
 	projectID  string
 	pod        *repo.Pod
 	width      int
 	height     int
 }
 
-func (p PodFormPage) HelpKeys() help.KeyMap {
-	return p.keys
+func (p PodFormPage) HelpKeys() []key.Binding {
+	return []key.Binding{p.keySave, p.keyCancel}
 }
 
 func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
@@ -37,7 +37,8 @@ func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
 
 	podFormPage := PodFormPage{
 		titleInput: titleInput,
-		keys:       newFormKeyMap(),
+		keySave:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 		projectID:  projectID,
 	}
 	if pod != nil {
@@ -63,7 +64,7 @@ func (p PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		switch {
-		case key.Matches(tmsg, p.keys.Save):
+		case key.Matches(tmsg, p.keySave):
 			if len(p.titleInput.Value()) > 0 {
 				projectID := p.projectID
 				var apiCmd tea.Cmd

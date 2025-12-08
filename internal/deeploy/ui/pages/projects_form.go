@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -12,36 +11,17 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-type formKeyMap struct {
-	Save   key.Binding
-	Cancel key.Binding
-}
-
-func (k formKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Save, k.Cancel}
-}
-
-func (k formKeyMap) FullHelp() [][]key.Binding {
-	return nil
-}
-
-func (p ProjectFormPage) HelpKeys() help.KeyMap {
-	return p.keys
-}
-
-func newFormKeyMap() formKeyMap {
-	return formKeyMap{
-		Save:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
-		Cancel: key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
-	}
-}
-
 type ProjectFormPage struct {
 	titleInput textinput.Model
-	keys       formKeyMap
+	keySave    key.Binding
+	keyCancel  key.Binding
 	project    *repo.Project
 	width      int
 	height     int
+}
+
+func (p ProjectFormPage) HelpKeys() []key.Binding {
+	return []key.Binding{p.keySave, p.keyCancel}
 }
 
 func NewProjectFormPage(project *repo.Project) ProjectFormPage {
@@ -55,7 +35,8 @@ func NewProjectFormPage(project *repo.Project) ProjectFormPage {
 
 	projectFormPage := ProjectFormPage{
 		titleInput: titleInput,
-		keys:       newFormKeyMap(),
+		keySave:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 	if project != nil {
 		projectFormPage.project = project
@@ -79,7 +60,7 @@ func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		switch {
-		case key.Matches(tmsg, p.keys.Save):
+		case key.Matches(tmsg, p.keySave):
 			if len(p.titleInput.Value()) > 0 {
 				var apiCmd tea.Cmd
 				if p.project != nil {

@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
@@ -11,47 +10,23 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-type projectDetailKeyMap struct {
-	NewPod        key.Binding
-	EditPod       key.Binding
-	SelectPod     key.Binding
-	DeletePod     key.Binding
-	EditProject   key.Binding
-	DeleteProject key.Binding
-	Back          key.Binding
-}
-
-func (k projectDetailKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.NewPod, k.EditPod, k.SelectPod, k.DeletePod, k.EditProject, k.DeleteProject, k.Back}
-}
-
-func (k projectDetailKeyMap) FullHelp() [][]key.Binding {
-	return nil
-}
-
-func (m ProjectDetailPage) HelpKeys() help.KeyMap {
-	return m.keys
-}
-
-func newProjectDetailKeyMap() projectDetailKeyMap {
-	return projectDetailKeyMap{
-		NewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
-		EditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
-		DeletePod:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
-		SelectPod:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
-		EditProject:   key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
-		DeleteProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "delete project")),
-		Back:          key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
-	}
-}
-
 type ProjectDetailPage struct {
-	store   msg.Store
-	project *repo.Project
-	pods    components.ScrollList
-	keys    projectDetailKeyMap
-	width   int
-	height  int
+	store            msg.Store
+	project          *repo.Project
+	pods             components.ScrollList
+	keyNewPod        key.Binding
+	keyEditPod       key.Binding
+	keySelectPod     key.Binding
+	keyDeletePod     key.Binding
+	keyEditProject   key.Binding
+	keyDeleteProject key.Binding
+	keyBack          key.Binding
+	width            int
+	height           int
+}
+
+func (m ProjectDetailPage) HelpKeys() []key.Binding {
+	return []key.Binding{m.keyNewPod, m.keyEditPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyDeleteProject, m.keyBack}
 }
 
 func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
@@ -77,10 +52,16 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 	})
 
 	return ProjectDetailPage{
-		store:   s,
-		pods:    l,
-		keys:    newProjectDetailKeyMap(),
-		project: &project,
+		store:            s,
+		pods:             l,
+		project:          &project,
+		keyNewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
+		keyEditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
+		keyDeletePod:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
+		keySelectPod:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
+		keyEditProject:   key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
+		keyDeleteProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "delete project")),
+		keyBack:          key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
 
@@ -114,16 +95,16 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(tmsg, m.keys.Back):
+		case key.Matches(tmsg, m.keyBack):
 			return m, func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
 			}
-		case key.Matches(tmsg, m.keys.NewPod):
+		case key.Matches(tmsg, m.keyNewPod):
 			projectID := m.project.ID
 			return m, func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, nil) }}
 			}
-		case key.Matches(tmsg, m.keys.EditPod):
+		case key.Matches(tmsg, m.keyEditPod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
@@ -132,7 +113,7 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
 				}
 			}
-		case key.Matches(tmsg, m.keys.SelectPod):
+		case key.Matches(tmsg, m.keySelectPod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
@@ -140,7 +121,7 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(&pod, m.project) }}
 				}
 			}
-		case key.Matches(tmsg, m.keys.DeletePod):
+		case key.Matches(tmsg, m.keyDeletePod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
@@ -148,14 +129,14 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDeletePage(&pod) }}
 				}
 			}
-		case key.Matches(tmsg, m.keys.EditProject):
+		case key.Matches(tmsg, m.keyEditProject):
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {
 					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(project) }}
 				}
 			}
-		case key.Matches(tmsg, m.keys.DeleteProject):
+		case key.Matches(tmsg, m.keyDeleteProject):
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {

@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
@@ -10,39 +9,19 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 )
 
-type dashboardKeyMap struct {
-	New    key.Binding
-	Edit   key.Binding
-	Delete key.Binding
-	Select key.Binding
-}
-
-func (m DashboardPage) HelpKeys() help.KeyMap {
-	return m.keys
-}
-func (k dashboardKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.New, k.Edit, k.Delete, k.Select}
-}
-
-func (k dashboardKeyMap) FullHelp() [][]key.Binding {
-	return nil
-}
-
-func newDashboardKeyMap() dashboardKeyMap {
-	return dashboardKeyMap{
-		New:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new project")),
-		Edit:   key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit project")),
-		Delete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete project")),
-		Select: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
-	}
-}
-
 type DashboardPage struct {
-	store  msg.Store
-	list   components.ScrollList
-	keys   dashboardKeyMap
-	width  int
-	height int
+	store     msg.Store
+	list      components.ScrollList
+	keyNew    key.Binding
+	keyEdit   key.Binding
+	keyDelete key.Binding
+	keySelect key.Binding
+	width     int
+	height    int
+}
+
+func (m DashboardPage) HelpKeys() []key.Binding {
+	return []key.Binding{m.keyNew, m.keyEdit, m.keyDelete, m.keySelect}
 }
 
 func NewDashboard(s msg.Store) DashboardPage {
@@ -53,9 +32,12 @@ func NewDashboard(s msg.Store) DashboardPage {
 	})
 
 	return DashboardPage{
-		store: s,
-		list:  l,
-		keys:  newDashboardKeyMap(),
+		store:     s,
+		list:      l,
+		keyNew:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new project")),
+		keyEdit:   key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit project")),
+		keyDelete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete project")),
+		keySelect: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 	}
 }
 
@@ -74,13 +56,13 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(tmsg, m.keys.New):
+		case key.Matches(tmsg, m.keyNew):
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(nil) },
 				}
 			}
-		case key.Matches(tmsg, m.keys.Edit):
+		case key.Matches(tmsg, m.keyEdit):
 			item := m.list.SelectedItem()
 			if item != nil {
 				project := item.(components.ProjectItem).Project
@@ -90,7 +72,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-		case key.Matches(tmsg, m.keys.Delete):
+		case key.Matches(tmsg, m.keyDelete):
 			item := m.list.SelectedItem()
 			if item != nil {
 				project := item.(components.ProjectItem).Project
@@ -100,7 +82,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
-		case key.Matches(tmsg, m.keys.Select):
+		case key.Matches(tmsg, m.keySelect):
 			item := m.list.SelectedItem()
 			if item != nil {
 				i := item.(components.ProjectItem)

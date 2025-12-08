@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
@@ -20,7 +20,7 @@ const headerHeight = 1
 const footerHeight = 1
 
 type HelpProvider interface {
-	HelpKeys() help.KeyMap
+	HelpKeys() []key.Binding
 }
 
 type app struct {
@@ -34,7 +34,6 @@ type app struct {
 	heartbeatStarted bool
 	offline          bool
 	bootstrapped     bool
-	help             help.Model
 }
 
 func (m *app) Projects() []repo.Project {
@@ -53,7 +52,6 @@ func NewApp() tea.Model {
 
 	return &app{
 		currentPage: NewBootstrap(),
-		help:        styles.NewHelpModel(),
 	}
 }
 
@@ -361,7 +359,7 @@ func (m app) View() tea.View {
 	hp, ok := m.currentPage.(HelpProvider)
 	if ok {
 		hs := lipgloss.NewStyle().Padding(0, 1)
-		helpView = hs.Render(m.help.View(hp.HelpKeys()))
+		helpView = hs.Render(components.RenderHelpFooter(hp.HelpKeys()))
 	}
 
 	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea, helpView)

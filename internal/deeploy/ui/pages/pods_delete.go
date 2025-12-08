@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -13,19 +12,6 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
-type podDeleteKeyMap struct {
-	Confirm key.Binding
-	Cancel  key.Binding
-}
-
-func (k podDeleteKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Confirm, k.Cancel}
-}
-
-func (k podDeleteKeyMap) FullHelp() [][]key.Binding {
-	return nil
-}
-
 type podToDelete struct {
 	ID        string
 	Title     string
@@ -33,15 +19,16 @@ type podToDelete struct {
 }
 
 type PodDeletePage struct {
-	pod    podToDelete
-	input  textinput.Model
-	keys   podDeleteKeyMap
-	width  int
-	height int
+	pod        podToDelete
+	input      textinput.Model
+	keyConfirm key.Binding
+	keyCancel  key.Binding
+	width      int
+	height     int
 }
 
-func (p PodDeletePage) HelpKeys() help.KeyMap {
-	return p.keys
+func (p PodDeletePage) HelpKeys() []key.Binding {
+	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
 func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
@@ -52,12 +39,10 @@ func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
 	ti.CharLimit = 100
 
 	return PodDeletePage{
-		pod:   podToDelete{ID: pod.ID, Title: pod.Title, ProjectID: pod.ProjectID},
-		input: ti,
-		keys: podDeleteKeyMap{
-			Confirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
-			Cancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
-		},
+		pod:        podToDelete{ID: pod.ID, Title: pod.Title, ProjectID: pod.ProjectID},
+		input:      ti,
+		keyConfirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
+		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 }
 
