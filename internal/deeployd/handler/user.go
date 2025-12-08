@@ -78,6 +78,14 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	isCLI := r.URL.Query().Get("cli") == "true"
 	port := r.URL.Query().Get("port")
 
+	// Single-tenant mode: Only allow registration if no user exists
+	// TODO: Remove this check for multi-user support
+	hasUser, _ := h.service.HasUser()
+	if hasUser {
+		http.Redirect(w, r, "/auth", http.StatusSeeOther)
+		return
+	}
+
 	form := forms.RegisterForm{
 		Email:           r.FormValue("email"),
 		Password:        r.FormValue("password"),
