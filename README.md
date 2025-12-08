@@ -76,6 +76,10 @@ Deeploy is open-source software licensed under the [MIT license](LICENSE).
 
 For support, questions, or discussions, please [open an issue](https://github.com/deeploy-sh/deeploy/issues) on our GitHub repository or [visit our community (GitHub Discussions)](https://github.com/deeploy-sh/deeploy/discussions).
 
+## Todo
+
+[Todo](./todo.md)
+
 ---
 
 Built with ❤️ by the dev community, for the dev community.
