@@ -20,6 +20,10 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
+func (h *UserHandler) LandingView(w http.ResponseWriter, r *http.Request) {
+	pages.Landing().Render(r.Context(), w)
+}
+
 func (h *UserHandler) AuthView(w http.ResponseWriter, r *http.Request) {
 	isCLI := r.URL.Query().Get("cli") == "true"
 	port := r.URL.Query().Get("port")
@@ -109,5 +113,5 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie.ClearCookie(w)
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/auth", http.StatusSeeOther)
 }

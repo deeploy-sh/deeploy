@@ -24,8 +24,11 @@ func Setup(app *app.App) http.Handler {
 	// Assets
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
 
+	// Landing
+	mux.HandleFunc("GET /", userHandler.LandingView)
+
 	// Auth
-	mux.HandleFunc("GET /", mw.RequireGuest(userHandler.AuthView))
+	mux.HandleFunc("GET /auth", mw.RequireGuest(userHandler.AuthView))
 	mux.HandleFunc("POST /login", userHandler.Login)
 	mux.HandleFunc("POST /register", userHandler.Register)
 	mux.HandleFunc("GET /logout", userHandler.Logout)

@@ -85,15 +85,15 @@ func (p authPage) View() tea.View {
 	var b strings.Builder
 
 	if p.waiting {
-		b.WriteString("Browser opened for authentication.\nWaiting for completion...")
+		b.WriteString("Waiting for browser authentication...")
 	} else {
+		title := "Authenticate"
 		if p.isReauth {
-			b.WriteString(fmt.Sprintf("> Re-authenticating %v \n", p.serverURL))
-			b.WriteString("> Press enter to authenticate")
-		} else {
-			b.WriteString(fmt.Sprintf("> Authenticating %v \n", p.serverURL))
-			b.WriteString("> Press enter to authenticate")
+			title = "Re-authenticate"
 		}
+		b.WriteString(title + "\n\n")
+		b.WriteString("Server: " + p.serverURL + "\n\n")
+		b.WriteString("Press enter to open browser")
 	}
 
 	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
@@ -159,7 +159,7 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 		port, callback := startLocalAuthServer()
 
 		authURL := fmt.Sprintf(
-			"%s?cli=true&port=%d",
+			"%s/auth?cli=true&port=%d",
 			m.serverURL,
 			port,
 		)

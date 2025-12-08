@@ -27,6 +27,8 @@ func (f *RegisterForm) Validate() RegisterErrors {
 	}
 	if f.Password == "" {
 		errors.Password = "Password is required"
+	} else if len(f.Password) < 12 {
+		errors.Password = "Password must be at least 12 characters"
 	}
 	if f.PasswordConfirm == "" {
 		errors.PasswordConfirm = "Confirm your password"

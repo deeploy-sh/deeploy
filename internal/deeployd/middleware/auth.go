@@ -43,7 +43,12 @@ func (m *AuthMiddleWare) Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		userID := claims["user_id"].(string)
+		userID, ok := claims["user_id"].(string)
+		if !ok || userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		user, err := m.userService.GetUserByID(userID)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
