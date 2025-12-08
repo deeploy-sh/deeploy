@@ -19,7 +19,7 @@ func RenderHelpFooter(keys []key.Binding) string {
 		if help.Key == "" {
 			continue
 		}
-		keyStr := styles.DimStyle().Render(help.Key)
+		keyStr := styles.ForegroundStyle().Render(help.Key)
 		descStr := styles.MutedStyle().Render(help.Desc)
 		parts = append(parts, keyStr+" "+descStr)
 	}

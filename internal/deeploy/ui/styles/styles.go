@@ -26,12 +26,13 @@ func ColorBackgroundElement() color.Color { return theme.Current.BackgroundEleme
 func ColorAccentBorder() color.Color { return theme.Current.AccentBorder() }
 
 // Style factories - call these to get fresh styles with current theme
-func SuccessStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorSuccess()) }
-func ErrorStyle() lipgloss.Style   { return lipgloss.NewStyle().Foreground(ColorError()) }
-func WarningStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorWarning()) }
-func PrimaryStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorPrimary()) }
-func MutedStyle() lipgloss.Style   { return lipgloss.NewStyle().Foreground(ColorMuted()) }
-func DimStyle() lipgloss.Style     { return lipgloss.NewStyle().Foreground(ColorDim()) }
+func ForegroundStyle() lipgloss.Style { return lipgloss.NewStyle().Foreground(ColorForeground()) }
+func SuccessStyle() lipgloss.Style    { return lipgloss.NewStyle().Foreground(ColorSuccess()) }
+func ErrorStyle() lipgloss.Style      { return lipgloss.NewStyle().Foreground(ColorError()) }
+func WarningStyle() lipgloss.Style    { return lipgloss.NewStyle().Foreground(ColorWarning()) }
+func PrimaryStyle() lipgloss.Style    { return lipgloss.NewStyle().Foreground(ColorPrimary()) }
+func MutedStyle() lipgloss.Style      { return lipgloss.NewStyle().Foreground(ColorMuted()) }
+func DimStyle() lipgloss.Style        { return lipgloss.NewStyle().Foreground(ColorDim()) }
 
 // Semantic aliases
 func OnlineStyle() lipgloss.Style  { return SuccessStyle() }
