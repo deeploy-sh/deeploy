@@ -70,7 +70,6 @@ func NewApp() tea.Model {
 
 func (m app) Init() tea.Cmd {
 	return tea.Batch(
-		initData,
 		m.currentPage.Init(),
 		// INFO: use tick here to show bootstrap(logo) min. 1 second
 		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
@@ -120,6 +119,7 @@ func (m app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bootstrapped = true
 
 		return m, tea.Batch(
+			initData,
 			func() tea.Msg {
 				return ChangePageMsg{
 					PageFactory: func(s Store) tea.Model { return NewDashboard(s) },

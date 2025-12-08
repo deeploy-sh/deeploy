@@ -223,7 +223,6 @@ func (m ProjectDetailPage) renderContent() string {
 	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
-	// Custom title (like dashboard)
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Width(w).
@@ -233,7 +232,6 @@ func (m ProjectDetailPage) renderContent() string {
 		PaddingBottom(1).
 		Render(m.project.Title + " > Pods")
 
-	// Pods list with background (like dashboard)
 	var podsContent string
 	if len(m.pods.Items()) == 0 {
 		podsContent = styles.MutedStyle().Render("No pods yet. Press 'n' to create one.")
