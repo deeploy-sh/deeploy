@@ -22,6 +22,9 @@ func NewTextInput(width ...int) textinput.Model {
 			Text:        bg.Foreground(styles.ColorForeground()),
 			Placeholder: bg.Foreground(styles.ColorMuted()),
 		},
+		Cursor: textinput.CursorStyle{
+			Blink: true,
+		},
 	})
 
 	if len(width) > 0 {
