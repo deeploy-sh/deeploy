@@ -53,29 +53,13 @@ func NewScrollList(items []ScrollItem, cfg ScrollListConfig) ScrollList {
 	}
 
 	if cfg.WithInput {
-		ti := textinput.New()
+		ti := NewTextInput(20)
 		ti.Placeholder = cfg.Placeholder
 		if ti.Placeholder == "" {
 			ti.Placeholder = "Type to search..."
 		}
 		ti.Focus()
 		ti.CharLimit = 100
-		ti.Prompt = ""
-		ti.SetWidth(20)
-
-		bgStyle := lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
-		inputStyles := textinput.Styles{
-			Focused: textinput.StyleState{
-				Text:        bgStyle.Foreground(styles.ColorForeground()),
-				Placeholder: bgStyle.Foreground(styles.ColorMuted()),
-			},
-			Blurred: textinput.StyleState{
-				Text:        bgStyle.Foreground(styles.ColorForeground()),
-				Placeholder: bgStyle.Foreground(styles.ColorMuted()),
-			},
-			Cursor: textinput.CursorStyle{Blink: true},
-		}
-		ti.SetStyles(inputStyles)
 		l.input = &ti
 	}
 

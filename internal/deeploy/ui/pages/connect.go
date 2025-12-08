@@ -44,7 +44,8 @@ type connectPage struct {
 
 func NewConnectPage(err error) connectPage {
 	log.Println(err)
-	ti := textinput.New()
+	card := components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
+	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = "e.g. 123.45.67.89:8090"
 	ti.CharLimit = 50
 	ti.Focus()

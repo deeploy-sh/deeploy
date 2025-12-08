@@ -9,6 +9,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
+	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -26,7 +27,8 @@ func (p PodFormPage) HelpKeys() help.KeyMap {
 }
 
 func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
-	titleInput := textinput.New()
+	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
 	if pod != nil {
@@ -100,6 +102,7 @@ func (p PodFormPage) View() tea.View {
 
 	title := lipgloss.NewStyle().
 		Bold(true).
+		Background(styles.ColorBackgroundPanel()).
 		Render(titleText)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,

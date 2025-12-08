@@ -9,7 +9,6 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/api"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/msg"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -46,17 +45,10 @@ type ProjectFormPage struct {
 }
 
 func NewProjectFormPage(project *repo.Project) ProjectFormPage {
-	titleInput := textinput.New()
+	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
-	titleInput.Prompt = ""
-	titleInput.SetWidth(35)
-
-	s := titleInput.Styles()
-	s.Focused.Placeholder = lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
-	s.Focused.Text = lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
-	titleInput.SetStyles(s)
-
 	if project != nil {
 		titleInput.SetValue(project.Title)
 	}

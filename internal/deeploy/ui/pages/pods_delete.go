@@ -45,7 +45,8 @@ func (p PodDeletePage) HelpKeys() help.KeyMap {
 }
 
 func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
-	ti := textinput.New()
+	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = pod.Title
 	ti.Focus()
 	ti.CharLimit = 100
