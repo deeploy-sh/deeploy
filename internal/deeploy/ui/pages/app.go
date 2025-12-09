@@ -120,7 +120,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		if tmsg.String() == ":" && m.bootstrapped && m.palette == nil {
+		if tmsg.String() == "alt+p" && m.bootstrapped && m.palette == nil {
 			if m.themeSwitcher != nil {
 				theme.SetTheme(m.themeSwitcher.OriginalTheme())
 				m.themeSwitcher = nil
@@ -268,6 +268,16 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "settings",
 			Action: func() tea.Msg {
 				return msg.OpenThemeSwitcher{}
+			},
+		},
+		{
+			ItemTitle:   "Git Tokens",
+			Description: "Manage Git tokens for private repos",
+			Category:    "settings",
+			Action: func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage() },
+				}
 			},
 		},
 	}
