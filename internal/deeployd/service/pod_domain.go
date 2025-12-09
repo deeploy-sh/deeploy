@@ -10,7 +10,6 @@ type PodDomainServiceInterface interface {
 	DomainByName(domain string) (*repo.PodDomain, error)
 	DomainsByPod(podID string) ([]repo.PodDomain, error)
 	Update(domain repo.PodDomain) error
-	SetPrimary(id string, podID string) error
 	Delete(id string) error
 	DeleteByPod(podID string) error
 }
@@ -57,14 +56,6 @@ func (s *PodDomainService) DomainsByPod(podID string) ([]repo.PodDomain, error) 
 
 func (s *PodDomainService) Update(domain repo.PodDomain) error {
 	err := s.repo.Update(domain)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *PodDomainService) SetPrimary(id string, podID string) error {
-	err := s.repo.SetPrimary(id, podID)
 	if err != nil {
 		return err
 	}

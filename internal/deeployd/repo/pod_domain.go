@@ -14,7 +14,6 @@ type PodDomain struct {
 	Domain     string    `json:"domain" db:"domain"`
 	Type       string    `json:"type" db:"type"`
 	Port       int       `json:"port" db:"port"`
-	IsPrimary  bool      `json:"is_primary" db:"is_primary"`
 	SSLEnabled bool      `json:"ssl_enabled" db:"ssl_enabled"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
@@ -26,7 +25,6 @@ type PodDomainRepoInterface interface {
 	DomainByName(domain string) (*PodDomain, error)
 	DomainsByPod(podID string) ([]PodDomain, error)
 	Update(domain PodDomain) error
-	SetPrimary(id string, podID string) error
 	Delete(id string) error
 	DeleteByPod(podID string) error
 }
@@ -40,9 +38,9 @@ func NewPodDomainRepo(db *sqlx.DB) *PodDomainRepo {
 }
 
 func (r *PodDomainRepo) Create(domain *PodDomain) error {
-	query := `INSERT INTO pod_domains (id, pod_id, domain, type, port, is_primary, ssl_enabled) VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	query := `INSERT INTO pod_domains (id, pod_id, domain, type, port, ssl_enabled) VALUES ($1, $2, $3, $4, $5, $6)`
 
-	_, err := r.db.Exec(query, domain.ID, domain.PodID, domain.Domain, domain.Type, domain.Port, domain.IsPrimary, domain.SSLEnabled)
+	_, err := r.db.Exec(query, domain.ID, domain.PodID, domain.Domain, domain.Type, domain.Port, domain.SSLEnabled)
 	if err != nil {
 		return err
 	}
@@ -52,7 +50,7 @@ func (r *PodDomainRepo) Create(domain *PodDomain) error {
 
 func (r *PodDomainRepo) Domain(id string) (*PodDomain, error) {
 	domain := &PodDomain{}
-	query := `SELECT id, pod_id, domain, type, port, is_primary, ssl_enabled, created_at, updated_at FROM pod_domains WHERE id = $1`
+	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE id = $1`
 
 	err := r.db.Get(domain, query, id)
 	if err == sql.ErrNoRows {
@@ -67,7 +65,7 @@ func (r *PodDomainRepo) Domain(id string) (*PodDomain, error) {
 
 func (r *PodDomainRepo) DomainByName(domainName string) (*PodDomain, error) {
 	domain := &PodDomain{}
-	query := `SELECT id, pod_id, domain, type, port, is_primary, ssl_enabled, created_at, updated_at FROM pod_domains WHERE domain = $1`
+	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE domain = $1`
 
 	err := r.db.Get(domain, query, domainName)
 	if err == sql.ErrNoRows {
@@ -82,7 +80,7 @@ func (r *PodDomainRepo) DomainByName(domainName string) (*PodDomain, error) {
 
 func (r *PodDomainRepo) DomainsByPod(podID string) ([]PodDomain, error) {
 	domains := []PodDomain{}
-	query := `SELECT id, pod_id, domain, type, port, is_primary, ssl_enabled, created_at, updated_at FROM pod_domains WHERE pod_id = $1`
+	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE pod_id = $1`
 
 	err := r.db.Select(&domains, query, podID)
 	if err == sql.ErrNoRows {
@@ -99,30 +97,6 @@ func (r *PodDomainRepo) Update(domain PodDomain) error {
 	query := `UPDATE pod_domains SET domain = $1, type = $2, port = $3, ssl_enabled = $4 WHERE id = $5`
 
 	result, err := r.db.Exec(query, domain.Domain, domain.Type, domain.Port, domain.SSLEnabled, domain.ID)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return errors.New("domain not found")
-	}
-
-	return nil
-}
-
-func (r *PodDomainRepo) SetPrimary(id string, podID string) error {
-	// First, unset all other primaries for this pod
-	_, err := r.db.Exec(`UPDATE pod_domains SET is_primary = false WHERE pod_id = $1`, podID)
-	if err != nil {
-		return err
-	}
-
-	// Then set the new primary
-	result, err := r.db.Exec(`UPDATE pod_domains SET is_primary = true WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
