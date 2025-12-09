@@ -2,3 +2,4 @@
 
 - is the tui -> deeployd conenction secure even with only IP based connection?
 - pods MUST HAVE zero downtime during deployment/redeployment
+- how to check if container is still running
