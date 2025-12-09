@@ -3,6 +3,7 @@ package docker
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -73,7 +74,8 @@ func (d *DockerService) CloneRepo(repoURL, branch, token string) (string, error)
 }
 
 // BuildImage builds a Docker image from a directory with a Dockerfile.
-func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePath, imageName string) (string, error) {
+// logCallback is called for each line of build output (can be nil).
+func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePath, imageName string, logCallback func(string)) (string, error) {
 	// Create tar archive of build context
 	tar, err := archive.TarWithOptions(buildPath, &archive.TarOptions{})
 	if err != nil {
@@ -95,9 +97,41 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 	}
 	defer resp.Body.Close()
 
-	// Read build output to completion
-	_, err = io.Copy(io.Discard, resp.Body)
-	if err != nil {
+	// Stream build output
+	scanner := bufio.NewScanner(resp.Body)
+	var lastError string
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Docker build output is JSON
+		var msg struct {
+			Stream      string `json:"stream"`
+			Error       string `json:"error"`
+			ErrorDetail struct {
+				Message string `json:"message"`
+			} `json:"errorDetail"`
+		}
+		if err := json.Unmarshal([]byte(line), &msg); err == nil {
+			if msg.Error != "" {
+				lastError = msg.Error
+				if logCallback != nil {
+					logCallback("ERROR: " + msg.Error)
+				}
+			} else if msg.Stream != "" {
+				// Remove trailing newline
+				stream := strings.TrimSuffix(msg.Stream, "\n")
+				if stream != "" && logCallback != nil {
+					logCallback(stream)
+				}
+			}
+		}
+	}
+
+	if lastError != "" {
+		return "", fmt.Errorf("build failed: %s", lastError)
+	}
+
+	if err := scanner.Err(); err != nil {
 		return "", fmt.Errorf("failed reading build output: %w", err)
 	}
 

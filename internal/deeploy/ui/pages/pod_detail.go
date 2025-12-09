@@ -169,8 +169,18 @@ func (m PodDetailPage) handleViewMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 			}
 		}
 	case key.Matches(tmsg, m.keyDeploy):
-		m.loading = true
-		return m, api.DeployPod(m.pod.ID)
+		podID := m.pod.ID
+		podTitle := m.pod.Title
+		return m, tea.Batch(
+			api.DeployPod(podID),
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewLogViewPage(podID, podTitle)
+					},
+				}
+			},
+		)
 	case key.Matches(tmsg, m.keyStop):
 		m.loading = true
 		return m, api.StopPod(m.pod.ID)
