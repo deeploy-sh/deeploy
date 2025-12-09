@@ -4,6 +4,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeployd/config"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/crypto"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/db"
+	"github.com/deeploy-sh/deeploy/internal/deeployd/docker"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/service"
 	"github.com/jmoiron/sqlx"
@@ -12,12 +13,14 @@ import (
 type App struct {
 	Cfg              *config.Config
 	DB               *sqlx.DB
+	Docker           *docker.DockerService
 	UserService      *service.UserService
 	ProjectService   *service.ProjectService
 	PodService       *service.PodService
 	PodEnvVarService *service.PodEnvVarService
 	PodDomainService *service.PodDomainService
 	GitTokenService  *service.GitTokenService
+	DeployService    *service.DeployService
 }
 
 func New(cfg *config.Config) (*App, error) {
@@ -35,6 +38,12 @@ func New(cfg *config.Config) (*App, error) {
 		}
 	}
 
+	// Docker service
+	dockerService, err := docker.NewDockerService(cfg.BuildDir)
+	if err != nil {
+		return nil, err
+	}
+
 	// Repositories
 	userRepo := repo.NewUserRepo(database)
 	projectRepo := repo.NewProjectRepo(database)
@@ -50,16 +59,19 @@ func New(cfg *config.Config) (*App, error) {
 	podEnvVarService := service.NewPodEnvVarService(podEnvVarRepo, encryptor)
 	podDomainService := service.NewPodDomainService(podDomainRepo)
 	gitTokenService := service.NewGitTokenService(gitTokenRepo, encryptor)
+	deployService := service.NewDeployService(podRepo, podDomainRepo, podEnvVarRepo, gitTokenRepo, dockerService, cfg.BaseDomain)
 
 	return &App{
 		Cfg:              cfg,
 		DB:               database,
+		Docker:           dockerService,
 		UserService:      userService,
 		ProjectService:   projectService,
 		PodService:       podService,
 		PodEnvVarService: podEnvVarService,
 		PodDomainService: podDomainService,
 		GitTokenService:  gitTokenService,
+		DeployService:    deployService,
 	}, nil
 }
 

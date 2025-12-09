@@ -98,9 +98,9 @@ func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 }
 
 func (r *PodRepo) Update(pod Pod) error {
-	query := `UPDATE pods SET title = $1, description = $2 WHERE id = $3`
+	query := `UPDATE pods SET title = $1, description = $2, repo_url = $3, branch = $4, dockerfile_path = $5, git_token_id = $6, container_id = $7, status = $8 WHERE id = $9`
 
-	result, err := r.db.Exec(query, pod.Title, pod.Description, pod.ID)
+	result, err := r.db.Exec(query, pod.Title, pod.Description, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.ContainerID, pod.Status, pod.ID)
 	if err != nil {
 		return err
 	}
