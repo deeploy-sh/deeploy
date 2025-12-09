@@ -22,7 +22,7 @@ func Setup(app *app.App) http.Handler {
 	podHandler := handlers.NewPodHandler(app.PodService)
 	gitTokenHandler := handlers.NewGitTokenHandler(app.GitTokenService)
 	deployHandler := handlers.NewDeployHandler(app.DeployService)
-	podDomainHandler := handlers.NewPodDomainHandler(app.PodDomainService)
+	podDomainHandler := handlers.NewPodDomainHandler(app.PodDomainService, app.PodService, app.Cfg.IsDevelopment())
 
 	// Assets
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
@@ -63,8 +63,8 @@ func Setup(app *app.App) http.Handler {
 
 	// Pod Domains
 	mux.HandleFunc("POST /api/pods/{id}/domains", auth.Auth(podDomainHandler.Create))
+	mux.HandleFunc("POST /api/pods/{id}/domains/generate", auth.Auth(podDomainHandler.Generate))
 	mux.HandleFunc("GET /api/pods/{id}/domains", auth.Auth(podDomainHandler.List))
-	mux.HandleFunc("PUT /api/pods/{id}/domains/{domainId}/primary", auth.Auth(podDomainHandler.SetPrimary))
 	mux.HandleFunc("DELETE /api/pods/{id}/domains/{domainId}", auth.Auth(podDomainHandler.Delete))
 
 	// Git Tokens
@@ -75,10 +75,7 @@ func Setup(app *app.App) http.Handler {
 	// Health (public - used by TUI for connection check + heartbeat)
 	mux.HandleFunc("GET /api/health", healthHandler)
 
-	// Middleware
-	return mw.Chain(mux,
-		mw.RequestLogging,
-	)
+	return mux
 }
 
 func assetHandler(isDevelopment bool) http.Handler {
