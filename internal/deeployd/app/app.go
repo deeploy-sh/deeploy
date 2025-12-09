@@ -17,6 +17,7 @@ type App struct {
 	PodService       *service.PodService
 	PodEnvVarService *service.PodEnvVarService
 	PodDomainService *service.PodDomainService
+	GitTokenService  *service.GitTokenService
 }
 
 func New(cfg *config.Config) (*App, error) {
@@ -40,6 +41,7 @@ func New(cfg *config.Config) (*App, error) {
 	podRepo := repo.NewPodRepo(database)
 	podEnvVarRepo := repo.NewPodEnvVarRepo(database)
 	podDomainRepo := repo.NewPodDomainRepo(database)
+	gitTokenRepo := repo.NewGitTokenRepo(database)
 
 	// Services
 	userService := service.NewUserService(userRepo)
@@ -47,6 +49,7 @@ func New(cfg *config.Config) (*App, error) {
 	podService := service.NewPodService(podRepo)
 	podEnvVarService := service.NewPodEnvVarService(podEnvVarRepo, encryptor)
 	podDomainService := service.NewPodDomainService(podDomainRepo)
+	gitTokenService := service.NewGitTokenService(gitTokenRepo, encryptor)
 
 	return &App{
 		Cfg:              cfg,
@@ -56,6 +59,7 @@ func New(cfg *config.Config) (*App, error) {
 		PodService:       podService,
 		PodEnvVarService: podEnvVarService,
 		PodDomainService: podDomainService,
+		GitTokenService:  gitTokenService,
 	}, nil
 }
 
