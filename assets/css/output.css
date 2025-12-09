@@ -1291,9 +1291,6 @@
   .p-6 {
     padding: calc(var(--spacing) * 6);
   }
-  .p-9 {
-    padding: calc(var(--spacing) * 9);
-  }
   .p-\[3px\] {
     padding: 3px;
   }
