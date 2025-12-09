@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
@@ -47,7 +47,7 @@ func (h *PodHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.Create(pod)
 	if err != nil {
-		log.Printf("Failed to create pod: %v", err)
+		slog.Error("failed to create pod", "error", err)
 		http.Error(w, "Failed to create pod", http.StatusInternalServerError)
 		return
 	}
@@ -63,7 +63,7 @@ func (h *PodHandler) Pod(w http.ResponseWriter, r *http.Request) {
 	pod, err := h.service.Pod(id)
 
 	if err != nil {
-		log.Printf("Failed to get pod: %v", err)
+		slog.Warn("failed to get pod", "podID", id, "error", err)
 		http.Error(w, "Failed to get pod", http.StatusInternalServerError)
 		return
 	}
@@ -77,7 +77,7 @@ func (h *PodHandler) PodsByProject(w http.ResponseWriter, r *http.Request) {
 
 	pods, err := h.service.PodsByProject(projectID)
 	if err != nil {
-		log.Printf("Failed to get pods: %v", err)
+		slog.Error("failed to get pods by project", "projectID", projectID, "error", err)
 		http.Error(w, "Failed to get pods", http.StatusInternalServerError)
 		return
 	}
@@ -96,7 +96,7 @@ func (h *PodHandler) PodsByUser(w http.ResponseWriter, r *http.Request) {
 
 	pods, err := h.service.PodsByUser(userID)
 	if err != nil {
-		log.Printf("Failed to get pods: %v", err)
+		slog.Error("failed to get pods by user", "userID", userID, "error", err)
 		http.Error(w, "Failed to get pods", http.StatusInternalServerError)
 		return
 	}
@@ -115,14 +115,14 @@ func (h *PodHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&pod)
 	if err != nil {
-		log.Printf("Failed to decode json: %v", err)
-		http.Error(w, "Failed to decode json", http.StatusInternalServerError)
+		slog.Warn("failed to decode json", "error", err)
+		http.Error(w, "Failed to decode json", http.StatusBadRequest)
 		return
 	}
 
 	err = h.service.Update(pod)
 	if err != nil {
-		log.Printf("Failed to update pod: %v", err)
+		slog.Error("failed to update pod", "error", err)
 		http.Error(w, "Failed to update pod", http.StatusInternalServerError)
 		return
 	}
@@ -136,8 +136,9 @@ func (h *PodHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Delete(id)
 	if err != nil {
-		log.Printf("Failed to delete pod: %v", err)
+		slog.Error("failed to delete pod", "podID", id, "error", err)
 		http.Error(w, "Could not delete pod", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent) // 204 - Standard for successful DELETE

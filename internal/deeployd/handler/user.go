@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/cookie"
@@ -30,8 +29,7 @@ func (h *UserHandler) AuthView(w http.ResponseWriter, r *http.Request) {
 
 	hasUser, err := h.service.HasUser()
 	if err != nil {
-		// TODO: handle error correctly
-		fmt.Println(err)
+		slog.Error("failed to check if user exists", "error", err)
 	}
 
 	if hasUser {
@@ -58,7 +56,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.Login(form.Email, form.Password)
 	if err != nil {
-		log.Printf("Login failed: %v", err)
+		slog.Warn("login failed", "error", err)
 		errs.Email = "Email or password incorrect"
 		errs.Password = "Email or password incorrect"
 		pages.Login(errs, form, isCLI, port).Render(r.Context(), w)
@@ -104,7 +102,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Printf("User creation failed: %v", err)
+		slog.Error("user creation failed", "error", err)
 		formeErrs.General = "Something went wrong. Please try again."
 		pages.Register(formeErrs, form, isCLI, port).Render(r.Context(), w)
 		return

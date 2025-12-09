@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
@@ -57,7 +57,7 @@ func (h *GitTokenHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.Create(gitToken)
 	if err != nil {
-		log.Printf("Failed to create git token: %v", err)
+		slog.Error("failed to create git token", "error", err)
 		http.Error(w, "Failed to create git token", http.StatusInternalServerError)
 		return
 	}
@@ -79,7 +79,7 @@ func (h *GitTokenHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.service.GitTokensByUser(userID)
 	if err != nil {
-		log.Printf("Failed to get git tokens: %v", err)
+		slog.Error("failed to get git tokens", "userID", userID, "error", err)
 		http.Error(w, "Failed to get git tokens", http.StatusInternalServerError)
 		return
 	}
@@ -102,7 +102,7 @@ func (h *GitTokenHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	if err := h.service.Delete(id); err != nil {
-		log.Printf("Failed to delete git token: %v", err)
+		slog.Error("failed to delete git token", "tokenID", id, "error", err)
 		http.Error(w, "Failed to delete git token", http.StatusInternalServerError)
 		return
 	}

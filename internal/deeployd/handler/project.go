@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/auth"
@@ -46,7 +46,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.Create(project)
 	if err != nil {
-		log.Printf("Failed to create project: %v", err)
+		slog.Error("failed to create project", "error", err)
 		http.Error(w, "Failed to create project", http.StatusInternalServerError)
 		return
 	}
@@ -62,7 +62,7 @@ func (h *ProjectHandler) Project(w http.ResponseWriter, r *http.Request) {
 	project, err := h.service.Project(id)
 
 	if err != nil {
-		log.Printf("Failed to get project: %v", err)
+		slog.Warn("failed to get project", "projectID", id, "error", err)
 		http.Error(w, "Failed to get project", http.StatusInternalServerError)
 		return
 	}
@@ -76,7 +76,7 @@ func (h *ProjectHandler) ProjectsByUser(w http.ResponseWriter, r *http.Request) 
 
 	projects, err := h.service.ProjectsByUser(userID)
 	if err != nil {
-		log.Printf("Failed to get projects: %v", err)
+		slog.Error("failed to get projects by user", "userID", userID, "error", err)
 		http.Error(w, "Failed to get projects", http.StatusInternalServerError)
 		return
 	}
@@ -95,14 +95,14 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
-		log.Printf("Failed to decode json: %v", err)
-		http.Error(w, "Failed to decode json", http.StatusInternalServerError)
+		slog.Warn("failed to decode json", "error", err)
+		http.Error(w, "Failed to decode json", http.StatusBadRequest)
 		return
 	}
 
 	err = h.service.Update(project)
 	if err != nil {
-		log.Printf("Failed to update project: %v", err)
+		slog.Error("failed to update project", "error", err)
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
 		return
 	}
@@ -116,8 +116,9 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Delete(id)
 	if err != nil {
-		log.Printf("Failed to delete project: %v", err)
+		slog.Error("failed to delete project", "projectID", id, "error", err)
 		http.Error(w, "Could not delete project", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent) // 204 - Standard for successful DELETE

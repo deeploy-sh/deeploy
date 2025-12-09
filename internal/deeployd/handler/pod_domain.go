@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -66,7 +66,7 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := h.service.Create(domain); err != nil {
-		log.Printf("Failed to create domain: %v", err)
+		slog.Error("failed to create domain", "error", err)
 		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
 		return
 	}
@@ -81,7 +81,7 @@ func (h *PodDomainHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	domains, err := h.service.DomainsByPod(podID)
 	if err != nil {
-		log.Printf("Failed to get domains: %v", err)
+		slog.Error("failed to get domains", "podID", podID, "error", err)
 		http.Error(w, "Failed to get domains", http.StatusInternalServerError)
 		return
 	}
@@ -94,7 +94,7 @@ func (h *PodDomainHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	domainID := r.PathValue("domainId")
 
 	if err := h.service.Delete(domainID); err != nil {
-		log.Printf("Failed to delete domain: %v", err)
+		slog.Error("failed to delete domain", "domainID", domainID, "error", err)
 		http.Error(w, "Failed to delete domain", http.StatusInternalServerError)
 		return
 	}
@@ -123,7 +123,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	// Get pod to use title for subdomain
 	pod, err := h.podService.Pod(podID)
 	if err != nil {
-		log.Printf("Failed to get pod: %v", err)
+		slog.Warn("failed to get pod", "podID", podID, "error", err)
 		http.Error(w, "Pod not found", http.StatusNotFound)
 		return
 	}
@@ -151,7 +151,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := h.service.Create(domain); err != nil {
-		log.Printf("Failed to create domain: %v", err)
+		slog.Error("failed to create domain", "error", err)
 		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
 		return
 	}
@@ -166,7 +166,7 @@ func (h *PodDomainHandler) getPublicIP() string {
 	h.publicIPOnce.Do(func() {
 		resp, err := http.Get("https://api.ipify.org")
 		if err != nil {
-			log.Printf("Failed to get public IP: %v", err)
+			slog.Warn("failed to get public IP", "error", err)
 			h.publicIP = "127-0-0-1" // fallback
 			return
 		}
@@ -174,13 +174,13 @@ func (h *PodDomainHandler) getPublicIP() string {
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("Failed to read public IP response: %v", err)
+			slog.Warn("failed to read public IP response", "error", err)
 			h.publicIP = "127-0-0-1" // fallback
 			return
 		}
 
 		h.publicIP = strings.TrimSpace(string(body))
-		log.Printf("Detected public IP: %s", h.publicIP)
+		slog.Info("detected public IP", "ip", h.publicIP)
 	})
 	return h.publicIP
 }
