@@ -20,6 +20,9 @@ func Setup(app *app.App) http.Handler {
 	dashboardHandler := handlers.NewDashboardHandler()
 	projectHandler := handlers.NewProjectHandler(app.ProjectService)
 	podHandler := handlers.NewPodHandler(app.PodService)
+	gitTokenHandler := handlers.NewGitTokenHandler(app.GitTokenService)
+	deployHandler := handlers.NewDeployHandler(app.DeployService)
+	podDomainHandler := handlers.NewPodDomainHandler(app.PodDomainService)
 
 	// Assets
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
@@ -51,6 +54,23 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("GET /api/pods", auth.Auth(podHandler.PodsByUser))
 	mux.HandleFunc("PUT /api/pods", auth.Auth(podHandler.Update))
 	mux.HandleFunc("DELETE /api/pods/{id}", auth.Auth(podHandler.Delete))
+
+	// Pod Deploy
+	mux.HandleFunc("POST /api/pods/{id}/deploy", auth.Auth(deployHandler.Deploy))
+	mux.HandleFunc("POST /api/pods/{id}/stop", auth.Auth(deployHandler.Stop))
+	mux.HandleFunc("POST /api/pods/{id}/restart", auth.Auth(deployHandler.Restart))
+	mux.HandleFunc("GET /api/pods/{id}/logs", auth.Auth(deployHandler.Logs))
+
+	// Pod Domains
+	mux.HandleFunc("POST /api/pods/{id}/domains", auth.Auth(podDomainHandler.Create))
+	mux.HandleFunc("GET /api/pods/{id}/domains", auth.Auth(podDomainHandler.List))
+	mux.HandleFunc("PUT /api/pods/{id}/domains/{domainId}/primary", auth.Auth(podDomainHandler.SetPrimary))
+	mux.HandleFunc("DELETE /api/pods/{id}/domains/{domainId}", auth.Auth(podDomainHandler.Delete))
+
+	// Git Tokens
+	mux.HandleFunc("POST /api/git-tokens", auth.Auth(gitTokenHandler.Create))
+	mux.HandleFunc("GET /api/git-tokens", auth.Auth(gitTokenHandler.List))
+	mux.HandleFunc("DELETE /api/git-tokens/{id}", auth.Auth(gitTokenHandler.Delete))
 
 	// Health (public - used by TUI for connection check + heartbeat)
 	mux.HandleFunc("GET /api/health", healthHandler)
