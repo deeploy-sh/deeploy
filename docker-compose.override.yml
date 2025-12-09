@@ -1,0 +1,25 @@
+# Dev overrides - auto-loaded by "docker compose up"
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"  # Localhost only for TablePlus etc.
+
+  traefik:
+    command:
+      # Repeat base commands (override replaces entire command)
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=deeploy"
+      - "--entrypoints.web.address=:80"
+      # DEV ONLY: Enable dashboard without auth (insecure!)
+      - "--api.insecure=true"
+    ports:
+      - "80:80"
+      # DEV ONLY: Traefik dashboard for debugging
+      - "8080:8080"
+
+  deeployd:
+    # Disable in dev - we run via "go run" instead
+    profiles:
+      - prod-only

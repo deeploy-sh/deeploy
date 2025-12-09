@@ -1,13 +1,25 @@
+# Production-ready config
+# Dev: auto-loads docker-compose.override.yml
+# Prod: install script uses only this file
+
+# THE NETWORK: All containers that need to talk to each other must be here.
+# Traefik routes traffic -> needs to reach containers -> must be in same network.
+networks:
+  deeploy:
+    # Fixed name so Go code can join new containers to this network
+    # See: internal/deeployd/docker/docker.go -> NetworkName -> RunContainer()
+    name: deeploy
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: deeploy-postgres
+    networks:
+      - deeploy
     environment:
       POSTGRES_USER: deeploy
       POSTGRES_PASSWORD: deeploy
       POSTGRES_DB: deeploy
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,20 +27,42 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   traefik:
     image: traefik:v3.2
     container_name: deeploy-traefik
+    networks:
+      - deeploy
     command:
-      - "--api.insecure=true"
+      # Docker provider: auto-discover containers with traefik labels
       - "--providers.docker=true"
+      # Don't expose containers unless they have traefik.enable=true label
       - "--providers.docker.exposedbydefault=false"
+      # Which network to use when connecting to containers
+      - "--providers.docker.network=deeploy"
+      # HTTP entrypoint on port 80
       - "--entrypoints.web.address=:80"
     ports:
+      # HTTP traffic - Traefik routes to deployed apps
       - "80:80"
-      - "8080:8080"
     volumes:
+      # Docker socket: Traefik reads container labels to configure routing
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  deeployd:
+    image: ghcr.io/deeploy-sh/deeploy:${DEEPLOY_VERSION:-latest}
+    container_name: deeploy-app
+    networks:
+      - deeploy
+    ports:
+      - "8090:8090"
+    environment:
+      DATABASE_URL: postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

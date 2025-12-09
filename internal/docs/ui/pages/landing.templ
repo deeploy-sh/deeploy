@@ -25,7 +25,7 @@ templ Landing() {
 					<div class="w-full max-w-lg">
 						<div class="relative">
 							@code.Code(code.Props{ID: "install-code"}) {
-								{ `curl -fsSL https://deeploy.sh/install.sh | bash` }
+								{ `curl -fsSL https://deeploy.sh/server.sh | sudo bash` }
 							}
 							@copybutton.CopyButton(copybutton.Props{
 								TargetID: "install-code",

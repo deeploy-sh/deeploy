@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -14,10 +15,19 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
 )
+
+// NetworkName is the shared network where Traefik lives.
+// New containers join this network so Traefik can route traffic to them.
+// Must match: docker-compose.yml -> networks -> deeploy -> name
+const NetworkName = "deeploy"
 
 type DockerService struct {
 	client   *client.Client
@@ -56,7 +66,7 @@ func (d *DockerService) CloneRepo(repoURL, branch, token string) (string, error)
 
 	// Create unique directory for this clone
 	repoName := filepath.Base(strings.TrimSuffix(repoURL, ".git"))
-	cloneDir := filepath.Join(d.buildDir, fmt.Sprintf("%s-%d", repoName, os.Getpid()))
+	cloneDir := filepath.Join(d.buildDir, fmt.Sprintf("%s-%s", repoName, uuid.New().String()[:8]))
 
 	// Remove if exists
 	os.RemoveAll(cloneDir)
@@ -67,6 +77,7 @@ func (d *DockerService) CloneRepo(repoURL, branch, token string) (string, error)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		os.RemoveAll(cloneDir) // Cleanup failed clone attempt
 		return "", fmt.Errorf("git clone failed: %s - %w", string(output), err)
 	}
 
@@ -76,6 +87,10 @@ func (d *DockerService) CloneRepo(repoURL, branch, token string) (string, error)
 // BuildImage builds a Docker image from a directory with a Dockerfile.
 // logCallback is called for each line of build output (can be nil).
 func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePath, imageName string, logCallback func(string)) (string, error) {
+	// Cleanup dangling images after build (success or fail)
+	defer d.PruneDanglingImages(ctx)
+	defer d.PruneBuildContainers(ctx)
+
 	// Create tar archive of build context
 	tar, err := archive.TarWithOptions(buildPath, &archive.TarOptions{})
 	if err != nil {
@@ -140,20 +155,36 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 
 // RunContainer starts a container with the given configuration.
 func (d *DockerService) RunContainer(ctx context.Context, opts RunContainerOptions) (string, error) {
+	// Build Traefik labels for all domains
+	labels := map[string]string{
+		"traefik.enable": "true",
+		"deeploy.pod.id": opts.PodID,
+	}
+
+	// Create a router for each domain
+	// Note: Service name must include @docker suffix because Traefik auto-appends it to services
+	for i, domain := range opts.Domains {
+		routerName := fmt.Sprintf("%s-%d", opts.PodID, i)
+		labels["traefik.http.routers."+routerName+".rule"] = fmt.Sprintf("Host(`%s`)", domain.Domain)
+		labels["traefik.http.routers."+routerName+".service"] = opts.PodID + "@docker"
+	}
+
+	// One service for all routers (use port from first domain)
+	port := 8080
+	if len(opts.Domains) > 0 {
+		port = opts.Domains[0].Port
+	}
+	labels["traefik.http.services."+opts.PodID+".loadbalancer.server.port"] = fmt.Sprintf("%d", port)
+
 	// Container config
 	config := &container.Config{
-		Image: opts.ImageName,
-		Env:   mapToEnvSlice(opts.EnvVars),
-		Labels: map[string]string{
-			"traefik.enable": "true",
-			"traefik.http.routers." + opts.PodID + ".rule":                      fmt.Sprintf("Host(`%s`)", opts.Domain),
-			"traefik.http.services." + opts.PodID + ".loadbalancer.server.port": fmt.Sprintf("%d", opts.Port),
-			"deeploy.pod.id": opts.PodID,
-		},
+		Image:  opts.ImageName,
+		Env:    mapToEnvSlice(opts.EnvVars),
+		Labels: labels,
 	}
 
 	// Exposed port
-	exposedPort := nat.Port(fmt.Sprintf("%d/tcp", opts.Port))
+	exposedPort := nat.Port(fmt.Sprintf("%d/tcp", port))
 	config.ExposedPorts = nat.PortSet{exposedPort: struct{}{}}
 
 	// Host config
@@ -161,8 +192,15 @@ func (d *DockerService) RunContainer(ctx context.Context, opts RunContainerOptio
 		RestartPolicy: container.RestartPolicy{Name: "unless-stopped"},
 	}
 
+	// Network config - join the deeploy network so Traefik can reach this container
+	networkConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			NetworkName: {},
+		},
+	}
+
 	// Create container
-	resp, err := d.client.ContainerCreate(ctx, config, hostConfig, nil, nil, opts.ContainerName)
+	resp, err := d.client.ContainerCreate(ctx, config, hostConfig, networkConfig, nil, opts.ContainerName)
 	if err != nil {
 		return "", fmt.Errorf("failed to create container: %w", err)
 	}
@@ -235,13 +273,50 @@ func (d *DockerService) Close() error {
 	return d.client.Close()
 }
 
+// PruneDanglingImages removes dangling (untagged) images to free up space.
+func (d *DockerService) PruneDanglingImages(ctx context.Context) {
+	report, err := d.client.ImagesPrune(ctx, filters.NewArgs(filters.Arg("dangling", "true")))
+	if err != nil {
+		slog.Warn("failed to prune dangling images", "error", err)
+		return
+	}
+	if len(report.ImagesDeleted) > 0 {
+		slog.Info("pruned dangling images", "count", len(report.ImagesDeleted), "reclaimed", report.SpaceReclaimed)
+	}
+}
+
+// PruneBuildContainers removes exited build containers.
+func (d *DockerService) PruneBuildContainers(ctx context.Context) {
+	report, err := d.client.ContainersPrune(ctx, filters.NewArgs(filters.Arg("status", "exited")))
+	if err != nil {
+		slog.Warn("failed to prune containers", "error", err)
+		return
+	}
+	if len(report.ContainersDeleted) > 0 {
+		slog.Info("pruned exited containers", "count", len(report.ContainersDeleted), "reclaimed", report.SpaceReclaimed)
+	}
+}
+
+// RemoveImage removes a specific image by name.
+func (d *DockerService) RemoveImage(ctx context.Context, imageName string) {
+	_, err := d.client.ImageRemove(ctx, imageName, image.RemoveOptions{Force: true, PruneChildren: true})
+	if err != nil {
+		slog.Warn("failed to remove image", "image", imageName, "error", err)
+	}
+}
+
+// DomainConfig holds domain configuration for Traefik routing.
+type DomainConfig struct {
+	Domain string
+	Port   int
+}
+
 // RunContainerOptions holds options for running a container.
 type RunContainerOptions struct {
 	ImageName     string
 	ContainerName string
 	PodID         string
-	Domain        string
-	Port          int
+	Domains       []DomainConfig
 	EnvVars       map[string]string
 }
 

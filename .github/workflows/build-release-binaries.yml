@@ -1,6 +1,4 @@
-# https://akrabat.com/using-github-actions-to-add-go-binaries-to-a-release/
-
-name: Build Release CLI Binaries
+name: Build Release TUI Binaries
 
 on:
   release:
@@ -13,15 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Build binaries
-        run: ./app/scripts/build-binaries.sh
+        run: ./scripts/build.sh
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          file: ./app/release/deeploy-*
+          file: ./release/deeploy-*
           file_glob: true

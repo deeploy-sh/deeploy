@@ -24,10 +24,10 @@ Deploy with a sleek TUI. For developers who live in the terminal.
 
 ```bash
 # Install server on your VPS (Hetzner, DigitalOcean, etc.)
-curl -fsSL https://deeploy.sh/install.sh | sh
+curl -fsSL https://deeploy.sh/server.sh | sudo bash
 
-# Install CLI/TUI client on your local machine
-curl -fsSL deeploy.sh/install-cli | sh
+# Install TUI client on your local machine
+curl -fsSL https://deeploy.sh/tui.sh | bash
 
 # Start deeploy
 deeploy
