@@ -49,9 +49,9 @@ func Setup(app *app.App) http.Handler {
 
 	// Pods
 	mux.HandleFunc("POST /api/pods", auth.Auth(podHandler.Create))
-	mux.HandleFunc("GET /api/pods/{id}", auth.Auth(podHandler.Pod))
-	mux.HandleFunc("GET /api/pods/project/{id}", auth.Auth(podHandler.PodsByProject))
 	mux.HandleFunc("GET /api/pods", auth.Auth(podHandler.PodsByUser))
+	mux.HandleFunc("GET /api/projects/{id}/pods", auth.Auth(podHandler.PodsByProject))
+	mux.HandleFunc("GET /api/pods/{id}", auth.Auth(podHandler.Pod))
 	mux.HandleFunc("PUT /api/pods", auth.Auth(podHandler.Update))
 	mux.HandleFunc("DELETE /api/pods/{id}", auth.Auth(podHandler.Delete))
 
