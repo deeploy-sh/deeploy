@@ -25,8 +25,8 @@ curl -fsSL https://deeploy.sh/tui.sh | bash
 
 ```bash
 # Server (VPS daemon)
-task dev:deeployd
+task dev:server
 
 # TUI
-task dev:deeploy
+task dev:tui
 ```

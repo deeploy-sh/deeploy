@@ -19,7 +19,7 @@ services:
       # DEV ONLY: Traefik dashboard for debugging
       - "8080:8080"
 
-  deeployd:
+  deeploy:
     # Disable in dev - we run via "go run" instead
     profiles:
       - prod-only

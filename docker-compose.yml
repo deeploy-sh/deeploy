@@ -7,7 +7,7 @@
 networks:
   deeploy:
     # Fixed name so Go code can join new containers to this network
-    # See: internal/deeployd/docker/docker.go -> NetworkName -> RunContainer()
+    # See: internal/server/docker/docker.go -> NetworkName -> RunContainer()
     name: deeploy
 
 services:
@@ -51,7 +51,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 
-  deeployd:
+  deeploy:
     image: ghcr.io/deeploy-sh/deeploy:${DEEPLOY_VERSION:-latest}
     container_name: deeploy-app
     networks:

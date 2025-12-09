@@ -24,7 +24,7 @@ for platform in "${platforms[@]}"; do
     env GOOS=$GOOS GOARCH=$GOARCH go build \
         -ldflags "-X main.Version=$VERSION" \
         -o "$OUTPUT_DIR/$output_name" \
-        ./cmd/deeploy
+        ./cmd/tui
 done
 
 echo "Done! Binaries in $OUTPUT_DIR/"
