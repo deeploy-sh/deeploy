@@ -5,22 +5,22 @@ vars:
     sh: command -v tailwindcss >/dev/null 2>&1 && echo "tailwindcss" || echo "npx tailwindcss@latest"
 
 tasks:
-  # --- Database ---
-  db:up:
-    desc: Start Postgres database
+  # --- Infrastructure ---
+  infra:up:
+    desc: Start Postgres and Traefik
     cmds:
-      - docker compose up -d postgres
+      - docker compose up -d postgres traefik
 
-  db:down:
-    desc: Stop Postgres database
+  infra:down:
+    desc: Stop all infrastructure
     cmds:
       - docker compose down
 
-  db:reset:
-    desc: Reset database (delete volume and restart)
+  infra:reset:
+    desc: Reset infrastructure (delete volumes and restart)
     cmds:
       - docker compose down -v
-      - docker compose up -d postgres
+      - docker compose up -d postgres traefik
 
   # --- Shared ---
   tailwind:watch:
@@ -42,8 +42,8 @@ tasks:
       - DEBUG=1 go run ./cmd/deeploy
 
   dev:deeployd:
-    desc: VPS server (starts Postgres automatically)
-    deps: [db:up]
+    desc: VPS server (starts Postgres and Traefik)
+    deps: [infra:up]
     cmds:
       - task --parallel tailwind:watch templ:deeployd
 
