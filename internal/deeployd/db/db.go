@@ -3,30 +3,20 @@ package db
 import (
 	"embed"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jmoiron/sqlx"
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-func Init(connection string) (*sqlx.DB, error) {
-	// Create data directory if it doesn't exist
-	dir := filepath.Dir(connection)
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return nil, err
-	}
-
-	// Open database connection
-	db, err := sqlx.Connect("sqlite", connection)
+func Init(databaseURL string) (*sqlx.DB, error) {
+	db, err := sqlx.Connect("postgres", databaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -36,29 +26,8 @@ func Init(connection string) (*sqlx.DB, error) {
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	// SQLite pragmas
-	_, err = db.Exec("PRAGMA foreign_keys=ON")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec("PRAGMA journal_mode=WAL")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec("PRAGMA busy_timeout=5000")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec("PRAGMA synchronous=NORMAL")
-	if err != nil {
-		return nil, err
-	}
-
 	// Run migrations
-	err = runMigrations(connection)
+	err = runMigrations(databaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -66,13 +35,13 @@ func Init(connection string) (*sqlx.DB, error) {
 	return db, nil
 }
 
-func runMigrations(connection string) error {
+func runMigrations(databaseURL string) error {
 	source, err := iofs.New(migrations, "migrations")
 	if err != nil {
 		return err
 	}
 
-	m, err := migrate.NewWithSourceInstance("iofs", source, "sqlite://"+connection)
+	m, err := migrate.NewWithSourceInstance("iofs", source, databaseURL)
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func NewPodRepo(db *sqlx.DB) *PodRepo {
 }
 
 func (r *PodRepo) Create(pod *Pod) error {
-	query := `INSERT INTO pods (id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO pods (id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	_, err := r.db.Exec(query, pod.ID, pod.UserID, pod.ProjectID, pod.Title, pod.Description, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.Status)
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *PodRepo) Create(pod *Pod) error {
 
 func (r *PodRepo) Pod(id string) (*Pod, error) {
 	pod := &Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE id = ?`
+	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE id = $1`
 
 	err := r.db.Get(pod, query, id)
 	if err == sql.ErrNoRows {
@@ -68,7 +68,7 @@ func (r *PodRepo) Pod(id string) (*Pod, error) {
 
 func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 	pods := []Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE project_id = ?`
+	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE project_id = $1`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {
@@ -83,7 +83,7 @@ func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 
 func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 	pods := []Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE user_id = ?`
+	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, container_id, status, created_at, updated_at FROM pods WHERE user_id = $1`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {
@@ -97,7 +97,7 @@ func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 }
 
 func (r *PodRepo) Update(pod Pod) error {
-	query := `UPDATE pods SET title = ?, description = ? WHERE id = ?`
+	query := `UPDATE pods SET title = $1, description = $2 WHERE id = $3`
 
 	result, err := r.db.Exec(query, pod.Title, pod.Description, pod.ID)
 	if err != nil {
@@ -116,7 +116,7 @@ func (r *PodRepo) Update(pod Pod) error {
 }
 
 func (r *PodRepo) Delete(id string) error {
-	query := `DELETE FROM pods WHERE id = ?`
+	query := `DELETE FROM pods WHERE id = $1`
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {

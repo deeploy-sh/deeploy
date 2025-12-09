@@ -34,7 +34,7 @@ func NewProjectRepo(db *sqlx.DB) *ProjectRepo {
 }
 
 func (r *ProjectRepo) Create(project *Project) error {
-	query := `INSERT INTO projects (id, user_id, title, description) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO projects (id, user_id, title, description) VALUES ($1, $2, $3, $4)`
 
 	_, err := r.db.Exec(query, project.ID, project.UserID, project.Title, project.Description)
 	if err != nil {
@@ -46,7 +46,7 @@ func (r *ProjectRepo) Create(project *Project) error {
 
 func (r *ProjectRepo) Project(id string) (*Project, error) {
 	project := &Project{}
-	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE id = ?`
+	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE id = $1`
 
 	err := r.db.Get(project, query, id)
 	if err == sql.ErrNoRows {
@@ -61,7 +61,7 @@ func (r *ProjectRepo) Project(id string) (*Project, error) {
 
 func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 	projects := []Project{}
-	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE user_id = ?`
+	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE user_id = $1`
 
 	err := r.db.Select(&projects, query, id)
 	if err == sql.ErrNoRows {
@@ -75,7 +75,7 @@ func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 }
 
 func (r *ProjectRepo) Update(project Project) error {
-	query := `UPDATE projects SET title = ?, description = ? WHERE id = ?`
+	query := `UPDATE projects SET title = $1, description = $2 WHERE id = $3`
 
 	result, err := r.db.Exec(query, project.Title, project.Description, project.ID)
 	if err != nil {
@@ -94,7 +94,7 @@ func (r *ProjectRepo) Update(project Project) error {
 }
 
 func (r *ProjectRepo) Delete(id string) error {
-	query := `DELETE FROM projects WHERE id = ?`
+	query := `DELETE FROM projects WHERE id = $1`
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {

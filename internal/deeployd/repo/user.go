@@ -55,7 +55,7 @@ func (r *UserRepo) CountUsers() (int, error) {
 }
 
 func (r *UserRepo) CreateUser(user *User) error {
-	query := `INSERT INTO users (id, email, password) VALUES (?, ?, ?)`
+	query := `INSERT INTO users (id, email, password) VALUES ($1, $2, $3)`
 
 	_, err := r.db.Exec(query, user.ID, user.Email, user.Password)
 	if err != nil {
@@ -67,7 +67,7 @@ func (r *UserRepo) CreateUser(user *User) error {
 
 func (r *UserRepo) GetUserByEmail(email string) (*User, error) {
 	user := &User{}
-	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE email = ?`
+	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1`
 
 	err := r.db.Get(user, query, email)
 	if err == sql.ErrNoRows {
@@ -82,7 +82,7 @@ func (r *UserRepo) GetUserByEmail(email string) (*User, error) {
 
 func (r *UserRepo) GetUserByID(id string) (*User, error) {
 	user := &User{}
-	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE id = ?`
+	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE id = $1`
 
 	err := r.db.Get(user, query, id)
 	if err == sql.ErrNoRows {
