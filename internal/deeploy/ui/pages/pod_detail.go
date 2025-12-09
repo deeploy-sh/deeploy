@@ -40,6 +40,7 @@ type PodDetailPage struct {
 	keyRestart     key.Binding
 	keyLogs        key.Binding
 	keyEdit        key.Binding
+	keyDomains     key.Binding
 	keySave        key.Binding
 	keyBack        key.Binding
 	keyTab         key.Binding
@@ -51,7 +52,7 @@ func (m PodDetailPage) HelpKeys() []key.Binding {
 	if m.mode == modeEditRepo {
 		return []key.Binding{m.keySave, m.keyTab, m.keyBack}
 	}
-	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyBack}
+	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyBack}
 }
 
 func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
@@ -89,6 +90,7 @@ func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
 		keyRestart:      key.NewBinding(key.WithKeys("R"), key.WithHelp("R", "restart")),
 		keyLogs:         key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "refresh logs")),
 		keyEdit:         key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit config")),
+		keyDomains:      key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "domains")),
 		keySave:         key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyBack:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keyTab:          key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
@@ -195,6 +197,16 @@ func (m PodDetailPage) handleViewMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		m.focusedField = 0
 		m.repoURLInput.Focus()
 		return m, textinput.Blink
+	case key.Matches(tmsg, m.keyDomains):
+		pod := m.pod
+		project := m.project
+		return m, func() tea.Msg {
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model {
+					return NewPodDomainsPage(pod, project)
+				},
+			}
+		}
 	}
 	return m, nil
 }
@@ -408,7 +420,7 @@ func (m PodDetailPage) renderViewMode() string {
 			b.WriteString(d.Domain)
 		}
 	} else {
-		b.WriteString(styles.MutedStyle().Render("(auto-generated on deploy)"))
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("(none - press 'o' to add)"))
 	}
 	b.WriteString("\n\n")
 
