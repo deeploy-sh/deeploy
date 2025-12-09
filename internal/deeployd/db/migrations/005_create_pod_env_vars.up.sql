@@ -1,0 +1,10 @@
+CREATE TABLE pod_env_vars (
+    id TEXT PRIMARY KEY,
+    pod_id TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pod_id) REFERENCES pods(id) ON DELETE CASCADE,
+    UNIQUE(pod_id, key)
+);

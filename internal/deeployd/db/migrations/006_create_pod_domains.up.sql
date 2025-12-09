@@ -1,0 +1,10 @@
+CREATE TABLE pod_domains (
+    id TEXT PRIMARY KEY,
+    pod_id TEXT NOT NULL,
+    domain TEXT NOT NULL UNIQUE,
+    is_primary INTEGER DEFAULT 0,
+    ssl_enabled INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pod_id) REFERENCES pods(id) ON DELETE CASCADE
+);
