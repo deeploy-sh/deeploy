@@ -382,7 +382,6 @@ type PodDomain struct {
 	Domain     string `json:"domain"`
 	Type       string `json:"type"`
 	Port       int    `json:"port"`
-	IsPrimary  bool   `json:"is_primary"`
 	SSLEnabled bool   `json:"ssl_enabled"`
 }
 
@@ -434,6 +433,26 @@ func DeletePodDomain(podID, domainID string) tea.Cmd {
 		defer resp.Body.Close()
 
 		return msg.PodDomainDeleted{}
+	}
+}
+
+func GenerateAutoDomain(podID string, port int, sslEnabled bool) tea.Cmd {
+	return func() tea.Msg {
+		data := struct {
+			Port       int  `json:"port"`
+			SSLEnabled bool `json:"ssl_enabled"`
+		}{
+			Port:       port,
+			SSLEnabled: sslEnabled,
+		}
+
+		resp, err := post("/pods/"+podID+"/domains/generate", data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodDomainCreated{}
 	}
 }
 
