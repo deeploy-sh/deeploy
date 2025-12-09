@@ -15,7 +15,6 @@ type Config struct {
 	EncryptionKey string
 	CookieSecure  bool
 	BuildDir      string
-	BaseDomain    string
 }
 
 func Load() *Config {
@@ -36,7 +35,6 @@ func Load() *Config {
 		EncryptionKey: encryptionKey,
 		CookieSecure:  isProduction,
 		BuildDir:      getEnv("BUILD_DIR", "/tmp/deeploy-builds"),
-		BaseDomain:    getEnv("BASE_DOMAIN", "localhost"),
 	}
 }
 
