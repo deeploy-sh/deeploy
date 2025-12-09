@@ -59,7 +59,7 @@ func New(cfg *config.Config) (*App, error) {
 	podEnvVarService := service.NewPodEnvVarService(podEnvVarRepo, encryptor)
 	podDomainService := service.NewPodDomainService(podDomainRepo)
 	gitTokenService := service.NewGitTokenService(gitTokenRepo, encryptor)
-	deployService := service.NewDeployService(podRepo, podDomainRepo, podEnvVarRepo, gitTokenRepo, dockerService, cfg.BaseDomain)
+	deployService := service.NewDeployService(podRepo, podDomainRepo, podEnvVarRepo, gitTokenRepo, dockerService)
 
 	return &App{
 		Cfg:              cfg,
