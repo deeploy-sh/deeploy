@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE projects (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id),
@@ -16,3 +17,7 @@ CREATE TABLE services (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- +goose Down
+DROP TABLE services;
+DROP TABLE projects;

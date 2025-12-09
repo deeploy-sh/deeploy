@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE pod_domains (
     id TEXT PRIMARY KEY,
     pod_id TEXT NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
@@ -7,3 +8,6 @@ CREATE TABLE pod_domains (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- +goose Down
+DROP TABLE pod_domains;
