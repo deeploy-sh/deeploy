@@ -81,13 +81,8 @@ func (h *ProjectHandler) ProjectsByUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	dto := make([]repo.Project, len(projects))
-	for i, project := range projects {
-		dto[i] = project
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dto)
+	json.NewEncoder(w).Encode(projects)
 }
 
 func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {

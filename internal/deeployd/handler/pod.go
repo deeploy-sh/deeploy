@@ -82,13 +82,8 @@ func (h *PodHandler) PodsByProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto := make([]repo.Pod, len(pods))
-	for i, pod := range pods {
-		dto[i] = pod
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dto)
+	json.NewEncoder(w).Encode(pods)
 }
 
 func (h *PodHandler) PodsByUser(w http.ResponseWriter, r *http.Request) {
@@ -101,13 +96,8 @@ func (h *PodHandler) PodsByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto := make([]repo.Pod, len(pods))
-	for i, pod := range pods {
-		dto[i] = pod
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dto)
+	json.NewEncoder(w).Encode(pods)
 }
 
 func (h *PodHandler) Update(w http.ResponseWriter, r *http.Request) {

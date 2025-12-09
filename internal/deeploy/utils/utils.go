@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deeploy-sh/deeploy/internal/deeploy/config"
 	"github.com/deeploy-sh/deeploy/internal/shared/utils"
 )
 
@@ -15,27 +14,6 @@ var (
 	ErrInvalidURL        = errors.New("invalid url")
 	ErrNoDeeployInstance = errors.New("no deeploy instance")
 )
-
-func IsOnline() bool {
-	endpoints := []string{
-		"https://www.google.com",
-		"https://1.1.1.1",
-		"https://8.8.8.8",
-	}
-
-	client := &http.Client{
-		Timeout: 3 * time.Second,
-	}
-
-	for _, endpoint := range endpoints {
-		req, _ := http.NewRequest(http.MethodHead, endpoint, nil)
-		_, err := client.Do(req)
-		if err == nil {
-			return true
-		}
-	}
-	return false
-}
 
 func ValidateServer(value string) error {
 	if !utils.IsValidURL(value) {
@@ -66,16 +44,4 @@ func ValidateServer(value string) error {
 	}
 
 	return nil
-}
-
-func DeleteCfgToken() {
-	c, _ := config.Load()
-	c.Token = ""
-	_ = config.Save(c)
-}
-
-func DeleteCfgServer() {
-	c, _ := config.Load()
-	c.Server = ""
-	_ = config.Save(c)
 }

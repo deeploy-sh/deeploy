@@ -15,7 +15,3 @@ func NewDashboardHandler() DashboardHandler {
 func (*DashboardHandler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	pages.Dashboard().Render(r.Context(), w)
 }
-
-func (*DashboardHandler) LandingView(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
-}
