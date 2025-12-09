@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/deeploy-sh/deeploy/internal/deeployd/crypto"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
 )
 
@@ -14,14 +15,23 @@ type PodEnvVarServiceInterface interface {
 }
 
 type PodEnvVarService struct {
-	repo repo.PodEnvVarRepoInterface
+	repo      repo.PodEnvVarRepoInterface
+	encryptor *crypto.Encryptor
 }
 
-func NewPodEnvVarService(repo *repo.PodEnvVarRepo) *PodEnvVarService {
-	return &PodEnvVarService{repo: repo}
+func NewPodEnvVarService(repo *repo.PodEnvVarRepo, encryptor *crypto.Encryptor) *PodEnvVarService {
+	return &PodEnvVarService{repo: repo, encryptor: encryptor}
 }
 
 func (s *PodEnvVarService) Create(envVar *repo.PodEnvVar) (*repo.PodEnvVar, error) {
+	if s.encryptor != nil {
+		encrypted, err := s.encryptor.Encrypt(envVar.Value)
+		if err != nil {
+			return nil, err
+		}
+		envVar.Value = encrypted
+	}
+
 	err := s.repo.Create(envVar)
 	if err != nil {
 		return nil, err
@@ -34,6 +44,15 @@ func (s *PodEnvVarService) EnvVar(id string) (*repo.PodEnvVar, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if s.encryptor != nil {
+		decrypted, err := s.encryptor.Decrypt(envVar.Value)
+		if err != nil {
+			return nil, err
+		}
+		envVar.Value = decrypted
+	}
+
 	return envVar, nil
 }
 
@@ -42,10 +61,29 @@ func (s *PodEnvVarService) EnvVarsByPod(podID string) ([]repo.PodEnvVar, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	if s.encryptor != nil {
+		for i := range envVars {
+			decrypted, err := s.encryptor.Decrypt(envVars[i].Value)
+			if err != nil {
+				return nil, err
+			}
+			envVars[i].Value = decrypted
+		}
+	}
+
 	return envVars, nil
 }
 
 func (s *PodEnvVarService) Update(envVar repo.PodEnvVar) error {
+	if s.encryptor != nil {
+		encrypted, err := s.encryptor.Encrypt(envVar.Value)
+		if err != nil {
+			return err
+		}
+		envVar.Value = encrypted
+	}
+
 	err := s.repo.Update(envVar)
 	if err != nil {
 		return err

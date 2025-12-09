@@ -15,10 +15,13 @@
 @layer theme, base, components, utilities;
 @layer theme {
   :root, :host {
+    --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+    "Liberation Mono", Menlo, monospace;
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-yellow-400: oklch(85.2% 0.199 91.936);
     --color-yellow-500: oklch(79.5% 0.184 86.047);
-    --color-green-100: oklch(96.2% 0.044 156.743);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-blue-500: oklch(62.3% 0.214 259.815);
     --color-gray-200: oklch(92.8% 0.006 264.531);
@@ -60,6 +63,10 @@
     --leading-normal: 1.5;
     --leading-relaxed: 1.625;
     --radius-xs: 0.125rem;
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-spin: spin 1s linear infinite;
@@ -73,6 +80,47 @@
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --default-mono-font-family: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas,
     "Liberation Mono", Menlo, monospace;
+    --breakpoint-3xl: 1600px;
+    --breakpoint-4xl: 2000px;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-surface: var(--surface);
+    --color-surface-foreground: var(--surface-foreground);
+    --color-code: var(--code);
+    --color-code-foreground: var(--code-foreground);
+    --color-code-highlight: var(--code-highlight);
+    --color-code-number: var(--code-number);
+    --color-selection: var(--selection);
+    --color-selection-foreground: var(--selection-foreground);
   }
 }
 @layer base {
@@ -232,6 +280,9 @@
   }
   .pointer-events-none {
     pointer-events: none;
+  }
+  .collapse {
+    visibility: collapse;
   }
   .visible {
     visibility: visible;
@@ -1182,6 +1233,9 @@
       background-color: color-mix(in oklab, var(--secondary) 50%, transparent);
     }
   }
+  .bg-selection {
+    background-color: var(--selection);
+  }
   .bg-sidebar {
     background-color: var(--sidebar);
   }
@@ -1659,6 +1713,9 @@
   .select-none {
     -webkit-user-select: none;
     user-select: none;
+  }
+  .\[db\:up\] {
+    db: up;
   }
   .group-data-\[tui-sidebar-side\=left\]\:left-0 {
     &:is(:where(.group)[data-tui-sidebar-side="left"] *) {
