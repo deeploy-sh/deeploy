@@ -257,6 +257,186 @@ func DeletePod(id string) tea.Cmd {
 	}
 }
 
+// --- Pod Deploy ---
+
+func DeployPod(id string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := post("/pods/"+id+"/deploy", nil)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodDeployed{}
+	}
+}
+
+func StopPod(id string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := post("/pods/"+id+"/stop", nil)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodStopped{}
+	}
+}
+
+func RestartPod(id string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := post("/pods/"+id+"/restart", nil)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodRestarted{}
+	}
+}
+
+func FetchPodLogs(id string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := get("/pods/" + id + "/logs")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		var result struct {
+			Logs []string `json:"logs"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodLogsLoaded{Logs: result.Logs}
+	}
+}
+
+// --- Git Tokens ---
+
+type GitToken struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Provider  string `json:"provider"`
+	CreatedAt string `json:"created_at"`
+}
+
+func FetchGitTokens() tea.Cmd {
+	return func() tea.Msg {
+		resp, err := get("/git-tokens")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		var tokens []GitToken
+		if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.GitTokensLoaded{Tokens: tokens}
+	}
+}
+
+func CreateGitToken(name, provider, token string) tea.Cmd {
+	return func() tea.Msg {
+		data := struct {
+			Name     string `json:"name"`
+			Provider string `json:"provider"`
+			Token    string `json:"token"`
+		}{
+			Name:     name,
+			Provider: provider,
+			Token:    token,
+		}
+
+		resp, err := post("/git-tokens", data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.GitTokenCreated{}
+	}
+}
+
+func DeleteGitToken(id string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := del("/git-tokens/" + id)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.GitTokenDeleted{}
+	}
+}
+
+// --- Pod Domains ---
+
+type PodDomain struct {
+	ID         string `json:"id"`
+	PodID      string `json:"pod_id"`
+	Domain     string `json:"domain"`
+	Type       string `json:"type"`
+	Port       int    `json:"port"`
+	IsPrimary  bool   `json:"is_primary"`
+	SSLEnabled bool   `json:"ssl_enabled"`
+}
+
+func FetchPodDomains(podID string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := get("/pods/" + podID + "/domains")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		var domains []PodDomain
+		if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodDomainsLoaded{Domains: domains}
+	}
+}
+
+func CreatePodDomain(podID, domain string, port int, sslEnabled bool) tea.Cmd {
+	return func() tea.Msg {
+		data := struct {
+			Domain     string `json:"domain"`
+			Port       int    `json:"port"`
+			SSLEnabled bool   `json:"ssl_enabled"`
+		}{
+			Domain:     domain,
+			Port:       port,
+			SSLEnabled: sslEnabled,
+		}
+
+		resp, err := post("/pods/"+podID+"/domains", data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodDomainCreated{}
+	}
+}
+
+func DeletePodDomain(podID, domainID string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := del("/pods/" + podID + "/domains/" + domainID)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodDomainDeleted{}
+	}
+}
+
 // --- Connection Check ---
 
 func CheckConnection() tea.Cmd {

@@ -50,6 +50,25 @@ type PodCreated struct{}
 type PodUpdated struct{}
 type PodDeleted struct{}
 
+// --- Pod Deploy ---
+
+type PodDeployed struct{}
+type PodStopped struct{}
+type PodRestarted struct{}
+type PodLogsLoaded struct{ Logs []string }
+
+// --- Git Tokens ---
+
+type GitTokensLoaded struct{ Tokens any }
+type GitTokenCreated struct{}
+type GitTokenDeleted struct{}
+
+// --- Pod Domains ---
+
+type PodDomainsLoaded struct{ Domains any }
+type PodDomainCreated struct{}
+type PodDomainDeleted struct{}
+
 // --- Errors ---
 
 type Error struct{ Err error }
