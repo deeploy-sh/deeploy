@@ -50,7 +50,7 @@ func (m *AuthMiddleWare) Auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		user, err := m.userService.GetUserByID(userID)
-		if err != nil {
+		if err != nil || user == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

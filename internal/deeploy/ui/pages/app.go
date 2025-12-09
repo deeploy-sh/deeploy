@@ -14,6 +14,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/deeploy/ui/theme"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 )
 
 const headerHeight = 1
@@ -206,6 +207,20 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+		return m, cmd
+
+	case msg.Error:
+		// If unauthorized, redirect to auth page
+		if tmsg.Err == errs.ErrUnauthorized {
+			return m, func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage("") },
+				}
+			}
+		}
+		// Other errors - just forward to current page
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 
 	// CRUD Success -> Reload data
