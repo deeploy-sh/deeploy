@@ -2,15 +2,11 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/deeploy-sh/deeploy/internal/deeployd/docker"
 	"github.com/deeploy-sh/deeploy/internal/deeployd/repo"
-	"github.com/google/uuid"
 )
 
 type DeployService struct {
@@ -19,11 +15,14 @@ type DeployService struct {
 	podEnvVarRepo repo.PodEnvVarRepoInterface
 	gitTokenRepo  repo.GitTokenRepoInterface
 	docker        *docker.DockerService
-	baseDomain    string
 
 	// Build logs storage (simple)
 	buildLogsMu sync.RWMutex
 	buildLogs   map[string][]string // podID -> log lines
+
+	// Prevent parallel deploys of the same pod
+	deployingMu sync.Mutex
+	deploying   map[string]bool
 }
 
 func NewDeployService(
@@ -32,7 +31,6 @@ func NewDeployService(
 	podEnvVarRepo *repo.PodEnvVarRepo,
 	gitTokenRepo *repo.GitTokenRepo,
 	docker *docker.DockerService,
-	baseDomain string,
 ) *DeployService {
 	return &DeployService{
 		podRepo:       podRepo,
@@ -40,8 +38,8 @@ func NewDeployService(
 		podEnvVarRepo: podEnvVarRepo,
 		gitTokenRepo:  gitTokenRepo,
 		docker:        docker,
-		baseDomain:    baseDomain,
 		buildLogs:     make(map[string][]string),
+		deploying:     make(map[string]bool),
 	}
 }
 
@@ -68,6 +66,21 @@ func (s *DeployService) clearBuildLogs(podID string) {
 
 // Deploy builds and runs a container for a pod.
 func (s *DeployService) Deploy(ctx context.Context, podID string) error {
+	// Prevent parallel deploys of the same pod
+	s.deployingMu.Lock()
+	if s.deploying[podID] {
+		s.deployingMu.Unlock()
+		return fmt.Errorf("deploy already in progress for pod %s", podID)
+	}
+	s.deploying[podID] = true
+	s.deployingMu.Unlock()
+
+	defer func() {
+		s.deployingMu.Lock()
+		delete(s.deploying, podID)
+		s.deployingMu.Unlock()
+	}()
+
 	// Clear old build logs
 	s.clearBuildLogs(podID)
 
@@ -134,39 +147,23 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	s.appendBuildLog(podID, "")
 	s.appendBuildLog(podID, "=== Docker image built successfully ===")
 
-	// 6. Create auto-domain if not exists
-	subdomain := s.generateSubdomain(pod.Title)
-	domain := fmt.Sprintf("%s.%s", subdomain, s.baseDomain)
-
+	// 6. Get all domains (user must add at least one)
 	domains, _ := s.podDomainRepo.DomainsByPod(podID)
-	hasAutoDomain := false
-	for _, d := range domains {
-		if d.Type == "auto" {
-			hasAutoDomain = true
-			domain = d.Domain
-			break
-		}
+	if len(domains) == 0 {
+		pod.Status = "failed"
+		s.podRepo.Update(*pod)
+		s.appendBuildLog(podID, "ERROR: no domain configured - add a domain first")
+		return fmt.Errorf("no domain configured for pod")
 	}
 
-	if !hasAutoDomain {
-		s.appendBuildLog(podID, fmt.Sprintf("Creating auto-domain: %s", domain))
-		autoDomain := &repo.PodDomain{
-			ID:         uuid.New().String(),
-			PodID:      podID,
-			Domain:     domain,
-			Type:       "auto",
-			Port:       80,
-			IsPrimary:  true,
-			SSLEnabled: true,
-		}
-		if err := s.podDomainRepo.Create(autoDomain); err != nil {
-			pod.Status = "failed"
-			s.podRepo.Update(*pod)
-			s.appendBuildLog(podID, fmt.Sprintf("ERROR: failed to create auto-domain: %v", err))
-			return fmt.Errorf("failed to create auto-domain: %w", err)
-		}
-	} else {
-		s.appendBuildLog(podID, fmt.Sprintf("Using existing domain: %s", domain))
+	// Convert to DomainConfig for docker
+	var domainConfigs []docker.DomainConfig
+	for _, d := range domains {
+		domainConfigs = append(domainConfigs, docker.DomainConfig{
+			Domain: d.Domain,
+			Port:   d.Port,
+		})
+		s.appendBuildLog(podID, fmt.Sprintf("Domain: %s (port %d)", d.Domain, d.Port))
 	}
 
 	// 7. Get env vars
@@ -199,8 +196,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		ImageName:     imageName,
 		ContainerName: fmt.Sprintf("deeploy-%s", podID),
 		PodID:         podID,
-		Domain:        domain,
-		Port:          80,
+		Domains:       domainConfigs,
 		EnvVars:       envMap,
 	})
 	if err != nil {
@@ -220,7 +216,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	s.appendBuildLog(podID, fmt.Sprintf("Container started: %s", containerID[:12]))
 	s.appendBuildLog(podID, "")
 	s.appendBuildLog(podID, "=== Deployment successful! ===")
-	s.appendBuildLog(podID, fmt.Sprintf("Your app is available at: https://%s", domain))
+	s.appendBuildLog(podID, fmt.Sprintf("Your app is available at %d domain(s)", len(domains)))
 
 	return nil
 }
@@ -274,30 +270,3 @@ func (s *DeployService) GetLogs(ctx context.Context, podID string, lines int) ([
 	return logs, pod.Status, err
 }
 
-// generateSubdomain creates a URL-safe subdomain from title + random suffix.
-func (s *DeployService) generateSubdomain(title string) string {
-	// Sanitize title
-	subdomain := strings.ToLower(title)
-	subdomain = strings.ReplaceAll(subdomain, " ", "-")
-
-	// Keep only alphanumeric and hyphens
-	var result strings.Builder
-	for _, r := range subdomain {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			result.WriteRune(r)
-		}
-	}
-	subdomain = result.String()
-
-	// Trim to max 20 chars
-	if len(subdomain) > 20 {
-		subdomain = subdomain[:20]
-	}
-
-	// Add random suffix
-	suffix := make([]byte, 4)
-	rand.Read(suffix)
-	subdomain = fmt.Sprintf("%s-%s", subdomain, hex.EncodeToString(suffix))
-
-	return subdomain
-}
