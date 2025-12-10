@@ -34,7 +34,7 @@ func (p PodDeletePage) HelpKeys() []key.Binding {
 }
 
 func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
-	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = pod.Title
 	ti.Focus()
@@ -98,7 +98,7 @@ func (p PodDeletePage) View() tea.View {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, hint, p.input.View())
 
-	card := components.Card(components.CardProps{
+	card := styles.Card(styles.CardProps{
 		Width:   40,
 		Padding: []int{1, 2},
 		Accent:  true,

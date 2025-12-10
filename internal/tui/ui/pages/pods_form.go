@@ -27,7 +27,7 @@ func (p PodFormPage) HelpKeys() []key.Binding {
 }
 
 func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
-	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
@@ -112,7 +112,7 @@ func (p PodFormPage) View() tea.View {
 		p.titleInput.View(),
 	)
 
-	card := components.Card(components.CardProps{
+	card := styles.Card(styles.CardProps{
 		Width:   40,
 		Padding: []int{1, 2},
 		Accent:  true,

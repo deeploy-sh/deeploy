@@ -44,7 +44,7 @@ func NewPalette(items []PaletteItem) Palette {
 		scrollItems[i] = item
 	}
 
-	card := CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
 	list := NewScrollList(scrollItems, ScrollListConfig{
 		Width:       card.InnerWidth(),
 		Height:      10,
@@ -80,7 +80,7 @@ func (m *Palette) SetSize(width, height int) {
 }
 
 func (m Palette) View() string {
-	card := CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	// Title
@@ -105,5 +105,5 @@ func (m Palette) View() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, input, list)
 
-	return Card(card).Render(content)
+	return styles.Card(card).Render(content)
 }

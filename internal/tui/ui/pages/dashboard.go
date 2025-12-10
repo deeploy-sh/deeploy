@@ -25,7 +25,7 @@ func (m DashboardPage) HelpKeys() []key.Binding {
 }
 
 func NewDashboard(s msg.Store) DashboardPage {
-	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	l := components.NewScrollList(components.ProjectsToItems(s.Projects(), s.Pods()), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
@@ -132,7 +132,7 @@ func (m DashboardPage) renderEmptyState() string {
 }
 
 func (m DashboardPage) renderList() string {
-	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	title := lipgloss.NewStyle().
@@ -152,7 +152,7 @@ func (m DashboardPage) renderList() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, list)
 
-	return components.Card(card).Render(content)
+	return styles.Card(card).Render(content)
 }
 
 func (m DashboardPage) Breadcrumbs() []string {

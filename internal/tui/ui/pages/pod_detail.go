@@ -296,7 +296,7 @@ func (m PodDetailPage) View() tea.View {
 		b.WriteString(m.renderViewMode())
 	}
 
-	card := components.Card(components.CardProps{
+	card := styles.Card(styles.CardProps{
 		Width:   70,
 		Padding: []int{1, 2},
 		Accent:  true,

@@ -345,7 +345,7 @@ func (m PodDomainsPage) renderAddMode() string {
 }
 
 func (m PodDomainsPage) centeredCard(content string) string {
-	card := components.Card(components.CardProps{
+	card := styles.Card(styles.CardProps{
 		Width:   60,
 		Padding: []int{1, 2},
 		Accent:  true,

@@ -44,7 +44,7 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 		}
 	}
 
-	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	l := components.NewScrollList(components.PodsToItems(pods), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
@@ -157,7 +157,7 @@ func (m ProjectDetailPage) renderContent() string {
 		return m.renderEmptyState()
 	}
 
-	card := components.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	title := lipgloss.NewStyle().
@@ -177,7 +177,7 @@ func (m ProjectDetailPage) renderContent() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, podsContent)
 
-	return components.Card(card).Render(content)
+	return styles.Card(card).Render(content)
 }
 
 func (m ProjectDetailPage) renderEmptyState() string {

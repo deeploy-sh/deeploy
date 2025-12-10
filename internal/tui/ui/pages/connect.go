@@ -28,7 +28,7 @@ func (p connectPage) HelpKeys() []key.Binding {
 
 func NewConnectPage(err error) connectPage {
 	log.Println(err)
-	card := components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = "http://123.45.67.89:8090"
 	ti.CharLimit = 50
@@ -85,7 +85,7 @@ func (m connectPage) View() tea.View {
 		content += styles.ErrorStyle().Render("\n* " + m.err.Error())
 	}
 
-	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
+	card := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)

@@ -50,15 +50,3 @@ func NoStyle() lipgloss.Style             { return lipgloss.NewStyle() }
 // Component helpers
 func FocusedButton() string { return FocusedStyle().Render("[ Submit ]") }
 func BlurredButton() string { return fmt.Sprintf("[ %s ]", DimStyle().Render("Submit")) }
-
-// AuthCard returns a card style for auth pages
-// Uses panel background with left accent border
-func AuthCard() lipgloss.Style {
-	return lipgloss.NewStyle().
-		Width(35).
-		Padding(1, 2).
-		Background(ColorBackgroundPanel()).
-		BorderLeft(true).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderLeftForeground(ColorAccentBorder())
-}

@@ -14,7 +14,7 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
-	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
+	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
 type authPage struct {
@@ -96,7 +96,7 @@ func (p authPage) View() tea.View {
 		b.WriteString("Press enter to open browser")
 	}
 
-	card := components.Card(components.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
+	card := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
 
 	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)

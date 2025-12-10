@@ -5,10 +5,11 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
 type ProjectFormPage struct {
@@ -25,7 +26,7 @@ func (p ProjectFormPage) HelpKeys() []key.Binding {
 }
 
 func NewProjectFormPage(project *repo.Project) ProjectFormPage {
-	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
@@ -106,7 +107,7 @@ func (p ProjectFormPage) View() tea.View {
 		p.titleInput.View(),
 	)
 
-	card := components.Card(components.CardProps{
+	card := styles.Card(styles.CardProps{
 		Width:   40,
 		Padding: []int{1, 2},
 		Accent:  true,
