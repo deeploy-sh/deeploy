@@ -1,15 +1,17 @@
 package pages
 
 import (
+	"fmt"
+
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 )
 
 type podToDelete struct {
@@ -87,18 +89,14 @@ func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (p PodDeletePage) View() tea.View {
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Render("Delete Pod")
-
-	name := lipgloss.NewStyle().
-		PaddingTop(1).
-		Render(p.pod.Title)
+		Render(fmt.Sprintf("Delete Pod (%v)", p.pod.Title))
 
 	hint := styles.MutedStyle().
 		PaddingTop(1).
 		PaddingBottom(1).
 		Render("Type '" + p.pod.Title + "' to confirm")
 
-	content := lipgloss.JoinVertical(lipgloss.Left, title, name, hint, p.input.View())
+	content := lipgloss.JoinVertical(lipgloss.Left, title, hint, p.input.View())
 
 	card := components.Card(components.CardProps{
 		Width:   40,
