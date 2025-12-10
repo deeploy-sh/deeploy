@@ -8,11 +8,11 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 )
 
 type podDetailMode int
@@ -23,29 +23,29 @@ const (
 )
 
 type PodDetailPage struct {
-	pod            *repo.Pod
-	project        *repo.Project
-	logs           []string
-	domains        []api.PodDomain
-	gitTokens      []api.GitToken
-	loading        bool
-	mode           podDetailMode
-	repoURLInput   textinput.Model
-	branchInput    textinput.Model
+	pod             *repo.Pod
+	project         *repo.Project
+	logs            []string
+	domains         []api.PodDomain
+	gitTokens       []api.GitToken
+	loading         bool
+	mode            podDetailMode
+	repoURLInput    textinput.Model
+	branchInput     textinput.Model
 	dockerfileInput textinput.Model
-	selectedToken  int
-	focusedField   int
-	keyDeploy      key.Binding
-	keyStop        key.Binding
-	keyRestart     key.Binding
-	keyLogs        key.Binding
-	keyEdit        key.Binding
-	keyDomains     key.Binding
-	keySave        key.Binding
-	keyBack        key.Binding
-	keyTab         key.Binding
-	width          int
-	height         int
+	selectedToken   int
+	focusedField    int
+	keyDeploy       key.Binding
+	keyStop         key.Binding
+	keyRestart      key.Binding
+	keyLogs         key.Binding
+	keyEdit         key.Binding
+	keyDomains      key.Binding
+	keySave         key.Binding
+	keyBack         key.Binding
+	keyTab          key.Binding
+	width           int
+	height          int
 }
 
 func (m PodDetailPage) HelpKeys() []key.Binding {
@@ -284,9 +284,10 @@ func (m PodDetailPage) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
+	statusStyle := lipgloss.NewStyle().Background(styles.ColorBackgroundPanel())
+
 	b.WriteString(titleStyle.Render(m.pod.Title))
-	b.WriteString("  ")
-	b.WriteString(m.renderStatus())
+	b.WriteString(statusStyle.Render(" " + m.renderStatus()))
 	b.WriteString("\n\n")
 
 	if m.mode == modeEditRepo {
