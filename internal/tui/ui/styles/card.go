@@ -4,35 +4,29 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 )
 
-type CardProps struct {
-	Width   int
-	Padding []int
-	Accent  bool
+type CardSize int
+
+const (
+	CardSmall CardSize = iota
+	CardMedium
+	CardLarge
+)
+
+var cardWidths = map[CardSize]int{
+	CardSmall:  40,
+	CardMedium: 55,
+	CardLarge:  75,
 }
 
-// InnerWidth calculates the available width inside the card.
-func (p CardProps) InnerWidth() int {
-	inner := p.Width
-	if len(p.Padding) > 1 {
-		inner -= p.Padding[1] * 2 // horizontal padding (left + right)
-	}
-	if p.Accent {
-		inner -= 1 // accent border
-	}
-	return inner
-}
+const cardPadding = 2
 
-// Card creates a card style with panel background and optional left accent border.
-func Card(p CardProps) lipgloss.Style {
+func Card(size CardSize, accent bool) lipgloss.Style {
 	style := lipgloss.NewStyle().
-		Width(p.Width).
+		Width(cardWidths[size]).
+		Padding(1, cardPadding).
 		Background(ColorBackgroundPanel())
 
-	if len(p.Padding) > 0 {
-		style = style.Padding(p.Padding...)
-	}
-
-	if p.Accent {
+	if accent {
 		style = style.
 			BorderLeft(true).
 			BorderStyle(lipgloss.ThickBorder()).
@@ -40,4 +34,9 @@ func Card(p CardProps) lipgloss.Style {
 	}
 
 	return style
+}
+
+func CardInner(size CardSize) int {
+	// Subtract padding (both sides) and accent border (1 char)
+	return cardWidths[size] - cardPadding*2 - 1
 }

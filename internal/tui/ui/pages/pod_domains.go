@@ -345,11 +345,7 @@ func (m PodDomainsPage) renderAddMode() string {
 }
 
 func (m PodDomainsPage) centeredCard(content string) string {
-	card := styles.Card(styles.CardProps{
-		Width:   60,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(content)
+	card := styles.Card(styles.CardMedium, true).Render(content)
 
 	return lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)

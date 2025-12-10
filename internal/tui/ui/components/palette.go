@@ -44,15 +44,14 @@ func NewPalette(items []PaletteItem) Palette {
 		scrollItems[i] = item
 	}
 
-	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
 	list := NewScrollList(scrollItems, ScrollListConfig{
-		Width:       card.InnerWidth(),
+		Width:       styles.CardInner(styles.CardMedium),
 		Height:      10,
 		WithInput:   true,
 		Placeholder: "Type to search...",
 	})
 
-	return Palette{list: list, width: 60}
+	return Palette{list: list, width: 55}
 }
 
 func (m Palette) Init() tea.Cmd {
@@ -80,8 +79,7 @@ func (m *Palette) SetSize(width, height int) {
 }
 
 func (m Palette) View() string {
-	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
-	w := card.InnerWidth()
+	w := styles.CardInner(styles.CardMedium)
 
 	// Title
 	title := lipgloss.NewStyle().
@@ -105,5 +103,5 @@ func (m Palette) View() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, input, list)
 
-	return styles.Card(card).Render(content)
+	return styles.Card(styles.CardMedium, true).Render(content)
 }

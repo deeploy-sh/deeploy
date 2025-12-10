@@ -296,11 +296,7 @@ func (m PodDetailPage) View() tea.View {
 		b.WriteString(m.renderViewMode())
 	}
 
-	card := styles.Card(styles.CardProps{
-		Width:   70,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(b.String())
+	card := styles.Card(styles.CardLarge, true).Render(b.String())
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)

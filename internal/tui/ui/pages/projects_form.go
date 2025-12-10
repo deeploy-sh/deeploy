@@ -26,8 +26,7 @@ func (p ProjectFormPage) HelpKeys() []key.Binding {
 }
 
 func NewProjectFormPage(project *repo.Project) ProjectFormPage {
-	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
-	titleInput := components.NewTextInput(card.InnerWidth())
+	titleInput := components.NewTextInput(styles.CardInner(styles.CardSmall))
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
 	if project != nil {
@@ -107,11 +106,7 @@ func (p ProjectFormPage) View() tea.View {
 		p.titleInput.View(),
 	)
 
-	card := styles.Card(styles.CardProps{
-		Width:   40,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(content)
+	card := styles.Card(styles.CardSmall, true).Render(content)
 
 	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)
