@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
@@ -21,6 +22,7 @@ type projectToDelete struct {
 type ProjectDeletePage struct {
 	project    projectToDelete
 	podCount   int
+	input      textinput.Model
 	keyConfirm key.Binding
 	keyCancel  key.Binding
 	width      int
@@ -39,19 +41,28 @@ func NewProjectDeletePage(s msg.Store, project *repo.Project) ProjectDeletePage 
 		}
 	}
 
+	card := components.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	ti := components.NewTextInput(card.InnerWidth())
+	ti.Placeholder = project.Title
+	ti.Focus()
+	ti.CharLimit = 100
+
 	return ProjectDeletePage{
 		project:    projectToDelete{ID: project.ID, Title: project.Title},
 		podCount:   podCount,
+		input:      ti,
 		keyConfirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
 		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 }
 
 func (p ProjectDeletePage) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch tmsg := tmsg.(type) {
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
@@ -61,6 +72,10 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyEnter:
 			if p.podCount > 0 {
+				return p, nil
+			}
+			// Only delete if input matches project title exactly
+			if p.input.Value() != p.project.Title {
 				return p, nil
 			}
 			return p, tea.Batch(
@@ -75,7 +90,9 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		p.height = tmsg.Height
 		return p, nil
 	}
-	return p, nil
+
+	p.input, cmd = p.input.Update(tmsg)
+	return p, cmd
 }
 
 func (p ProjectDeletePage) View() tea.View {
@@ -91,14 +108,16 @@ func (p ProjectDeletePage) View() tea.View {
 	if p.podCount > 0 {
 		hint = styles.MutedStyle().
 			PaddingTop(1).
+			PaddingBottom(1).
 			Render(fmt.Sprintf("Delete all %d pods first", p.podCount))
 	} else {
 		hint = styles.MutedStyle().
 			PaddingTop(1).
-			Render("Press enter to confirm")
+			PaddingBottom(1).
+			Render("Type '" + p.project.Title + "' to confirm")
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, title, name, hint)
+	content := lipgloss.JoinVertical(lipgloss.Left, title, name, hint, p.input.View())
 
 	card := components.Card(components.CardProps{
 		Width:   40,

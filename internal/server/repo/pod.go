@@ -29,6 +29,7 @@ type PodRepoInterface interface {
 	Pod(id string) (*Pod, error)
 	PodsByProject(id string) ([]Pod, error)
 	PodsByUser(id string) ([]Pod, error)
+	CountByProject(id string) (int, error)
 	Update(pod Pod) error
 	Delete(id string) error
 }
@@ -80,6 +81,18 @@ func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 	}
 
 	return pods, nil
+}
+
+func (r *PodRepo) CountByProject(id string) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM pods WHERE project_id = $1`
+
+	err := r.db.Get(&count, query, id)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {

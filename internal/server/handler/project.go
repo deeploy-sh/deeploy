@@ -13,11 +13,12 @@ import (
 )
 
 type ProjectHandler struct {
-	service service.ProjectServiceInterface
+	service    service.ProjectServiceInterface
+	podService service.PodServiceInterface
 }
 
-func NewProjectHandler(service *service.ProjectService) *ProjectHandler {
-	return &ProjectHandler{service: service}
+func NewProjectHandler(service *service.ProjectService, podService *service.PodService) *ProjectHandler {
+	return &ProjectHandler{service: service, podService: podService}
 }
 
 func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +110,19 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	err := h.service.Delete(id)
+	// Check if project has pods
+	podCount, err := h.podService.CountByProject(id)
+	if err != nil {
+		slog.Error("failed to count pods for project", "projectID", id, "error", err)
+		http.Error(w, "Could not delete project", http.StatusInternalServerError)
+		return
+	}
+	if podCount > 0 {
+		http.Error(w, "Cannot delete project with existing pods", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.Delete(id)
 	if err != nil {
 		slog.Error("failed to delete project", "projectID", id, "error", err)
 		http.Error(w, "Could not delete project", http.StatusInternalServerError)

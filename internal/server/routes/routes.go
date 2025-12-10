@@ -18,7 +18,7 @@ func Setup(app *app.App) http.Handler {
 	auth := mw.NewAuthMiddleware(app.UserService)
 	userHandler := handlers.NewUserHandler(app.UserService)
 	dashboardHandler := handlers.NewDashboardHandler()
-	projectHandler := handlers.NewProjectHandler(app.ProjectService)
+	projectHandler := handlers.NewProjectHandler(app.ProjectService, app.PodService)
 	podHandler := handlers.NewPodHandler(app.PodService)
 	gitTokenHandler := handlers.NewGitTokenHandler(app.GitTokenService)
 	deployHandler := handlers.NewDeployHandler(app.DeployService)

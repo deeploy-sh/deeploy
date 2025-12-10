@@ -9,6 +9,7 @@ type PodServiceInterface interface {
 	Pod(id string) (*repo.Pod, error)
 	PodsByProject(id string) ([]repo.Pod, error)
 	PodsByUser(id string) ([]repo.Pod, error)
+	CountByProject(id string) (int, error)
 	Update(pod repo.Pod) error
 	Delete(id string) error
 }
@@ -52,6 +53,10 @@ func (s *PodService) PodsByUser(id string) ([]repo.Pod, error) {
 	}
 
 	return pods, nil
+}
+
+func (s *PodService) CountByProject(id string) (int, error) {
+	return s.repo.CountByProject(id)
 }
 
 func (s *PodService) Update(pod repo.Pod) error {

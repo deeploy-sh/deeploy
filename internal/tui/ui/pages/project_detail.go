@@ -11,22 +11,21 @@ import (
 )
 
 type ProjectDetailPage struct {
-	store            msg.Store
-	project          *repo.Project
-	pods             components.ScrollList
-	keyNewPod        key.Binding
-	keyEditPod       key.Binding
-	keySelectPod     key.Binding
-	keyDeletePod     key.Binding
-	keyEditProject   key.Binding
-	keyDeleteProject key.Binding
-	keyBack          key.Binding
-	width            int
-	height           int
+	store          msg.Store
+	project        *repo.Project
+	pods           components.ScrollList
+	keyNewPod      key.Binding
+	keyEditPod     key.Binding
+	keySelectPod   key.Binding
+	keyDeletePod   key.Binding
+	keyEditProject key.Binding
+	keyBack        key.Binding
+	width          int
+	height         int
 }
 
 func (m ProjectDetailPage) HelpKeys() []key.Binding {
-	return []key.Binding{m.keyNewPod, m.keyEditPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyDeleteProject, m.keyBack}
+	return []key.Binding{m.keyNewPod, m.keyEditPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyBack}
 }
 
 func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
@@ -52,16 +51,15 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 	})
 
 	return ProjectDetailPage{
-		store:            s,
-		pods:             l,
-		project:          &project,
-		keyNewPod:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
-		keyEditPod:       key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
-		keyDeletePod:     key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
-		keySelectPod:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
-		keyEditProject:   key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
-		keyDeleteProject: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "delete project")),
-		keyBack:          key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+		store:          s,
+		pods:           l,
+		project:        &project,
+		keyNewPod:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
+		keyEditPod:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
+		keyDeletePod:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
+		keySelectPod:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
+		keyEditProject: key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
+		keyBack:        key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
 
@@ -134,13 +132,6 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				project := m.project
 				return m, func() tea.Msg {
 					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(project) }}
-				}
-			}
-		case key.Matches(tmsg, m.keyDeleteProject):
-			if m.project != nil {
-				project := m.project
-				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(s, project) }}
 				}
 			}
 		}
