@@ -50,7 +50,7 @@ func Card(p CardProps) lipgloss.Style {
 		}
 		style = style.
 			BorderLeft(true).
-			BorderStyle(lipgloss.NormalBorder()).
+			BorderStyle(lipgloss.ThickBorder()).
 			BorderLeftForeground(accentColor)
 	}
 
