@@ -31,7 +31,7 @@ type logsUpdated struct {
 	status string
 }
 
-type LogViewPage struct {
+type PodLogsPage struct {
 	podID     string
 	podTitle  string
 	viewport  viewport.Model
@@ -43,9 +43,9 @@ type LogViewPage struct {
 	height    int
 }
 
-func NewLogViewPage(podID, podTitle string) LogViewPage {
+func NewPodLogsPage(podID, podTitle string) PodLogsPage {
 	vp := viewport.New()
-	return LogViewPage{
+	return PodLogsPage{
 		podID:     podID,
 		podTitle:  podTitle,
 		viewport:  vp,
@@ -55,20 +55,20 @@ func NewLogViewPage(podID, podTitle string) LogViewPage {
 	}
 }
 
-func (m LogViewPage) Init() tea.Cmd {
+func (m PodLogsPage) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchLogs(),
 		m.schedulePoll(),
 	)
 }
 
-func (m LogViewPage) schedulePoll() tea.Cmd {
+func (m PodLogsPage) schedulePoll() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return pollLogsMsg{}
 	})
 }
 
-func (m LogViewPage) fetchLogs() tea.Cmd {
+func (m PodLogsPage) fetchLogs() tea.Cmd {
 	return func() tea.Msg {
 		cfg, err := config.Load()
 		if err != nil {
@@ -97,7 +97,7 @@ func (m LogViewPage) fetchLogs() tea.Cmd {
 	}
 }
 
-func (m LogViewPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case pollLogsMsg:
 		// Keep polling while building
@@ -149,7 +149,7 @@ func (m LogViewPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m LogViewPage) triggerDeploy() tea.Cmd {
+func (m PodLogsPage) triggerDeploy() tea.Cmd {
 	return func() tea.Msg {
 		cfg, _ := config.Load()
 		url := fmt.Sprintf("%s/api/pods/%s/deploy", cfg.Server, m.podID)
@@ -160,7 +160,7 @@ func (m LogViewPage) triggerDeploy() tea.Cmd {
 	}
 }
 
-func (m *LogViewPage) updateViewport() {
+func (m *PodLogsPage) updateViewport() {
 	content := strings.Join(m.logs, "\n")
 	m.viewport.SetContent(content)
 	if m.status == "building" {
@@ -168,7 +168,7 @@ func (m *LogViewPage) updateViewport() {
 	}
 }
 
-func (m LogViewPage) View() tea.View {
+func (m PodLogsPage) View() tea.View {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
 	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.podTitle))
 
@@ -198,6 +198,6 @@ func (m LogViewPage) View() tea.View {
 	return tea.NewView(content)
 }
 
-func (m LogViewPage) Breadcrumbs() []string {
+func (m PodLogsPage) Breadcrumbs() []string {
 	return []string{"Build Logs", m.podTitle}
 }
