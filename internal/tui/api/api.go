@@ -457,6 +457,8 @@ func GenerateAutoDomain(podID string, port int, sslEnabled bool) tea.Cmd {
 	}
 }
 
+// --- Pod Env Vars ---
+
 func FetchPodEnvVars(podID string) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := get("/pods/" + podID + "/vars")

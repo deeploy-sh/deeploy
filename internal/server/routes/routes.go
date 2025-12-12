@@ -23,6 +23,7 @@ func Setup(app *app.App) http.Handler {
 	gitTokenHandler := handlers.NewGitTokenHandler(app.GitTokenService)
 	deployHandler := handlers.NewDeployHandler(app.DeployService)
 	podDomainHandler := handlers.NewPodDomainHandler(app.PodDomainService, app.PodService, app.Cfg.IsDevelopment())
+	podEnvVarHandler := handlers.NewPodEnvVarHandler(app.PodEnvVarService, app.PodService)
 
 	// Assets
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
@@ -66,6 +67,10 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("POST /api/pods/{id}/domains/generate", auth.Auth(podDomainHandler.Generate))
 	mux.HandleFunc("GET /api/pods/{id}/domains", auth.Auth(podDomainHandler.List))
 	mux.HandleFunc("DELETE /api/pods/{id}/domains/{domainId}", auth.Auth(podDomainHandler.Delete))
+
+	// Pod Env Vars
+	mux.HandleFunc("GET /api/pods/{id}/vars", auth.Auth(podEnvVarHandler.List))
+	mux.HandleFunc("PUT /api/pods/{id}/vars", auth.Auth(podEnvVarHandler.BulkUpdate))
 
 	// Git Tokens
 	mux.HandleFunc("POST /api/git-tokens", auth.Auth(gitTokenHandler.Create))

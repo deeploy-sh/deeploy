@@ -3,13 +3,14 @@ package service
 import (
 	"github.com/deeploy-sh/deeploy/internal/server/crypto"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
 
 type PodEnvVarServiceInterface interface {
-	Create(envVar *repo.PodEnvVar) (*repo.PodEnvVar, error)
-	EnvVar(id string) (*repo.PodEnvVar, error)
-	EnvVarsByPod(podID string) ([]repo.PodEnvVar, error)
-	Update(envVar repo.PodEnvVar) error
+	Create(envVar *model.PodEnvVar) (*model.PodEnvVar, error)
+	EnvVar(id string) (*model.PodEnvVar, error)
+	EnvVarsByPod(podID string) ([]model.PodEnvVar, error)
+	Update(envVar model.PodEnvVar) error
 	Delete(id string) error
 	DeleteByPod(podID string) error
 }
@@ -23,7 +24,7 @@ func NewPodEnvVarService(repo *repo.PodEnvVarRepo, encryptor *crypto.Encryptor) 
 	return &PodEnvVarService{repo: repo, encryptor: encryptor}
 }
 
-func (s *PodEnvVarService) Create(envVar *repo.PodEnvVar) (*repo.PodEnvVar, error) {
+func (s *PodEnvVarService) Create(envVar *model.PodEnvVar) (*model.PodEnvVar, error) {
 	if s.encryptor != nil {
 		encrypted, err := s.encryptor.Encrypt(envVar.Value)
 		if err != nil {
@@ -39,7 +40,7 @@ func (s *PodEnvVarService) Create(envVar *repo.PodEnvVar) (*repo.PodEnvVar, erro
 	return envVar, nil
 }
 
-func (s *PodEnvVarService) EnvVar(id string) (*repo.PodEnvVar, error) {
+func (s *PodEnvVarService) EnvVar(id string) (*model.PodEnvVar, error) {
 	envVar, err := s.repo.EnvVar(id)
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (s *PodEnvVarService) EnvVar(id string) (*repo.PodEnvVar, error) {
 	return envVar, nil
 }
 
-func (s *PodEnvVarService) EnvVarsByPod(podID string) ([]repo.PodEnvVar, error) {
+func (s *PodEnvVarService) EnvVarsByPod(podID string) ([]model.PodEnvVar, error) {
 	envVars, err := s.repo.EnvVarsByPod(podID)
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func (s *PodEnvVarService) EnvVarsByPod(podID string) ([]repo.PodEnvVar, error) 
 	return envVars, nil
 }
 
-func (s *PodEnvVarService) Update(envVar repo.PodEnvVar) error {
+func (s *PodEnvVarService) Update(envVar model.PodEnvVar) error {
 	if s.encryptor != nil {
 		encrypted, err := s.encryptor.Encrypt(envVar.Value)
 		if err != nil {
