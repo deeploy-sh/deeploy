@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/deeploy-sh/deeploy/internal/tui/config"
-	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
+	"github.com/deeploy-sh/deeploy/internal/tui/config"
+	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 )
 
 // --- Helpers ---
@@ -453,6 +454,40 @@ func GenerateAutoDomain(podID string, port int, sslEnabled bool) tea.Cmd {
 		defer resp.Body.Close()
 
 		return msg.PodDomainCreated{}
+	}
+}
+
+func FetchPodEnvVars(podID string) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := get("/pods/" + podID + "/vars")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		var envVars []model.PodEnvVar
+		err = json.NewDecoder(resp.Body).Decode(&envVars)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodEnvVarsLoaded{EnvVars: envVars}
+	}
+}
+
+func UpdatePodEnvVars(podID string, vars []model.PodEnvVar) tea.Cmd {
+	return func() tea.Msg {
+		data := struct {
+			Vars []model.PodEnvVar `json:"vars"`
+		}{Vars: vars}
+
+		resp, err := put("/pods/"+podID+"/vars", data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodEnvVarsUpdated{}
 	}
 }
 

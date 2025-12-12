@@ -69,6 +69,11 @@ type PodDomainsLoaded struct{ Domains any }
 type PodDomainCreated struct{}
 type PodDomainDeleted struct{}
 
+// --- Pod Env Vars ---
+
+type PodEnvVarsLoaded struct{ EnvVars any }
+type PodEnvVarsUpdated struct{}
+
 // --- Errors ---
 
 type Error struct{ Err error }
