@@ -1,0 +1,66 @@
+package pages
+
+import (
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/button"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/code"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/layouts"
+)
+
+templ Dashboard() {
+	@layouts.AppLayout() {
+		<div class="h-[calc(100vh-65px)]">
+			<div class="container mx-auto px-4">
+				<div class="flex flex-col items-center justify-center h-[calc(100vh-65px)] space-y-8">
+					<div class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium animate-pulse">
+						Web UI Coming Soon
+					</div>
+					<h1 class="text-3xl text-center font-bold tracking-tight">
+						Access our Terminal UI.
+						Modern and Fast.
+					</h1>
+					<p class="text-xl text-muted-foreground max-w-2xl text-center">
+						Open-source platform to deploy and manage your infrastructure. Built for developers who love CLIs.
+					</p>
+					<div class="w-full max-w-lg">
+						@code.Code() {
+							{ `curl -fsSL https://deeploy.sh/tui.sh | bash` }
+						}
+						<p class="text-muted-foreground mx-auto text-xs text-center mt-2">CLI/TUI client for your local development machine</p>
+					</div>
+					<div class="flex flex-col items-center gap-2">
+						<div class="flex flex-col sm:flex-row gap-2 mt-4">
+							@button.Button(button.Props{
+								Variant: button.VariantDefault,
+								Class:   "px-8",
+								Href:    "https://github.com/deeploy-sh/deeploy",
+								Target:  "_blank",
+							}) {
+								Star on GitHub
+							}
+							@button.Button(button.Props{
+								Variant: button.VariantOutline,
+								Class:   "px-8",
+								Href:    "https://x.com/axadrn",
+								Target:  "_blank",
+							}) {
+								Follow the Journey
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="fixed bottom-4 left-4 z-50">
+				<div class="flex items-center gap-2 text-sm text-muted-foreground bg-background/80 backdrop-blur-sm p-2 rounded-lg border shadow-sm">
+					<span>Made with</span>
+					<a
+						href="https://templui.io"
+						class="text-foreground hover:text-primary transition-colors"
+						target="_blank"
+					>
+						templUI
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}

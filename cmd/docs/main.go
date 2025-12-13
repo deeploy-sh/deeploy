@@ -8,8 +8,8 @@ import (
 	"github.com/a-h/templ"
 	"github.com/deeploy-sh/deeploy/internal/docs/assets"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
-	"github.com/deeploy-sh/deeploy/internal/docs/scripts"
 	"github.com/deeploy-sh/deeploy/internal/docs/ui/pages"
+	"github.com/deeploy-sh/deeploy/scripts"
 )
 
 func main() {
@@ -17,27 +17,26 @@ func main() {
 	mux := http.NewServeMux()
 	SetupAssetsRoutes(mux)
 	mux.Handle("GET /", templ.Handler(pages.Landing()))
-	mux.Handle("GET /install.sh", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		file, err := scripts.Files.ReadFile("install.sh")
-		if err != nil {
-			http.Error(w, "file not found", http.StatusNotFound)
-			return
-		}
-		w.Header().Set("Content-Disposition", "attachment; filename=install.sh")
-		w.Write(file)
-	}))
-	mux.Handle("GET /install-cli.sh", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// file, err := install.InstallScript.ReadFile("install.sh")
-		file, err := scripts.Files.ReadFile("install-cli.sh")
-		if err != nil {
-			http.Error(w, "file not found", http.StatusNotFound)
-			return
-		}
-		w.Header().Set("Content-Disposition", "attachment; filename=install.sh")
-		w.Write(file)
-	}))
+
+	// Serve install scripts
+	mux.Handle("GET /server.sh", serveScript("server.sh"))
+	mux.Handle("GET /tui.sh", serveScript("tui.sh"))
+
 	fmt.Println("Server is running on http://localhost:8090")
 	http.ListenAndServe(":8090", mux)
+}
+
+func serveScript(name string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		file, err := scripts.Files.ReadFile(name)
+		if err != nil {
+			http.Error(w, "file not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Disposition", "attachment; filename="+name)
+		w.Write(file)
+	})
 }
 
 func SetupAssetsRoutes(mux *http.ServeMux) {

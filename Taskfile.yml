@@ -5,29 +5,47 @@ vars:
     sh: command -v tailwindcss >/dev/null 2>&1 && echo "tailwindcss" || echo "npx tailwindcss@latest"
 
 tasks:
+  # --- Infrastructure ---
+  infra:up:
+    desc: Start Postgres and Traefik
+    cmds:
+      - docker compose up -d postgres traefik
+
+  infra:down:
+    desc: Stop all infrastructure
+    cmds:
+      - docker compose down
+
+  infra:reset:
+    desc: Reset infrastructure (delete volumes and restart)
+    cmds:
+      - docker compose down -v
+      - docker compose up -d postgres traefik
+
   # --- Shared ---
   tailwind:watch:
     cmds:
       - "{{.TAILWIND_CMD}} -i ./assets/css/input.css -o ./assets/css/output.css --watch"
 
-  templ:deeployd:
+  templ:server:
     cmds:
-      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/deeployd" --open-browser=false
+      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/server" --open-browser=false
 
   templ:docs:
     cmds:
       - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/docs" --open-browser=false
 
   # --- Dev ---
-  dev:deeploy:
+  dev:tui:
     desc: TUI client
     cmds:
-      - DEBUG=1 go run ./cmd/deeploy
+      - DEBUG=1 go run ./cmd/tui
 
-  dev:deeployd:
-    desc: VPS server
+  dev:server:
+    desc: VPS server (starts Postgres and Traefik)
+    deps: [infra:up]
     cmds:
-      - task --parallel tailwind:watch templ:deeployd
+      - task --parallel tailwind:watch templ:server
 
   dev:docs:
     desc: Docs website
@@ -35,6 +53,6 @@ tasks:
       - task --parallel tailwind:watch templ:docs
 
   dev:all:
-    desc: Run deeployd + docs (ports 8090 + 8091)
+    desc: Run server + docs (ports 8090 + 8091)
     cmds:
-      - task --parallel dev:deeployd dev:docs
+      - task --parallel dev:server dev:docs

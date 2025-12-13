@@ -1,0 +1,65 @@
+package layouts
+
+import (
+	"fmt"
+	"github.com/deeploy-sh/deeploy/internal/docs/config"
+	"github.com/deeploy-sh/deeploy/internal/docs/ui/modules"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/code"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/copybutton"
+	"time"
+)
+
+templ BaseLayout() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>deeploy.sh - Modern Deployment. Terminal First.</title>
+			// Preload fonts to prevent flickering
+			<link rel="preload" href="/assets/fonts/geist/geist-variable.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
+			<link rel="preload" href="/assets/fonts/geist/geist-mono-variable.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
+			// Component JS files
+			@code.Script()
+			@copybutton.Script()
+			// Tailwind CSS
+			<link href={ templ.SafeURL("/assets/css/output.css?v=" + fmt.Sprint(time.Now().Unix())) } rel="stylesheet"/>
+			// Theme initialization - must run before body renders to prevent flash
+			<script nonce={ templ.GetNonce(ctx) }>
+				(function() {
+					// Get current theme preference (system, light, or dark)
+					function getThemePreference() {
+						return localStorage.getItem('themePreference') || 'system';
+					}
+
+					// Apply theme based on preference
+					const preference = getThemePreference();
+					let isDark = false;
+
+					if (preference === 'system') {
+						// Use system preference
+						isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+					} else {
+						// Use explicit preference
+						isDark = preference === 'dark';
+					}
+
+					// Apply theme immediately to prevent flash
+					if (isDark) {
+						document.documentElement.classList.add('dark');
+					}
+				})();
+			</script>
+			// Plausible
+			if config.AppConfig.GoEnv == "prod" {
+				<script defer data-domain="deeploy.sh" src="https://plausible.axeladrian.com/js/script.js" nonce={ templ.GetNonce(ctx) }></script>
+			}
+		</head>
+		<body class="transition-colors duration-200">
+			<div class="min-h-screen flex flex-col">
+				@modules.Navbar()
+				{ children... }
+			</div>
+		</body>
+	</html>
+}

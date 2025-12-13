@@ -1,0 +1,13 @@
+-- +goose Up
+CREATE TABLE pod_domains (
+    id TEXT PRIMARY KEY,
+    pod_id TEXT NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
+    domain TEXT NOT NULL UNIQUE,
+    is_primary BOOLEAN DEFAULT false,
+    ssl_enabled BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- +goose Down
+DROP TABLE pod_domains;

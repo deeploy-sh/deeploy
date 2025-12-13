@@ -1,0 +1,13 @@
+-- +goose Up
+CREATE TABLE pod_env_vars (
+    id TEXT PRIMARY KEY,
+    pod_id TEXT NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(pod_id, key)
+);
+
+-- +goose Down
+DROP TABLE pod_env_vars;

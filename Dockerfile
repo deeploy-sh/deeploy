@@ -1,5 +1,5 @@
 # Build-Stage
-FROM golang:1.24-alpine AS build
+FROM golang:1.24-alpine3.20 AS build
 WORKDIR /app
 
 # Copy the source code
@@ -15,7 +15,7 @@ RUN templ generate
 RUN apk add --no-cache gcc musl-dev
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/deeployd
+RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/server
 
 # Deploy-Stage
 FROM alpine:3.20.2
