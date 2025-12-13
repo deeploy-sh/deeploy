@@ -4,7 +4,7 @@ Thanks for considering contributing to deeploy.
 
 ## Before You Contribute
 
-deeploy is source-available. We may monetize this project in the future (commercial licenses, hosted solutions, etc.). By contributing, you agree that your contributions may be used in both open-source and commercial aspects of the project.
+deeploy is open source under the Apache 2.0 license. We may offer commercial products in the future (hosted solutions, paid plugins, etc.). By contributing, you agree that your contributions may be used in both open-source and commercial aspects of the project.
 
 Questions? Reach out before contributing.
 

@@ -70,7 +70,7 @@ We welcome contributions from the community! Whether it's adding new features, i
 
 ## License
 
-Deeploy is open-source software licensed under the [MIT license](LICENSE).
+Deeploy is open-source software licensed under the [Apache 2.0 license](LICENSE).
 
 ## Support
 
