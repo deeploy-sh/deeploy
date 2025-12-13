@@ -9,3 +9,4 @@
 - feat: remove desc. on pods/projects -- yagni
 - feat: zero downtime for redployments
 - fix: realtime/live pod status updates
+- docs: favicon + seo stuff
