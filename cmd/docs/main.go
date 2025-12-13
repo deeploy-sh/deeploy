@@ -9,18 +9,19 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
-	"github.com/deeploy-sh/deeploy/internal/docs/assets"
+	docsAssets "github.com/deeploy-sh/deeploy/internal/docs/assets"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
 	"github.com/deeploy-sh/deeploy/internal/docs/middleware"
 	"github.com/deeploy-sh/deeploy/internal/docs/ui/pages"
 	"github.com/deeploy-sh/deeploy/scripts"
+	sharedAssets "github.com/deeploy-sh/deeploy/internal/shared/assets"
 	"github.com/resend/resend-go/v2"
 )
 
 func main() {
 	config.LoadConfig()
 	mux := http.NewServeMux()
-	SetupAssetsRoutes(mux)
+	setupAssets(mux)
 	mux.Handle("GET /", templ.Handler(pages.Landing()))
 
 	// Serve install scripts
@@ -102,17 +103,22 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func SetupAssetsRoutes(mux *http.ServeMux) {
-	var isDev = config.AppConfig.IsDevelopment()
-	assetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var fs http.Handler
-		if isDev {
-			w.Header().Set("Cache-Control", "no-store")
-			fs = http.FileServer(http.Dir("./assets"))
-		} else {
-			fs = http.FileServer(http.FS(assets.Assets))
-		}
-		fs.ServeHTTP(w, r)
-	})
-	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler))
+func setupAssets(mux *http.ServeMux) {
+	isDev := config.AppConfig.IsDevelopment()
+
+	serve := func(devPath string, fs http.FileSystem) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isDev {
+				w.Header().Set("Cache-Control", "no-store")
+				http.FileServer(http.Dir(devPath)).ServeHTTP(w, r)
+			} else {
+				http.FileServer(fs).ServeHTTP(w, r)
+			}
+		})
+	}
+
+	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/docs/assets", http.FS(docsAssets.Assets))))
+	mux.Handle("GET /assets/img/", http.StripPrefix("/assets/", serve("./internal/docs/assets", http.FS(docsAssets.Assets))))
+	mux.Handle("GET /assets/fonts/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
+	mux.Handle("GET /assets/js/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 }

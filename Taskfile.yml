@@ -22,19 +22,6 @@ tasks:
       - docker compose down -v
       - docker compose up -d postgres traefik
 
-  # --- Shared ---
-  tailwind:watch:
-    cmds:
-      - "{{.TAILWIND_CMD}} -i ./assets/css/input.css -o ./assets/css/output.css --watch"
-
-  templ:server:
-    cmds:
-      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/server" --open-browser=false
-
-  templ:docs:
-    cmds:
-      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/docs" --open-browser=false
-
   # --- Dev ---
   dev:tui:
     desc: TUI client
@@ -45,12 +32,28 @@ tasks:
     desc: VPS server (starts Postgres and Traefik)
     deps: [infra:up]
     cmds:
-      - task --parallel tailwind:watch templ:server
+      - task --parallel tailwind:server templ:server
 
   dev:docs:
     desc: Docs website
     cmds:
-      - task --parallel tailwind:watch templ:docs
+      - task --parallel tailwind:docs templ:docs
+
+  tailwind:server:
+    cmds:
+      - "{{.TAILWIND_CMD}} -i ./internal/server/assets/css/input.css -o ./internal/server/assets/css/output.css --watch"
+
+  tailwind:docs:
+    cmds:
+      - "{{.TAILWIND_CMD}} -i ./internal/docs/assets/css/input.css -o ./internal/docs/assets/css/output.css --watch"
+
+  templ:server:
+    cmds:
+      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/server" --open-browser=false
+
+  templ:docs:
+    cmds:
+      - go tool templ generate --watch --proxy="http://localhost:8090" --cmd="go run ./cmd/docs" --open-browser=false
 
   dev:all:
     desc: Run server + docs (ports 8090 + 8091)

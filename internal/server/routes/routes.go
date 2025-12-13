@@ -5,10 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/deeploy-sh/deeploy/assets"
 	"github.com/deeploy-sh/deeploy/internal/server/app"
+	serverAssets "github.com/deeploy-sh/deeploy/internal/server/assets"
 	handlers "github.com/deeploy-sh/deeploy/internal/server/handler"
 	mw "github.com/deeploy-sh/deeploy/internal/server/middleware"
+	sharedAssets "github.com/deeploy-sh/deeploy/internal/shared/assets"
 )
 
 func Setup(app *app.App) http.Handler {
@@ -26,7 +27,7 @@ func Setup(app *app.App) http.Handler {
 	podEnvVarHandler := handlers.NewPodEnvVarHandler(app.PodEnvVarService, app.PodService)
 
 	// Assets
-	mux.Handle("GET /assets/", http.StripPrefix("/assets/", assetHandler(app.Cfg.IsDevelopment())))
+	setupAssets(mux, app.Cfg.IsDevelopment())
 
 	// Landing
 	mux.HandleFunc("GET /", userHandler.LandingView)
@@ -83,17 +84,21 @@ func Setup(app *app.App) http.Handler {
 	return mux
 }
 
-func assetHandler(isDevelopment bool) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var fs http.Handler
-		if isDevelopment {
-			w.Header().Set("Cache-Control", "no-store")
-			fs = http.FileServer(http.Dir("./assets"))
-		} else {
-			fs = http.FileServer(http.FS(assets.Assets))
-		}
-		fs.ServeHTTP(w, r)
-	})
+func setupAssets(mux *http.ServeMux, isDev bool) {
+	serve := func(devPath string, fs http.FileSystem) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isDev {
+				w.Header().Set("Cache-Control", "no-store")
+				http.FileServer(http.Dir(devPath)).ServeHTTP(w, r)
+			} else {
+				http.FileServer(fs).ServeHTTP(w, r)
+			}
+		})
+	}
+
+	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/server/assets", http.FS(serverAssets.Assets))))
+	mux.Handle("GET /assets/fonts/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
+	mux.Handle("GET /assets/js/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
