@@ -30,6 +30,7 @@ type PodEditPage struct {
 	keySave         key.Binding
 	keyBack         key.Binding
 	keyTab          key.Binding
+	keyShiftTab     key.Binding
 	width           int
 	height          int
 }
@@ -94,7 +95,8 @@ func NewPodEditPage(pod *repo.Pod, project *repo.Project) PodEditPage {
 		focusedField:    fieldTitle,
 		keySave:         key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyBack:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
-		keyTab:          key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
+		keyTab:          key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next")),
+		keyShiftTab:     key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev")),
 	}
 }
 
@@ -175,21 +177,11 @@ func (m *PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 	case key.Matches(tmsg, m.keyTab):
 		m.focusedField = (m.focusedField + 1) % 6
-		m.blurAll()
-		var cmd tea.Cmd
-		switch m.focusedField {
-		case fieldTitle:
-			cmd = m.titleInput.Focus()
-		case fieldDesc:
-			cmd = m.descInput.Focus()
-		case fieldRepoURL:
-			cmd = m.repoURLInput.Focus()
-		case fieldBranch:
-			cmd = m.branchInput.Focus()
-		case fieldDockerfile:
-			cmd = m.dockerfileInput.Focus()
-		}
-		return m, cmd
+		return m, m.updateFocus()
+
+	case key.Matches(tmsg, m.keyShiftTab):
+		m.focusedField = (m.focusedField + 5) % 6 // +5 is same as -1 mod 6
+		return m, m.updateFocus()
 
 	case tmsg.Code == tea.KeyUp:
 		if m.focusedField == fieldGitToken && m.selectedToken > 0 {
@@ -227,6 +219,23 @@ func (m *PodEditPage) blurAll() {
 	m.repoURLInput.Blur()
 	m.branchInput.Blur()
 	m.dockerfileInput.Blur()
+}
+
+func (m *PodEditPage) updateFocus() tea.Cmd {
+	m.blurAll()
+	switch m.focusedField {
+	case fieldTitle:
+		return m.titleInput.Focus()
+	case fieldDesc:
+		return m.descInput.Focus()
+	case fieldRepoURL:
+		return m.repoURLInput.Focus()
+	case fieldBranch:
+		return m.branchInput.Focus()
+	case fieldDockerfile:
+		return m.dockerfileInput.Focus()
+	}
+	return nil
 }
 
 func (m *PodEditPage) save() (tea.Model, tea.Cmd) {
