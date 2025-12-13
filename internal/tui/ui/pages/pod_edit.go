@@ -140,10 +140,24 @@ func (m PodEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m, nil
+	// Update focused input for blink messages
+	var cmd tea.Cmd
+	switch m.focusedField {
+	case fieldTitle:
+		m.titleInput, cmd = m.titleInput.Update(tmsg)
+	case fieldDesc:
+		m.descInput, cmd = m.descInput.Update(tmsg)
+	case fieldRepoURL:
+		m.repoURLInput, cmd = m.repoURLInput.Update(tmsg)
+	case fieldBranch:
+		m.branchInput, cmd = m.branchInput.Update(tmsg)
+	case fieldDockerfile:
+		m.dockerfileInput, cmd = m.dockerfileInput.Update(tmsg)
+	}
+	return m, cmd
 }
 
-func (m PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m *PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		pod := m.pod
@@ -162,19 +176,20 @@ func (m PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(tmsg, m.keyTab):
 		m.focusedField = (m.focusedField + 1) % 6
 		m.blurAll()
+		var cmd tea.Cmd
 		switch m.focusedField {
 		case fieldTitle:
-			m.titleInput.Focus()
+			cmd = m.titleInput.Focus()
 		case fieldDesc:
-			m.descInput.Focus()
+			cmd = m.descInput.Focus()
 		case fieldRepoURL:
-			m.repoURLInput.Focus()
+			cmd = m.repoURLInput.Focus()
 		case fieldBranch:
-			m.branchInput.Focus()
+			cmd = m.branchInput.Focus()
 		case fieldDockerfile:
-			m.dockerfileInput.Focus()
+			cmd = m.dockerfileInput.Focus()
 		}
-		return m, nil
+		return m, cmd
 
 	case tmsg.Code == tea.KeyUp:
 		if m.focusedField == fieldGitToken && m.selectedToken > 0 {
@@ -206,7 +221,7 @@ func (m PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PodEditPage) blurAll() {
+func (m *PodEditPage) blurAll() {
 	m.titleInput.Blur()
 	m.descInput.Blur()
 	m.repoURLInput.Blur()
