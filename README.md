@@ -30,3 +30,11 @@ task dev:server
 # TUI
 task dev:tui
 ```
+
+## Contributing
+
+Please read the [contributing guide](CONTRIBUTING.md).
+
+## License
+
+[Source Available](LICENSE) - use it, contribute to it, but don't compete with it.
