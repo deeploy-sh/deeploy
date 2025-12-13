@@ -1,16 +1,18 @@
 package config
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	CookieSecure bool
-	GoEnv        string
+	CookieSecure     bool
+	AppEnv           string
+	GitHubToken      string
+	ResendAPIKey     string
+	ResendAudienceID string
 }
 
 var AppConfig *Config
@@ -18,14 +20,43 @@ var AppConfig *Config
 func LoadConfig() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
-	} else {
-		log.Println(".env file initialized.")
+		slog.Info("no .env file found, using environment variables")
 	}
 
+	appEnv := envString("APP_ENV", "development")
+
 	AppConfig = &Config{
-		// CookieSecure: os.Getenv("GO_ENV") != "dev",
-		GoEnv:        os.Getenv("GO_ENV"),
-		CookieSecure: false, // INFO: false for now because to many http/https cookie related issues (e.g login) while testing
+		AppEnv:           appEnv,
+		CookieSecure:     appEnv == "production",
+		GitHubToken:      envString("GITHUB_TOKEN", ""),
+		ResendAPIKey:     envString("RESEND_API_KEY", ""),
+		ResendAudienceID: envString("RESEND_AUDIENCE_ID", ""),
 	}
+
+	// Production: validate required services
+	if AppConfig.IsProduction() {
+		if AppConfig.ResendAPIKey == "" {
+			slog.Error("production requires RESEND_API_KEY")
+			os.Exit(1)
+		}
+		if AppConfig.ResendAudienceID == "" {
+			slog.Error("production requires RESEND_AUDIENCE_ID")
+			os.Exit(1)
+		}
+	}
+}
+
+func envString(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+func (c *Config) IsDevelopment() bool {
+	return c.AppEnv == "development"
+}
+
+func (c *Config) IsProduction() bool {
+	return c.AppEnv == "production"
 }

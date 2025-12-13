@@ -1,15 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
-	"os"
+	"regexp"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/deeploy-sh/deeploy/internal/docs/assets"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
+	"github.com/deeploy-sh/deeploy/internal/docs/middleware"
 	"github.com/deeploy-sh/deeploy/internal/docs/ui/pages"
 	"github.com/deeploy-sh/deeploy/scripts"
+	"github.com/resend/resend-go/v2"
 )
 
 func main() {
@@ -22,8 +27,11 @@ func main() {
 	mux.Handle("GET /server.sh", serveScript("server.sh"))
 	mux.Handle("GET /tui.sh", serveScript("tui.sh"))
 
+	// Newsletter subscribe endpoint
+	mux.HandleFunc("POST /api/subscribe", handleSubscribe)
+
 	fmt.Println("Server is running on http://localhost:8090")
-	http.ListenAndServe(":8090", mux)
+	http.ListenAndServe(":8090", middleware.GitHubStarsMiddleware(mux))
 }
 
 func serveScript(name string) http.Handler {
@@ -39,8 +47,63 @@ func serveScript(name string) http.Handler {
 	})
 }
 
+func handleSubscribe(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		Email string `json:"email"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request",
+		})
+		return
+	}
+
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+
+	// Validate email
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   "Invalid email",
+		})
+		return
+	}
+
+	// Dev mode: just log
+	if config.AppConfig.IsDevelopment() {
+		slog.Info("newsletter subscription (dev mode)", "email", email)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+		})
+		return
+	}
+
+	// Prod mode: add to Resend audience
+	client := resend.NewClient(config.AppConfig.ResendAPIKey)
+	_, err := client.Contacts.Create(&resend.CreateContactRequest{
+		Email:      email,
+		AudienceId: config.AppConfig.ResendAudienceID,
+	})
+	if err != nil {
+		// Log error but return success to prevent email enumeration
+		slog.Warn("newsletter subscription failed", "error", err, "email", email)
+	} else {
+		slog.Info("newsletter subscription successful", "email", email)
+	}
+
+	// Always return success to prevent email enumeration
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+	})
+}
+
 func SetupAssetsRoutes(mux *http.ServeMux) {
-	var isDev = os.Getenv("GO_ENV") != "prod"
+	var isDev = config.AppConfig.IsDevelopment()
 	assetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var fs http.Handler
 		if isDev {
