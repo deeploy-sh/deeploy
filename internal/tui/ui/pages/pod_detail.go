@@ -193,7 +193,8 @@ func (m PodDetailPage) View() tea.View {
 	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorMuted())
 
 	// Repo Info
-	b.WriteString(labelStyle.Render("Repo: "))
+	b.WriteString(labelStyle.Render("Repo"))
+	b.WriteString("\n")
 	if m.pod.RepoURL != nil && *m.pod.RepoURL != "" {
 		b.WriteString(*m.pod.RepoURL)
 		b.WriteString(" @ ")
@@ -201,34 +202,36 @@ func (m PodDetailPage) View() tea.View {
 	} else {
 		b.WriteString(styles.MutedStyle().Render("(not configured)"))
 	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	// Dockerfile
-	b.WriteString(labelStyle.Render("Dockerfile: "))
+	b.WriteString(labelStyle.Render("Dockerfile"))
+	b.WriteString("\n")
 	if m.pod.DockerfilePath != "" {
 		b.WriteString(m.pod.DockerfilePath)
 	} else {
 		b.WriteString("Dockerfile")
 	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	// Domains
-	b.WriteString(labelStyle.Render("Domains: "))
+	b.WriteString(labelStyle.Render("Domains"))
+	b.WriteString("\n")
 	if len(m.domains) > 0 {
 		b.WriteString(fmt.Sprintf("%d configured", len(m.domains)))
 	} else {
 		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("(none)"))
 	}
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	// Env Vars
-	b.WriteString(labelStyle.Render("Env Vars: "))
+	b.WriteString(labelStyle.Render("Env Vars"))
+	b.WriteString("\n")
 	if m.envVarCount > 0 {
 		b.WriteString(fmt.Sprintf("%d configured", m.envVarCount))
 	} else {
 		b.WriteString(styles.MutedStyle().Render("(none)"))
 	}
-	b.WriteString("\n")
 
 	if m.loading {
 		b.WriteString("\n")

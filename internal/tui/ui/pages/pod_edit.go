@@ -48,22 +48,25 @@ func (m PodEditPage) HelpKeys() []key.Binding {
 }
 
 func NewPodEditPage(pod *repo.Pod, project *repo.Project) PodEditPage {
-	titleInput := components.NewTextInput(40)
+	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
+	inputWidth := card.InnerWidth()
+
+	titleInput := components.NewTextInput(inputWidth)
 	titleInput.Placeholder = "My Pod"
 	titleInput.SetValue(pod.Title)
 	titleInput.Focus()
 
-	descInput := components.NewTextInput(50)
+	descInput := components.NewTextInput(inputWidth)
 	descInput.Placeholder = "Description (optional)"
 	descInput.SetValue(pod.Description)
 
-	repoInput := components.NewTextInput(50)
+	repoInput := components.NewTextInput(inputWidth)
 	repoInput.Placeholder = "https://github.com/user/repo"
 	if pod.RepoURL != nil {
 		repoInput.SetValue(*pod.RepoURL)
 	}
 
-	branchInput := components.NewTextInput(30)
+	branchInput := components.NewTextInput(inputWidth)
 	branchInput.Placeholder = "main"
 	if pod.Branch != "" {
 		branchInput.SetValue(pod.Branch)
@@ -71,7 +74,7 @@ func NewPodEditPage(pod *repo.Pod, project *repo.Project) PodEditPage {
 		branchInput.SetValue("main")
 	}
 
-	dockerfileInput := components.NewTextInput(30)
+	dockerfileInput := components.NewTextInput(inputWidth)
 	dockerfileInput.Placeholder = "Dockerfile"
 	if pod.DockerfilePath != "" {
 		dockerfileInput.SetValue(pod.DockerfilePath)
@@ -256,59 +259,64 @@ func (m PodEditPage) View() tea.View {
 	b.WriteString(titleStyle.Render("Edit Pod"))
 	b.WriteString("\n\n")
 
-	labelStyle := lipgloss.NewStyle().Width(14).Foreground(styles.ColorMuted())
-	activeLabel := lipgloss.NewStyle().Width(14).Foreground(styles.ColorPrimary())
+	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorMuted())
+	activeLabel := lipgloss.NewStyle().Foreground(styles.ColorPrimary())
 
 	// Title
 	if m.focusedField == fieldTitle {
-		b.WriteString(activeLabel.Render("Title:"))
+		b.WriteString(activeLabel.Render("Title"))
 	} else {
-		b.WriteString(labelStyle.Render("Title:"))
+		b.WriteString(labelStyle.Render("Title"))
 	}
+	b.WriteString("\n")
 	b.WriteString(m.titleInput.View())
 	b.WriteString("\n\n")
 
 	// Description
 	if m.focusedField == fieldDesc {
-		b.WriteString(activeLabel.Render("Description:"))
+		b.WriteString(activeLabel.Render("Description"))
 	} else {
-		b.WriteString(labelStyle.Render("Description:"))
+		b.WriteString(labelStyle.Render("Description"))
 	}
+	b.WriteString("\n")
 	b.WriteString(m.descInput.View())
 	b.WriteString("\n\n")
 
 	// Repo URL
 	if m.focusedField == fieldRepoURL {
-		b.WriteString(activeLabel.Render("Repo URL:"))
+		b.WriteString(activeLabel.Render("Repo URL"))
 	} else {
-		b.WriteString(labelStyle.Render("Repo URL:"))
+		b.WriteString(labelStyle.Render("Repo URL"))
 	}
+	b.WriteString("\n")
 	b.WriteString(m.repoURLInput.View())
 	b.WriteString("\n\n")
 
 	// Branch
 	if m.focusedField == fieldBranch {
-		b.WriteString(activeLabel.Render("Branch:"))
+		b.WriteString(activeLabel.Render("Branch"))
 	} else {
-		b.WriteString(labelStyle.Render("Branch:"))
+		b.WriteString(labelStyle.Render("Branch"))
 	}
+	b.WriteString("\n")
 	b.WriteString(m.branchInput.View())
 	b.WriteString("\n\n")
 
 	// Dockerfile
 	if m.focusedField == fieldDockerfile {
-		b.WriteString(activeLabel.Render("Dockerfile:"))
+		b.WriteString(activeLabel.Render("Dockerfile"))
 	} else {
-		b.WriteString(labelStyle.Render("Dockerfile:"))
+		b.WriteString(labelStyle.Render("Dockerfile"))
 	}
+	b.WriteString("\n")
 	b.WriteString(m.dockerfileInput.View())
 	b.WriteString("\n\n")
 
 	// Git Token
 	if m.focusedField == fieldGitToken {
-		b.WriteString(activeLabel.Render("Git Token:"))
+		b.WriteString(activeLabel.Render("Git Token"))
 	} else {
-		b.WriteString(labelStyle.Render("Git Token:"))
+		b.WriteString(labelStyle.Render("Git Token"))
 	}
 	b.WriteString("\n")
 
