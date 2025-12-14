@@ -1,14 +1,45 @@
 package modules
 
-templ Navbar() {
-	<nav class="border-b py-3">
-		<div class="container mx-auto px-4 flex justify-between items-center">
-			<a href="/">
-				<p class="font-bold text-xl">
-					🔥 deeploy.sh
-				</p>
+import "fmt"
+
+// NavbarProps contains props for the navbar
+type NavbarProps struct {
+	GitHubStars int
+}
+
+func formatStars(count int) string {
+	if count >= 1000 {
+		return fmt.Sprintf("%.1fk", float64(count)/1000)
+	}
+	return fmt.Sprintf("%d", count)
+}
+
+templ Navbar(props ...NavbarProps) {
+	{{ var p NavbarProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<nav class="px-20 py-6 border-b border-border flex justify-between items-center">
+		<!-- Logo left - text only -->
+		<a href="/" class="hover:text-muted-foreground transition-colors">
+			deeploy
+		</a>
+		<!-- Nav right -->
+		<div class="flex items-center gap-6">
+			<!-- GitHub -->
+			<a
+				href="https://github.com/deeploy-sh/deeploy"
+				target="_blank"
+				class="text-muted-foreground hover:text-foreground transition-colors"
+			>
+				if p.GitHubStars > 0 {
+					GitHub [{ formatStars(p.GitHubStars) }]
+				} else {
+					GitHub
+				}
 			</a>
-			@ThemeSwitcher(ThemeSwitcherProps{})
+			<!-- Theme Switcher -->
+			@ThemeSwitcher()
 		</div>
 	</nav>
 }

@@ -1,0 +1,38 @@
+package modules
+
+type FooterLinksProps struct {
+	GitHubStars int
+}
+
+templ FooterLinks(props ...FooterLinksProps) {
+	{{ var p FooterLinksProps }}
+	if len(props) > 0 {
+		{{ p = props[0] }}
+	}
+	<footer class="border-y border-border flex text-muted-foreground">
+		<a
+			href="https://github.com/deeploy-sh/deeploy"
+			target="_blank"
+			class="flex-1 px-20 py-6 text-center hover:text-foreground transition-colors"
+		>
+			if p.GitHubStars > 0 {
+				GitHub [{ formatStars(p.GitHubStars) }]
+			} else {
+				GitHub
+			}
+		</a>
+		<a
+			href="https://x.com/axadrn"
+			target="_blank"
+			class="flex-1 px-20 py-6 text-center border-l border-border hover:text-foreground transition-colors"
+		>
+			X
+		</a>
+	</footer>
+}
+
+templ FooterCopyright() {
+	<div class="py-8 text-center text-muted-foreground">
+		© 2025 <a href="https://axeladrian.com" target="_blank" class="hover:text-foreground transition-colors">Axel Adrian</a>
+	</div>
+}
