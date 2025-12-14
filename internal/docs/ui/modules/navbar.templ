@@ -2,6 +2,39 @@ package modules
 
 import "fmt"
 
+// Blob Logo Icon (16x16)
+templ BlobIcon() {
+	<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-yellow-500">
+		<rect x="4" y="4" width="2" height="2" fill="currentColor"></rect>
+		<rect x="6" y="4" width="2" height="2" fill="currentColor"></rect>
+		<rect x="8" y="4" width="2" height="2" fill="currentColor"></rect>
+		<rect x="10" y="4" width="2" height="2" fill="currentColor"></rect>
+		<rect x="2" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="4" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="6" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="8" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="10" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="12" y="6" width="2" height="2" fill="currentColor"></rect>
+		<rect x="2" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="4" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="6" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="8" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="10" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="12" y="8" width="2" height="2" fill="currentColor"></rect>
+		<rect x="2" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="4" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="6" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="8" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="10" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="12" y="10" width="2" height="2" fill="currentColor"></rect>
+		<rect x="4" y="12" width="2" height="2" fill="currentColor"></rect>
+		<rect x="10" y="12" width="2" height="2" fill="currentColor"></rect>
+		<!-- Eyes -->
+		<rect x="4" y="6" width="2" height="2" class="text-background" fill="currentColor"></rect>
+		<rect x="10" y="6" width="2" height="2" class="text-background" fill="currentColor"></rect>
+	</svg>
+}
+
 // NavbarProps contains props for the navbar
 type NavbarProps struct {
 	GitHubStars int
@@ -20,8 +53,9 @@ templ Navbar(props ...NavbarProps) {
 		{{ p = props[0] }}
 	}
 	<nav class="px-20 py-6 border-b border-border flex justify-between items-center">
-		<!-- Logo left - text only -->
-		<a href="/" class="hover:text-muted-foreground transition-colors">
+		<!-- Logo left -->
+		<a href="/" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
+			@BlobIcon()
 			deeploy
 		</a>
 		<!-- Nav right -->
