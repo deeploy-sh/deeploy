@@ -52,14 +52,14 @@ templ Navbar(props ...NavbarProps) {
 	if len(props) > 0 {
 		{{ p = props[0] }}
 	}
-	<nav class="px-20 py-6 border-b border-border flex justify-between items-center">
+	<nav class="px-4 py-4 md:px-20 md:py-6 border-b border-border flex justify-between items-center">
 		<!-- Logo left -->
 		<a href="/" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
 			@BlobIcon()
 			deeploy
 		</a>
 		<!-- Nav right -->
-		<div class="flex items-center gap-6">
+		<div class="flex items-center gap-4 md:gap-6">
 			<!-- GitHub -->
 			<a
 				href="https://github.com/deeploy-sh/deeploy"

@@ -17,15 +17,17 @@ templ Landing() {
 			}
 		}}
 		<div class="min-h-screen flex flex-col px-4">
-			<div class="max-w-5xl mx-auto w-full flex-1 flex flex-col border-x border-border">
+			<div class="max-w-5xl mx-auto w-full flex-1 flex flex-col md:border-x border-border">
 				<!-- Navbar -->
 				@modules.Navbar(modules.NavbarProps{GitHubStars: stars})
 				<!-- Main Content -->
-				<main class="flex-1 px-20 py-28 space-y-16">
+				<main class="flex-1 px-4 py-16 md:px-20 md:py-28 space-y-12 md:space-y-16">
 					<!-- Hero -->
 					<div class="space-y-4">
-						<h1 class="text-4xl font-semibold tracking-tight">The open source deployment platform</h1>
-						<p class="text-muted-foreground">Terminal-first. Built for developers who live in the command line.</p>
+						<h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
+							Deploy from your terminal. Open source.
+						</h1>
+						<p class="text-muted-foreground">Built for developers who live in the command line.</p>
 					</div>
 					<!-- Newsletter -->
 					<div class="space-y-4">
@@ -35,17 +37,17 @@ templ Landing() {
 								0.1 coming soon — get notified about releases, cloud, and more.
 							</p>
 						</div>
-						<form id="subscribe-form" class="flex">
+						<form id="subscribe-form" class="flex flex-col sm:flex-row gap-2 sm:gap-0">
 							<div class="flex-1">
 								@input.Input(input.Props{
 									Type:        input.TypeEmail,
 									Name:        "email",
 									Placeholder: "your@email.com",
-									Class:       "border-r-0 h-11",
+									Class:       "sm:border-r-0 h-11",
 									Attributes:  templ.Attributes{"required": true},
 								})
 							</div>
-							@button.Button(button.Props{Type: button.TypeSubmit, Class: "h-11 px-6"}) {
+							@button.Button(button.Props{Type: button.TypeSubmit, Class: "h-11 px-6 w-full sm:w-auto"}) {
 								notify me
 							}
 						</form>
