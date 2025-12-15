@@ -67,6 +67,7 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("POST /api/pods/{id}/domains", auth.Auth(podDomainHandler.Create))
 	mux.HandleFunc("POST /api/pods/{id}/domains/generate", auth.Auth(podDomainHandler.Generate))
 	mux.HandleFunc("GET /api/pods/{id}/domains", auth.Auth(podDomainHandler.List))
+	mux.HandleFunc("PUT /api/pods/{id}/domains/{domainId}", auth.Auth(podDomainHandler.Update))
 	mux.HandleFunc("DELETE /api/pods/{id}/domains/{domainId}", auth.Auth(podDomainHandler.Delete))
 
 	// Pod Env Vars

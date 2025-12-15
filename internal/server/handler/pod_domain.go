@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
 
@@ -56,7 +56,7 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Port = 80
 	}
 
-	domain := &repo.PodDomain{
+	domain := &model.PodDomain{
 		ID:         uuid.New().String(),
 		PodID:      podID,
 		Domain:     req.Domain,
@@ -102,6 +102,51 @@ func (h *PodDomainHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
+	domainID := r.PathValue("domainId")
+
+	var req model.PodDomain
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if req.Domain == "" {
+		http.Error(w, "Domain is required", http.StatusBadRequest)
+		return
+	}
+
+	if req.Port == 0 {
+		req.Port = 80
+	}
+
+	// Get existing domain to preserve type
+	existing, err := h.service.Domain(domainID)
+	if err != nil {
+		slog.Warn("failed to get domain", "domainID", domainID, "error", err)
+		http.Error(w, "Domain not found", http.StatusNotFound)
+		return
+	}
+
+	domain := model.PodDomain{
+		ID:         domainID,
+		PodID:      existing.PodID,
+		Domain:     req.Domain,
+		Type:       existing.Type, // Preserve original type
+		Port:       req.Port,
+		SSLEnabled: req.SSLEnabled,
+	}
+
+	if err := h.service.Update(domain); err != nil {
+		slog.Error("failed to update domain", "domainID", domainID, "error", err)
+		http.Error(w, "Failed to update domain", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(domain)
+}
+
 type generateDomainRequest struct {
 	Port       int  `json:"port"`
 	SSLEnabled bool `json:"ssl_enabled"`
@@ -141,7 +186,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	}
 	domainName := fmt.Sprintf("%s.%s.sslip.io", subdomain, ip)
 
-	domain := &repo.PodDomain{
+	domain := &model.PodDomain{
 		ID:         uuid.New().String(),
 		PodID:      podID,
 		Domain:     domainName,

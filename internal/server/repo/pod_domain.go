@@ -3,28 +3,17 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"time"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
 
-type PodDomain struct {
-	ID         string    `json:"id" db:"id"`
-	PodID      string    `json:"pod_id" db:"pod_id"`
-	Domain     string    `json:"domain" db:"domain"`
-	Type       string    `json:"type" db:"type"`
-	Port       int       `json:"port" db:"port"`
-	SSLEnabled bool      `json:"ssl_enabled" db:"ssl_enabled"`
-	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
-}
-
 type PodDomainRepoInterface interface {
-	Create(domain *PodDomain) error
-	Domain(id string) (*PodDomain, error)
-	DomainByName(domain string) (*PodDomain, error)
-	DomainsByPod(podID string) ([]PodDomain, error)
-	Update(domain PodDomain) error
+	Create(domain *model.PodDomain) error
+	Domain(id string) (*model.PodDomain, error)
+	DomainByName(domain string) (*model.PodDomain, error)
+	DomainsByPod(podID string) ([]model.PodDomain, error)
+	Update(domain model.PodDomain) error
 	Delete(id string) error
 	DeleteByPod(podID string) error
 }
@@ -37,7 +26,7 @@ func NewPodDomainRepo(db *sqlx.DB) *PodDomainRepo {
 	return &PodDomainRepo{db: db}
 }
 
-func (r *PodDomainRepo) Create(domain *PodDomain) error {
+func (r *PodDomainRepo) Create(domain *model.PodDomain) error {
 	query := `INSERT INTO pod_domains (id, pod_id, domain, type, port, ssl_enabled) VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := r.db.Exec(query, domain.ID, domain.PodID, domain.Domain, domain.Type, domain.Port, domain.SSLEnabled)
@@ -48,8 +37,8 @@ func (r *PodDomainRepo) Create(domain *PodDomain) error {
 	return nil
 }
 
-func (r *PodDomainRepo) Domain(id string) (*PodDomain, error) {
-	domain := &PodDomain{}
+func (r *PodDomainRepo) Domain(id string) (*model.PodDomain, error) {
+	domain := &model.PodDomain{}
 	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE id = $1`
 
 	err := r.db.Get(domain, query, id)
@@ -63,8 +52,8 @@ func (r *PodDomainRepo) Domain(id string) (*PodDomain, error) {
 	return domain, nil
 }
 
-func (r *PodDomainRepo) DomainByName(domainName string) (*PodDomain, error) {
-	domain := &PodDomain{}
+func (r *PodDomainRepo) DomainByName(domainName string) (*model.PodDomain, error) {
+	domain := &model.PodDomain{}
 	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE domain = $1`
 
 	err := r.db.Get(domain, query, domainName)
@@ -78,8 +67,8 @@ func (r *PodDomainRepo) DomainByName(domainName string) (*PodDomain, error) {
 	return domain, nil
 }
 
-func (r *PodDomainRepo) DomainsByPod(podID string) ([]PodDomain, error) {
-	domains := []PodDomain{}
+func (r *PodDomainRepo) DomainsByPod(podID string) ([]model.PodDomain, error) {
+	domains := []model.PodDomain{}
 	query := `SELECT id, pod_id, domain, type, port, ssl_enabled, created_at, updated_at FROM pod_domains WHERE pod_id = $1`
 
 	err := r.db.Select(&domains, query, podID)
@@ -93,7 +82,7 @@ func (r *PodDomainRepo) DomainsByPod(podID string) ([]PodDomain, error) {
 	return domains, nil
 }
 
-func (r *PodDomainRepo) Update(domain PodDomain) error {
+func (r *PodDomainRepo) Update(domain model.PodDomain) error {
 	query := `UPDATE pod_domains SET domain = $1, type = $2, port = $3, ssl_enabled = $4 WHERE id = $5`
 
 	result, err := r.db.Exec(query, domain.Domain, domain.Type, domain.Port, domain.SSLEnabled, domain.ID)

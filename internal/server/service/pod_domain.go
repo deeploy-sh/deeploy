@@ -2,14 +2,15 @@ package service
 
 import (
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
 
 type PodDomainServiceInterface interface {
-	Create(domain *repo.PodDomain) (*repo.PodDomain, error)
-	Domain(id string) (*repo.PodDomain, error)
-	DomainByName(domain string) (*repo.PodDomain, error)
-	DomainsByPod(podID string) ([]repo.PodDomain, error)
-	Update(domain repo.PodDomain) error
+	Create(domain *model.PodDomain) (*model.PodDomain, error)
+	Domain(id string) (*model.PodDomain, error)
+	DomainByName(domain string) (*model.PodDomain, error)
+	DomainsByPod(podID string) ([]model.PodDomain, error)
+	Update(domain model.PodDomain) error
 	Delete(id string) error
 	DeleteByPod(podID string) error
 }
@@ -22,7 +23,7 @@ func NewPodDomainService(repo *repo.PodDomainRepo) *PodDomainService {
 	return &PodDomainService{repo: repo}
 }
 
-func (s *PodDomainService) Create(domain *repo.PodDomain) (*repo.PodDomain, error) {
+func (s *PodDomainService) Create(domain *model.PodDomain) (*model.PodDomain, error) {
 	err := s.repo.Create(domain)
 	if err != nil {
 		return nil, err
@@ -30,7 +31,7 @@ func (s *PodDomainService) Create(domain *repo.PodDomain) (*repo.PodDomain, erro
 	return domain, nil
 }
 
-func (s *PodDomainService) Domain(id string) (*repo.PodDomain, error) {
+func (s *PodDomainService) Domain(id string) (*model.PodDomain, error) {
 	domain, err := s.repo.Domain(id)
 	if err != nil {
 		return nil, err
@@ -38,7 +39,7 @@ func (s *PodDomainService) Domain(id string) (*repo.PodDomain, error) {
 	return domain, nil
 }
 
-func (s *PodDomainService) DomainByName(domainName string) (*repo.PodDomain, error) {
+func (s *PodDomainService) DomainByName(domainName string) (*model.PodDomain, error) {
 	domain, err := s.repo.DomainByName(domainName)
 	if err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (s *PodDomainService) DomainByName(domainName string) (*repo.PodDomain, err
 	return domain, nil
 }
 
-func (s *PodDomainService) DomainsByPod(podID string) ([]repo.PodDomain, error) {
+func (s *PodDomainService) DomainsByPod(podID string) ([]model.PodDomain, error) {
 	domains, err := s.repo.DomainsByPod(podID)
 	if err != nil {
 		return nil, err
@@ -54,7 +55,7 @@ func (s *PodDomainService) DomainsByPod(podID string) ([]repo.PodDomain, error) 
 	return domains, nil
 }
 
-func (s *PodDomainService) Update(domain repo.PodDomain) error {
+func (s *PodDomainService) Update(domain model.PodDomain) error {
 	err := s.repo.Update(domain)
 	if err != nil {
 		return err

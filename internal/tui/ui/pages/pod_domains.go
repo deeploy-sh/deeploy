@@ -37,6 +37,7 @@ type PodDomainsPage struct {
 	loading      bool
 	keyAdd       key.Binding
 	keyAuto      key.Binding
+	keyEdit      key.Binding
 	keyDelete    key.Binding
 	keyBack      key.Binding
 	keySave      key.Binding
@@ -50,7 +51,7 @@ func (m PodDomainsPage) HelpKeys() []key.Binding {
 	if m.mode == modeDomainAdd {
 		return []key.Binding{m.keySave, m.keyTab, m.keyToggle, m.keyBack}
 	}
-	return []key.Binding{m.keyAdd, m.keyAuto, m.keyDelete, m.keyBack}
+	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyBack}
 }
 
 func NewPodDomainsPage(pod *repo.Pod, project *repo.Project) PodDomainsPage {
@@ -70,6 +71,7 @@ func NewPodDomainsPage(pod *repo.Pod, project *repo.Project) PodDomainsPage {
 		sslEnabled:  false,
 		keyAdd:      key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add custom")),
 		keyAuto:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "generate auto")),
+		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDelete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keySave:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
@@ -92,7 +94,7 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case msg.PodDomainCreated, msg.PodDomainDeleted:
+	case msg.PodDomainCreated, msg.PodDomainUpdated, msg.PodDomainDeleted:
 		m.mode = modeDomainList
 		m.domainInput.SetValue("")
 		m.portInput.SetValue("")
@@ -145,11 +147,32 @@ func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		m.portInput.SetValue("8080")
 		return m, textinput.Blink
 
+	case key.Matches(tmsg, m.keyEdit):
+		if len(m.domains) > 0 && m.selected < len(m.domains) {
+			domain := m.domains[m.selected]
+			pod := m.pod
+			project := m.project
+			return m, func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewPodDomainsEditPage(domain, pod, project)
+					},
+				}
+			}
+		}
+
 	case key.Matches(tmsg, m.keyDelete):
 		if len(m.domains) > 0 && m.selected < len(m.domains) {
-			domainID := m.domains[m.selected].ID
-			m.loading = true
-			return m, api.DeletePodDomain(m.pod.ID, domainID)
+			domain := m.domains[m.selected]
+			pod := m.pod
+			project := m.project
+			return m, func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewPodDomainsDeletePage(domain, pod, project)
+					},
+				}
+			}
 		}
 
 	case tmsg.Code == tea.KeyUp:

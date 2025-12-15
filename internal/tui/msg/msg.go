@@ -67,6 +67,7 @@ type GitTokenDeleted struct{}
 
 type PodDomainsLoaded struct{ Domains any }
 type PodDomainCreated struct{}
+type PodDomainUpdated struct{}
 type PodDomainDeleted struct{}
 
 // --- Pod Env Vars ---
