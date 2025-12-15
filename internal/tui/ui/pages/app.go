@@ -208,7 +208,8 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
 
 		// If still on bootstrap, switch to dashboard now
-		if _, onBootstrap := m.currentPage.(*bootstrap); onBootstrap {
+		_, onBootstrap := m.currentPage.(*bootstrap)
+		if onBootstrap {
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
@@ -408,7 +409,8 @@ func (m app) View() tea.View {
 
 	logo := "⚡ deeploy.sh"
 	breadcrumbParts := []string{logo}
-	if p, ok := m.currentPage.(PageInfo); ok {
+	p, ok := m.currentPage.(PageInfo)
+	if ok {
 		breadcrumbParts = append(breadcrumbParts, p.Breadcrumbs()...)
 	}
 	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render("  >  "))

@@ -224,13 +224,15 @@ func (m ScrollList) View() string {
 
 			// Get prefix if item implements PrefixedItem
 			prefix := ""
-			if pi, ok := item.(PrefixedItem); ok {
+			pi, ok := item.(PrefixedItem)
+			if ok {
 				prefix = pi.Prefix() + " "
 			}
 
 			// Get suffix if item implements SuffixedItem
 			suffix := ""
-			if si, ok := item.(SuffixedItem); ok {
+			si, ok := item.(SuffixedItem)
+			if ok {
 				suffix = si.Suffix()
 			}
 

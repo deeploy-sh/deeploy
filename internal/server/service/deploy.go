@@ -98,7 +98,8 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 
 	// 2. Update status to building
 	pod.Status = "building"
-	if err := s.podRepo.Update(*pod); err != nil {
+	err = s.podRepo.Update(*pod)
+	if err != nil {
 		return fmt.Errorf("failed to update pod status: %w", err)
 	}
 
@@ -209,7 +210,8 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	// 10. Update pod with container ID and status
 	pod.ContainerID = &containerID
 	pod.Status = "running"
-	if err := s.podRepo.Update(*pod); err != nil {
+	err = s.podRepo.Update(*pod)
+	if err != nil {
 		return fmt.Errorf("failed to update pod: %w", err)
 	}
 
@@ -232,12 +234,14 @@ func (s *DeployService) Stop(ctx context.Context, podID string) error {
 		return fmt.Errorf("pod has no running container")
 	}
 
-	if err := s.docker.StopContainer(ctx, *pod.ContainerID); err != nil {
+	err = s.docker.StopContainer(ctx, *pod.ContainerID)
+	if err != nil {
 		return fmt.Errorf("failed to stop container: %w", err)
 	}
 
 	pod.Status = "stopped"
-	if err := s.podRepo.Update(*pod); err != nil {
+	err = s.podRepo.Update(*pod)
+	if err != nil {
 		return fmt.Errorf("failed to update pod: %w", err)
 	}
 

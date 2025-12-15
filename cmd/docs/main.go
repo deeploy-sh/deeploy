@@ -55,7 +55,8 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": false,
 			"error":   "Invalid request",
@@ -86,7 +87,7 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 
 	// Prod mode: add to Resend audience
 	client := resend.NewClient(config.AppConfig.ResendAPIKey)
-	_, err := client.Contacts.Create(&resend.CreateContactRequest{
+	_, err = client.Contacts.Create(&resend.CreateContactRequest{
 		Email:      email,
 		AudienceId: config.AppConfig.ResendAudienceID,
 	})

@@ -35,7 +35,8 @@ type gitTokenResponse struct {
 func (h *GitTokenHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createGitTokenRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -101,7 +102,8 @@ func (h *GitTokenHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *GitTokenHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	if err := h.service.Delete(id); err != nil {
+	err := h.service.Delete(id)
+	if err != nil {
 		slog.Error("failed to delete git token", "tokenID", id, "error", err)
 		http.Error(w, "Failed to delete git token", http.StatusInternalServerError)
 		return

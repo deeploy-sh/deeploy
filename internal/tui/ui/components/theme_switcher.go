@@ -71,8 +71,10 @@ func (m ThemeSwitcher) Update(tmsg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 	m.list, cmd = m.list.Update(tmsg)
 
 	if m.list.Index() != prevIndex {
-		if item := m.list.SelectedItem(); item != nil {
-			if ti, ok := item.(themeItem); ok {
+		item := m.list.SelectedItem()
+		if item != nil {
+			ti, ok := item.(themeItem)
+			if ok {
 				theme.SetTheme(ti.name)
 			}
 		}
@@ -82,8 +84,10 @@ func (m ThemeSwitcher) Update(tmsg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEnter:
-			if item := m.list.SelectedItem(); item != nil {
-				if ti, ok := item.(themeItem); ok {
+			item := m.list.SelectedItem()
+			if item != nil {
+				ti, ok := item.(themeItem)
+				if ok {
 					cfg, err := config.Load()
 					if err != nil {
 						cfg = &config.Config{}

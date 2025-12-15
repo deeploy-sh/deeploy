@@ -47,7 +47,8 @@ func LoadConfig() {
 }
 
 func envString(key, def string) string {
-	if v := os.Getenv(key); v != "" {
+	v := os.Getenv(key)
+	if v != "" {
 		return v
 	}
 	return def

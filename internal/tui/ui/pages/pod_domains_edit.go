@@ -113,7 +113,8 @@ func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			port := 8080
-			if pVal, err := strconv.Atoi(p.portInput.Value()); err == nil && pVal > 0 {
+			pVal, err := strconv.Atoi(p.portInput.Value())
+			if err == nil && pVal > 0 {
 				port = pVal
 			}
 

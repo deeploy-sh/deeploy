@@ -76,7 +76,8 @@ func getGitHubStars() int {
 		StargazersCount int `json:"stargazers_count"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
 		return githubStarsCache.stars
 	}
 

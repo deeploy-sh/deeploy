@@ -42,7 +42,8 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
 	var req createDomainRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -65,7 +66,8 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 		SSLEnabled: req.SSLEnabled,
 	}
 
-	if _, err := h.service.Create(domain); err != nil {
+	_, err = h.service.Create(domain)
+	if err != nil {
 		slog.Error("failed to create domain", "error", err)
 		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
 		return
@@ -93,7 +95,8 @@ func (h *PodDomainHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *PodDomainHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	domainID := r.PathValue("domainId")
 
-	if err := h.service.Delete(domainID); err != nil {
+	err := h.service.Delete(domainID)
+	if err != nil {
 		slog.Error("failed to delete domain", "domainID", domainID, "error", err)
 		http.Error(w, "Failed to delete domain", http.StatusInternalServerError)
 		return
@@ -106,7 +109,8 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 	domainID := r.PathValue("domainId")
 
 	var req model.PodDomain
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -137,7 +141,8 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 		SSLEnabled: req.SSLEnabled,
 	}
 
-	if err := h.service.Update(domain); err != nil {
+	err = h.service.Update(domain)
+	if err != nil {
 		slog.Error("failed to update domain", "domainID", domainID, "error", err)
 		http.Error(w, "Failed to update domain", http.StatusInternalServerError)
 		return
@@ -156,7 +161,8 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
 	var req generateDomainRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -195,7 +201,8 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		SSLEnabled: req.SSLEnabled,
 	}
 
-	if _, err := h.service.Create(domain); err != nil {
+	_, err = h.service.Create(domain)
+	if err != nil {
 		slog.Error("failed to create domain", "error", err)
 		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
 		return

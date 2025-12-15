@@ -41,7 +41,8 @@ func NewDockerService(buildDir string) (*DockerService, error) {
 	}
 
 	// Ensure build directory exists
-	if err := os.MkdirAll(buildDir, 0755); err != nil {
+	err = os.MkdirAll(buildDir, 0755)
+	if err != nil {
 		return nil, err
 	}
 
@@ -126,7 +127,8 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 				Message string `json:"message"`
 			} `json:"errorDetail"`
 		}
-		if err := json.Unmarshal([]byte(line), &msg); err == nil {
+		err := json.Unmarshal([]byte(line), &msg)
+		if err == nil {
 			if msg.Error != "" {
 				lastError = msg.Error
 				if logCallback != nil {
@@ -146,7 +148,8 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 		return "", fmt.Errorf("build failed: %s", lastError)
 	}
 
-	if err := scanner.Err(); err != nil {
+	err = scanner.Err()
+	if err != nil {
 		return "", fmt.Errorf("failed reading build output: %w", err)
 	}
 
@@ -206,7 +209,8 @@ func (d *DockerService) RunContainer(ctx context.Context, opts RunContainerOptio
 	}
 
 	// Start container
-	if err := d.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+	err = d.client.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	if err != nil {
 		return "", fmt.Errorf("failed to start container: %w", err)
 	}
 

@@ -23,7 +23,8 @@ func (h *DeployHandler) Deploy(w http.ResponseWriter, r *http.Request) {
 
 	// Start deploy in background
 	go func() {
-		if err := h.service.Deploy(context.Background(), podID); err != nil {
+		err := h.service.Deploy(context.Background(), podID)
+		if err != nil {
 			slog.Error("deploy failed", "podID", podID, "error", err)
 		}
 	}()
@@ -38,7 +39,8 @@ func (h *DeployHandler) Deploy(w http.ResponseWriter, r *http.Request) {
 func (h *DeployHandler) Stop(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
-	if err := h.service.Stop(r.Context(), podID); err != nil {
+	err := h.service.Stop(r.Context(), podID)
+	if err != nil {
 		slog.Error("failed to stop pod", "podID", podID, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,7 +53,8 @@ func (h *DeployHandler) Stop(w http.ResponseWriter, r *http.Request) {
 func (h *DeployHandler) Restart(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
-	if err := h.service.Restart(r.Context(), podID); err != nil {
+	err := h.service.Restart(r.Context(), podID)
+	if err != nil {
 		slog.Error("failed to restart pod", "podID", podID, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

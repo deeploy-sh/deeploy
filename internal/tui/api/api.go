@@ -151,7 +151,8 @@ func fetchProjects() ([]model.Project, error) {
 	defer resp.Body.Close()
 
 	var projects []model.Project
-	if err := json.NewDecoder(resp.Body).Decode(&projects); err != nil {
+	err = json.NewDecoder(resp.Body).Decode(&projects)
+	if err != nil {
 		return nil, err
 	}
 	return projects, nil
@@ -207,7 +208,8 @@ func fetchPods() ([]model.Pod, error) {
 	defer resp.Body.Close()
 
 	var pods []model.Pod
-	if err := json.NewDecoder(resp.Body).Decode(&pods); err != nil {
+	err = json.NewDecoder(resp.Body).Decode(&pods)
+	if err != nil {
 		return nil, err
 	}
 	return pods, nil
@@ -306,7 +308,8 @@ func FetchPodLogs(id string) tea.Cmd {
 		var result struct {
 			Logs []string `json:"logs"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&result)
+		if err != nil {
 			return msg.Error{Err: err}
 		}
 
@@ -325,7 +328,8 @@ func FetchGitTokens() tea.Cmd {
 		defer resp.Body.Close()
 
 		var tokens []model.GitToken
-		if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&tokens)
+		if err != nil {
 			return msg.Error{Err: err}
 		}
 
@@ -378,7 +382,8 @@ func FetchPodDomains(podID string) tea.Cmd {
 		defer resp.Body.Close()
 
 		var domains []model.PodDomain
-		if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&domains)
+		if err != nil {
 			return msg.Error{Err: err}
 		}
 

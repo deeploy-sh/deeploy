@@ -53,7 +53,8 @@ func MergeAttributes(attrs ...templ.Attributes) templ.Attributes {
 // Example: RandomID() → "id-1a2b3c"
 func RandomID() string {
 	b := make([]byte, 6)
-	if _, err := rand.Read(b); err != nil {
+	_, err := rand.Read(b)
+	if err != nil {
 		panic(err)
 	}
 	return fmt.Sprintf("id-%s", hex.EncodeToString(b))

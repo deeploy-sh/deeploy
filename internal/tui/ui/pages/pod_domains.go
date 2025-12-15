@@ -222,8 +222,9 @@ func (m PodDomainsPage) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 
 	case key.Matches(tmsg, m.keySave):
 		port := 8080
-		if p, err := strconv.Atoi(m.portInput.Value()); err == nil && p > 0 {
-			port = p
+		pVal, err := strconv.Atoi(m.portInput.Value())
+		if err == nil && pVal > 0 {
+			port = pVal
 		}
 
 		if m.isAuto {

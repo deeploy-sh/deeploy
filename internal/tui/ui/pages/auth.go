@@ -168,7 +168,8 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 			Server: m.serverURL,
 			Token:  result.token,
 		}
-		if err := config.Save(&cfg); err != nil {
+		err := config.Save(&cfg)
+		if err != nil {
 			return msg.AuthError{Err: err}
 		}
 

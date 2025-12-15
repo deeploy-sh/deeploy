@@ -89,7 +89,8 @@ func (m PodLogsPage) fetchLogs() tea.Cmd {
 		defer resp.Body.Close()
 
 		var result logsResponse
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&result)
+		if err != nil {
 			return logsUpdated{logs: []string{"Error: " + err.Error()}, status: "error"}
 		}
 

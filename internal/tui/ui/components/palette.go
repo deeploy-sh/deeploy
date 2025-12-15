@@ -64,9 +64,12 @@ func (m Palette) Update(msg tea.Msg) (Palette, tea.Cmd) {
 	m.list, cmd = m.list.Update(msg)
 
 	// Enter executes action
-	if msg, ok := msg.(tea.KeyPressMsg); ok && msg.Code == tea.KeyEnter {
-		if item := m.list.SelectedItem(); item != nil {
-			if pi, ok := item.(PaletteItem); ok && pi.Action != nil {
+	keyMsg, ok := msg.(tea.KeyPressMsg)
+	if ok && keyMsg.Code == tea.KeyEnter {
+		item := m.list.SelectedItem()
+		if item != nil {
+			pi, ok := item.(PaletteItem)
+			if ok && pi.Action != nil {
 				return m, pi.Action
 			}
 		}

@@ -25,7 +25,8 @@ func Init(databaseURL string) (*sqlx.DB, error) {
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	// Run migrations
-	if err := runMigrations(db); err != nil {
+	err = runMigrations(db)
+	if err != nil {
 		return nil, err
 	}
 
@@ -35,11 +36,13 @@ func Init(databaseURL string) (*sqlx.DB, error) {
 func runMigrations(db *sqlx.DB) error {
 	goose.SetBaseFS(migrations)
 
-	if err := goose.SetDialect("postgres"); err != nil {
+	err := goose.SetDialect("postgres")
+	if err != nil {
 		return err
 	}
 
-	if err := goose.Up(db.DB, "migrations"); err != nil {
+	err = goose.Up(db.DB, "migrations")
+	if err != nil {
 		return err
 	}
 

@@ -71,7 +71,8 @@ var Available = map[string]Theme{
 // SetTheme switches the active theme by name
 // Returns true if theme was found and set, false otherwise
 func SetTheme(name string) bool {
-	if t, ok := Available[name]; ok {
+	t, ok := Available[name]
+	if ok {
 		Current = t
 		return true
 	}
