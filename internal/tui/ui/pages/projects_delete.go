@@ -7,7 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -33,7 +33,7 @@ func (p ProjectDeletePage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
-func NewProjectDeletePage(s msg.Store, project *repo.Project) ProjectDeletePage {
+func NewProjectDeletePage(s msg.Store, project *model.Project) ProjectDeletePage {
 	podCount := 0
 	for _, p := range s.Pods() {
 		if p.ProjectID == project.ID {

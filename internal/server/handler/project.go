@@ -7,8 +7,8 @@ import (
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
 	"github.com/deeploy-sh/deeploy/internal/server/forms"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
 
@@ -38,7 +38,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project := &repo.Project{
+	project := &model.Project{
 		ID:     uuid.New().String(),
 		UserID: auth.GetUser(r.Context()).ID,
 		Title:  form.Title,
@@ -86,7 +86,7 @@ func (h *ProjectHandler) ProjectsByUser(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
-	var project repo.Project
+	var project model.Project
 
 	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {

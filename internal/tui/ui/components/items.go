@@ -3,12 +3,12 @@ package components
 import (
 	"fmt"
 
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
 
 // ProjectItem wraps a Project for use in ScrollList
 type ProjectItem struct {
-	repo.Project
+	model.Project
 	PodCount int
 }
 
@@ -17,7 +17,7 @@ func (i ProjectItem) Suffix() string      { return fmt.Sprintf("(%d)", i.PodCoun
 func (i ProjectItem) FilterValue() string { return i.Project.Title }
 
 // ProjectsToItems converts a slice of Projects to ScrollItems
-func ProjectsToItems(projects []repo.Project, pods []repo.Pod) []ScrollItem {
+func ProjectsToItems(projects []model.Project, pods []model.Pod) []ScrollItem {
 	// Count pods per project
 	podCounts := make(map[string]int)
 	for _, p := range pods {
@@ -33,14 +33,14 @@ func ProjectsToItems(projects []repo.Project, pods []repo.Pod) []ScrollItem {
 
 // PodItem wraps a Pod for use in ScrollList
 type PodItem struct {
-	repo.Pod
+	model.Pod
 }
 
 func (i PodItem) Title() string       { return i.Pod.Title }
 func (i PodItem) FilterValue() string { return i.Pod.Title }
 
 // PodsToItems converts a slice of Pods to ScrollItems
-func PodsToItems(pods []repo.Pod) []ScrollItem {
+func PodsToItems(pods []model.Pod) []ScrollItem {
 	items := make([]ScrollItem, len(pods))
 	for i, p := range pods {
 		items[i] = PodItem{Pod: p}

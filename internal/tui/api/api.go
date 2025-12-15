@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
@@ -144,14 +143,14 @@ func LoadData() tea.Cmd {
 
 // --- Projects ---
 
-func fetchProjects() ([]repo.Project, error) {
+func fetchProjects() ([]model.Project, error) {
 	resp, err := get("/projects")
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var projects []repo.Project
+	var projects []model.Project
 	if err := json.NewDecoder(resp.Body).Decode(&projects); err != nil {
 		return nil, err
 	}
@@ -174,7 +173,7 @@ func CreateProject(title string) tea.Cmd {
 	}
 }
 
-func UpdateProject(project *repo.Project) tea.Cmd {
+func UpdateProject(project *model.Project) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := put("/projects", project)
 		if err != nil {
@@ -200,14 +199,14 @@ func DeleteProject(id string) tea.Cmd {
 
 // --- Pods ---
 
-func fetchPods() ([]repo.Pod, error) {
+func fetchPods() ([]model.Pod, error) {
 	resp, err := get("/pods")
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var pods []repo.Pod
+	var pods []model.Pod
 	if err := json.NewDecoder(resp.Body).Decode(&pods); err != nil {
 		return nil, err
 	}
@@ -234,7 +233,7 @@ func CreatePod(title, projectID string) tea.Cmd {
 	}
 }
 
-func UpdatePod(pod *repo.Pod) tea.Cmd {
+func UpdatePod(pod *model.Pod) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := put("/pods", pod)
 		if err != nil {
@@ -317,13 +316,6 @@ func FetchPodLogs(id string) tea.Cmd {
 
 // --- Git Tokens ---
 
-type GitToken struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Provider  string `json:"provider"`
-	CreatedAt string `json:"created_at"`
-}
-
 func FetchGitTokens() tea.Cmd {
 	return func() tea.Msg {
 		resp, err := get("/git-tokens")
@@ -332,7 +324,7 @@ func FetchGitTokens() tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		var tokens []GitToken
+		var tokens []model.GitToken
 		if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
 			return msg.Error{Err: err}
 		}
@@ -377,15 +369,6 @@ func DeleteGitToken(id string) tea.Cmd {
 
 // --- Pod Domains ---
 
-type PodDomain struct {
-	ID         string `json:"id"`
-	PodID      string `json:"pod_id"`
-	Domain     string `json:"domain"`
-	Type       string `json:"type"`
-	Port       int    `json:"port"`
-	SSLEnabled bool   `json:"ssl_enabled"`
-}
-
 func FetchPodDomains(podID string) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := get("/pods/" + podID + "/domains")
@@ -394,7 +377,7 @@ func FetchPodDomains(podID string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		var domains []PodDomain
+		var domains []model.PodDomain
 		if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
 			return msg.Error{Err: err}
 		}

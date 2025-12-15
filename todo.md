@@ -1,7 +1,5 @@
 ## Todo
 
-- feat: think about toasts for errors/success messages
-- refactor: remove all model structs into shared models package
 - refactor: avoid inline statement checks (ok/err/etc.)
 - feat: zero downtime for redeployments
 - docs: docs + seo stuff

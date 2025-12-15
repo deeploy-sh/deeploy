@@ -7,14 +7,14 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/theme"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
-	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 )
 
 const headerHeight = 1
@@ -28,8 +28,8 @@ type app struct {
 	currentPage      tea.Model
 	palette          *components.Palette
 	themeSwitcher    *components.ThemeSwitcher
-	projects         []repo.Project
-	pods             []repo.Pod
+	projects         []model.Project
+	pods             []model.Pod
 	width            int
 	height           int
 	heartbeatStarted bool
@@ -39,11 +39,11 @@ type app struct {
 	statusType       msg.StatusType
 }
 
-func (m *app) Projects() []repo.Project {
+func (m *app) Projects() []model.Project {
 	return m.projects
 }
 
-func (m *app) Pods() []repo.Pod {
+func (m *app) Pods() []model.Pod {
 	return m.pods
 }
 
@@ -372,7 +372,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
 						// Find project for this pod
-						var project *repo.Project
+						var project *model.Project
 						for _, pr := range s.Projects() {
 							if pr.ID == pod.ProjectID {
 								proj := pr

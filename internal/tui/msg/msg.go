@@ -2,7 +2,7 @@ package msg
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
 
 // --- Navigation ---
@@ -13,8 +13,8 @@ type ChangePage struct {
 
 // Store interface for page factories
 type Store interface {
-	Projects() []repo.Project
-	Pods() []repo.Pod
+	Projects() []model.Project
+	Pods() []model.Pod
 }
 
 // --- Connection ---
@@ -34,12 +34,12 @@ type AuthSuccess struct{}
 // --- Data Loaded ---
 
 type DataLoaded struct {
-	Projects []repo.Project
-	Pods     []repo.Pod
+	Projects []model.Project
+	Pods     []model.Pod
 }
 
-type ProjectsLoaded struct{ Projects []repo.Project }
-type PodsLoaded struct{ Pods []repo.Pod }
+type ProjectsLoaded struct{ Projects []model.Project }
+type PodsLoaded struct{ Pods []model.Pod }
 
 // --- CRUD Success (trigger reload) ---
 
@@ -59,20 +59,20 @@ type PodLogsLoaded struct{ Logs []string }
 
 // --- Git Tokens ---
 
-type GitTokensLoaded struct{ Tokens any }
+type GitTokensLoaded struct{ Tokens []model.GitToken }
 type GitTokenCreated struct{}
 type GitTokenDeleted struct{}
 
 // --- Pod Domains ---
 
-type PodDomainsLoaded struct{ Domains any }
+type PodDomainsLoaded struct{ Domains []model.PodDomain }
 type PodDomainCreated struct{}
 type PodDomainUpdated struct{}
 type PodDomainDeleted struct{}
 
 // --- Pod Env Vars ---
 
-type PodEnvVarsLoaded struct{ EnvVars any }
+type PodEnvVarsLoaded struct{ EnvVars []model.PodEnvVar }
 type PodEnvVarsUpdated struct{}
 
 // --- Errors ---

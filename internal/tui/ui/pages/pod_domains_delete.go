@@ -7,7 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -15,9 +15,9 @@ import (
 )
 
 type PodDomainsDeletePage struct {
-	domain     api.PodDomain
-	pod        *repo.Pod
-	project    *repo.Project
+	domain     model.PodDomain
+	pod        *model.Pod
+	project    *model.Project
 	input      textinput.Model
 	keyConfirm key.Binding
 	keyCancel  key.Binding
@@ -29,7 +29,7 @@ func (p PodDomainsDeletePage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
-func NewPodDomainsDeletePage(domain api.PodDomain, pod *repo.Pod, project *repo.Project) PodDomainsDeletePage {
+func NewPodDomainsDeletePage(domain model.PodDomain, pod *model.Pod, project *model.Project) PodDomainsDeletePage {
 	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = domain.Domain

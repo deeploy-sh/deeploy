@@ -3,33 +3,18 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"time"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
 
-type Pod struct {
-	ID             string    `json:"id" db:"id"`
-	UserID         string    `json:"user_id" db:"user_id"`
-	ProjectID      string    `json:"project_id" db:"project_id"`
-	Title          string    `json:"title" db:"title"`
-	RepoURL        *string   `json:"repo_url" db:"repo_url"`
-	Branch         string    `json:"branch" db:"branch"`
-	DockerfilePath string    `json:"dockerfile_path" db:"dockerfile_path"`
-	GitTokenID     *string   `json:"git_token_id" db:"git_token_id"`
-	ContainerID    *string   `json:"container_id" db:"container_id"`
-	Status         string    `json:"status" db:"status"`
-	CreatedAt      time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
-}
-
 type PodRepoInterface interface {
-	Create(pod *Pod) error
-	Pod(id string) (*Pod, error)
-	PodsByProject(id string) ([]Pod, error)
-	PodsByUser(id string) ([]Pod, error)
+	Create(pod *model.Pod) error
+	Pod(id string) (*model.Pod, error)
+	PodsByProject(id string) ([]model.Pod, error)
+	PodsByUser(id string) ([]model.Pod, error)
 	CountByProject(id string) (int, error)
-	Update(pod Pod) error
+	Update(pod model.Pod) error
 	Delete(id string) error
 }
 
@@ -41,7 +26,7 @@ func NewPodRepo(db *sqlx.DB) *PodRepo {
 	return &PodRepo{db: db}
 }
 
-func (r *PodRepo) Create(pod *Pod) error {
+func (r *PodRepo) Create(pod *model.Pod) error {
 	query := `INSERT INTO pods (id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	_, err := r.db.Exec(query, pod.ID, pod.UserID, pod.ProjectID, pod.Title, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.Status)
@@ -52,8 +37,8 @@ func (r *PodRepo) Create(pod *Pod) error {
 	return nil
 }
 
-func (r *PodRepo) Pod(id string) (*Pod, error) {
-	pod := &Pod{}
+func (r *PodRepo) Pod(id string) (*model.Pod, error) {
+	pod := &model.Pod{}
 	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE id = $1`
 
 	err := r.db.Get(pod, query, id)
@@ -67,8 +52,8 @@ func (r *PodRepo) Pod(id string) (*Pod, error) {
 	return pod, nil
 }
 
-func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
-	pods := []Pod{}
+func (r *PodRepo) PodsByProject(id string) ([]model.Pod, error) {
+	pods := []model.Pod{}
 	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE project_id = $1`
 
 	err := r.db.Select(&pods, query, id)
@@ -94,8 +79,8 @@ func (r *PodRepo) CountByProject(id string) (int, error) {
 	return count, nil
 }
 
-func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
-	pods := []Pod{}
+func (r *PodRepo) PodsByUser(id string) ([]model.Pod, error) {
+	pods := []model.Pod{}
 	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE user_id = $1`
 
 	err := r.db.Select(&pods, query, id)
@@ -109,7 +94,7 @@ func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 	return pods, nil
 }
 
-func (r *PodRepo) Update(pod Pod) error {
+func (r *PodRepo) Update(pod model.Pod) error {
 	query := `UPDATE pods SET title = $1, repo_url = $2, branch = $3, dockerfile_path = $4, git_token_id = $5, container_id = $6, status = $7 WHERE id = $8`
 
 	result, err := r.db.Exec(query, pod.Title, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.ContainerID, pod.Status, pod.ID)

@@ -7,8 +7,8 @@ import (
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
 	"github.com/deeploy-sh/deeploy/internal/server/forms"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
 
@@ -37,7 +37,7 @@ func (h *PodHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pod := &repo.Pod{
+	pod := &model.Pod{
 		ID:        uuid.New().String(),
 		UserID:    auth.GetUser(r.Context()).ID,
 		ProjectID: form.ProjectID,
@@ -100,7 +100,7 @@ func (h *PodHandler) PodsByUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PodHandler) Update(w http.ResponseWriter, r *http.Request) {
-	var pod repo.Pod
+	var pod model.Pod
 
 	err := json.NewDecoder(r.Body).Decode(&pod)
 	if err != nil {

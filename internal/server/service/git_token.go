@@ -3,13 +3,14 @@ package service
 import (
 	"github.com/deeploy-sh/deeploy/internal/server/crypto"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
 
 type GitTokenServiceInterface interface {
-	Create(token *repo.GitToken) (*repo.GitToken, error)
-	GitToken(id string) (*repo.GitToken, error)
-	GitTokensByUser(userID string) ([]repo.GitToken, error)
-	Update(token repo.GitToken) error
+	Create(token *model.GitToken) (*model.GitToken, error)
+	GitToken(id string) (*model.GitToken, error)
+	GitTokensByUser(userID string) ([]model.GitToken, error)
+	Update(token model.GitToken) error
 	Delete(id string) error
 }
 
@@ -22,7 +23,7 @@ func NewGitTokenService(repo *repo.GitTokenRepo, encryptor *crypto.Encryptor) *G
 	return &GitTokenService{repo: repo, encryptor: encryptor}
 }
 
-func (s *GitTokenService) Create(token *repo.GitToken) (*repo.GitToken, error) {
+func (s *GitTokenService) Create(token *model.GitToken) (*model.GitToken, error) {
 	if s.encryptor != nil {
 		encrypted, err := s.encryptor.Encrypt(token.Token)
 		if err != nil {
@@ -38,7 +39,7 @@ func (s *GitTokenService) Create(token *repo.GitToken) (*repo.GitToken, error) {
 	return token, nil
 }
 
-func (s *GitTokenService) GitToken(id string) (*repo.GitToken, error) {
+func (s *GitTokenService) GitToken(id string) (*model.GitToken, error) {
 	token, err := s.repo.GitToken(id)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func (s *GitTokenService) GitToken(id string) (*repo.GitToken, error) {
 	return token, nil
 }
 
-func (s *GitTokenService) GitTokensByUser(userID string) ([]repo.GitToken, error) {
+func (s *GitTokenService) GitTokensByUser(userID string) ([]model.GitToken, error) {
 	tokens, err := s.repo.GitTokensByUser(userID)
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func (s *GitTokenService) GitTokensByUser(userID string) ([]repo.GitToken, error
 	return tokens, nil
 }
 
-func (s *GitTokenService) Update(token repo.GitToken) error {
+func (s *GitTokenService) Update(token model.GitToken) error {
 	if s.encryptor != nil {
 		encrypted, err := s.encryptor.Encrypt(token.Token)
 		if err != nil {

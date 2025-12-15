@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,8 +17,8 @@ func ComparePassword(hash, password string) bool {
 	return err == nil
 }
 
-func GetUser(ctx context.Context) *repo.UserDTO {
-	user, ok := ctx.Value("user").(*repo.UserDTO)
+func GetUser(ctx context.Context) *model.User {
+	user, ok := ctx.Value("user").(*model.User)
 	if ok {
 		return user
 	}

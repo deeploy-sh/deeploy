@@ -7,7 +7,6 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
@@ -15,9 +14,9 @@ import (
 )
 
 type PodDetailPage struct {
-	pod         *repo.Pod
-	project     *repo.Project
-	domains     []api.PodDomain
+	pod         *model.Pod
+	project     *model.Project
+	domains     []model.PodDomain
 	envVarCount int
 	keyDeploy   key.Binding
 	keyStop     key.Binding
@@ -35,7 +34,7 @@ func (m PodDetailPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyVars, m.keyBack}
 }
 
-func NewPodDetailPage(pod *repo.Pod, project *repo.Project) PodDetailPage {
+func NewPodDetailPage(pod *model.Pod, project *model.Project) PodDetailPage {
 	return PodDetailPage{
 		pod:        pod,
 		project:    project,
@@ -60,15 +59,11 @@ func (m PodDetailPage) Init() tea.Cmd {
 func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
-		if domains, ok := tmsg.Domains.([]api.PodDomain); ok {
-			m.domains = domains
-		}
+		m.domains = tmsg.Domains
 		return m, nil
 
 	case msg.PodEnvVarsLoaded:
-		if envVars, ok := tmsg.EnvVars.([]model.PodEnvVar); ok {
-			m.envVarCount = len(envVars)
-		}
+		m.envVarCount = len(tmsg.EnvVars)
 		return m, nil
 
 	case msg.PodDeployed, msg.PodStopped, msg.PodRestarted:

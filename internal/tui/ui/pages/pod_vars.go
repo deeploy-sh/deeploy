@@ -7,7 +7,6 @@ import (
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
@@ -15,8 +14,8 @@ import (
 )
 
 type PodVarsPage struct {
-	pod      *repo.Pod
-	project  *repo.Project
+	pod      *model.Pod
+	project  *model.Project
 	textarea textarea.Model
 	envVars  []model.PodEnvVar
 	keySave  key.Binding
@@ -29,7 +28,7 @@ func (m PodVarsPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyBack}
 }
 
-func NewPodVarsPage(pod *repo.Pod, project *repo.Project) PodVarsPage {
+func NewPodVarsPage(pod *model.Pod, project *model.Project) PodVarsPage {
 	ta := textarea.New()
 	ta.Placeholder = "DATABASE_URL=postgres://..."
 	ta.Prompt = ""
@@ -53,11 +52,8 @@ func (m PodVarsPage) Init() tea.Cmd {
 func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodEnvVarsLoaded:
-		envVars, ok := tmsg.EnvVars.([]model.PodEnvVar)
-		if ok {
-			m.envVars = envVars
-			m.textarea.SetValue(m.envVarsToText())
-		}
+		m.envVars = tmsg.EnvVars
+		m.textarea.SetValue(m.envVarsToText())
 		return m, nil
 
 	case msg.PodEnvVarsUpdated:

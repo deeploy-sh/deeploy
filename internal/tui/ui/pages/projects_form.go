@@ -5,7 +5,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -16,7 +16,7 @@ type ProjectFormPage struct {
 	titleInput textinput.Model
 	keySave    key.Binding
 	keyCancel  key.Binding
-	project    *repo.Project
+	project    *model.Project
 	width      int
 	height     int
 }
@@ -25,7 +25,7 @@ func (p ProjectFormPage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keySave, p.keyCancel}
 }
 
-func NewProjectFormPage(project *repo.Project) ProjectFormPage {
+func NewProjectFormPage(project *model.Project) ProjectFormPage {
 	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()

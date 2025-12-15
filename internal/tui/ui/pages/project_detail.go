@@ -4,15 +4,15 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 )
 
 type ProjectDetailPage struct {
 	store          msg.Store
-	project        *repo.Project
+	project        *model.Project
 	pods           components.ScrollList
 	keyNewPod      key.Binding
 	keySelectPod   key.Binding
@@ -28,7 +28,7 @@ func (m ProjectDetailPage) HelpKeys() []key.Binding {
 }
 
 func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
-	var project repo.Project
+	var project model.Project
 	for _, p := range s.Projects() {
 		if p.ID == projectID {
 			project = p
@@ -36,7 +36,7 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 		}
 	}
 
-	var pods []repo.Pod
+	var pods []model.Pod
 	for _, p := range s.Pods() {
 		if p.ProjectID == projectID {
 			pods = append(pods, p)
@@ -72,7 +72,7 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.DataLoaded:
 		// Filter pods for this project
-		var pods []repo.Pod
+		var pods []model.Pod
 		for _, p := range tmsg.Pods {
 			if p.ProjectID == m.project.ID {
 				pods = append(pods, p)

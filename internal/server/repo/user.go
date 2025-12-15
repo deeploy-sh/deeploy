@@ -2,36 +2,16 @@ package repo
 
 import (
 	"database/sql"
-	"time"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
 
-type User struct {
-	ID        string    `db:"id"`
-	Email     string    `db:"email"`
-	Password  string    `db:"password"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-}
-
-type UserDTO struct {
-	ID    string
-	Email string
-}
-
-func (u *User) ToDTO() *UserDTO {
-	return &UserDTO{
-		ID:    u.ID,
-		Email: u.Email,
-	}
-}
-
 type UserRepoInterface interface {
 	CountUsers() (int, error)
-	CreateUser(user *User) error
-	GetUserByEmail(email string) (*User, error)
-	GetUserByID(id string) (*User, error)
+	CreateUser(user *model.User) error
+	GetUserByEmail(email string) (*model.User, error)
+	GetUserByID(id string) (*model.User, error)
 }
 
 type UserRepo struct {
@@ -54,7 +34,7 @@ func (r *UserRepo) CountUsers() (int, error) {
 	return count, nil
 }
 
-func (r *UserRepo) CreateUser(user *User) error {
+func (r *UserRepo) CreateUser(user *model.User) error {
 	query := `INSERT INTO users (id, email, password) VALUES ($1, $2, $3)`
 
 	_, err := r.db.Exec(query, user.ID, user.Email, user.Password)
@@ -65,8 +45,8 @@ func (r *UserRepo) CreateUser(user *User) error {
 	return nil
 }
 
-func (r *UserRepo) GetUserByEmail(email string) (*User, error) {
-	user := &User{}
+func (r *UserRepo) GetUserByEmail(email string) (*model.User, error) {
+	user := &model.User{}
 	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1`
 
 	err := r.db.Get(user, query, email)
@@ -80,8 +60,8 @@ func (r *UserRepo) GetUserByEmail(email string) (*User, error) {
 	return user, nil
 }
 
-func (r *UserRepo) GetUserByID(id string) (*User, error) {
-	user := &User{}
+func (r *UserRepo) GetUserByID(id string) (*model.User, error) {
+	user := &model.User{}
 	query := `SELECT id, email, password, created_at, updated_at FROM users WHERE id = $1`
 
 	err := r.db.Get(user, query, id)

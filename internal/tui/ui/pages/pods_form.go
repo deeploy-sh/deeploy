@@ -8,7 +8,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -16,16 +16,16 @@ import (
 )
 
 type PodFormPage struct {
-	pod             *repo.Pod
+	pod             *model.Pod
 	projectID       string
-	gitTokens       []api.GitToken
+	gitTokens       []model.GitToken
 	titleInput      textinput.Model
 	repoURLInput    textinput.Model
 	branchInput     textinput.Model
 	dockerfileInput textinput.Model
-	selectedToken int
-	focusedField  int
-	keySave       key.Binding
+	selectedToken   int
+	focusedField    int
+	keySave         key.Binding
 	keyBack         key.Binding
 	keyTab          key.Binding
 	keyShiftTab     key.Binding
@@ -45,7 +45,7 @@ func (m PodFormPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyTab, m.keyBack}
 }
 
-func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
+func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
 	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
 	inputWidth := card.InnerWidth()
 
@@ -101,15 +101,13 @@ func (m PodFormPage) Init() tea.Cmd {
 func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.GitTokensLoaded:
-		if tokens, ok := tmsg.Tokens.([]api.GitToken); ok {
-			m.gitTokens = tokens
-			// Find current token selection
-			if m.pod != nil && m.pod.GitTokenID != nil {
-				for i, t := range m.gitTokens {
-					if t.ID == *m.pod.GitTokenID {
-						m.selectedToken = i + 1
-						break
-					}
+		m.gitTokens = tmsg.Tokens
+		// Find current token selection
+		if m.pod != nil && m.pod.GitTokenID != nil {
+			for i, t := range m.gitTokens {
+				if t.ID == *m.pod.GitTokenID {
+					m.selectedToken = i + 1
+					break
 				}
 			}
 		}

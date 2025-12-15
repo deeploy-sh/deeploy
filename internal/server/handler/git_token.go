@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
 
@@ -47,7 +47,7 @@ func (h *GitTokenHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	userID := auth.GetUser(r.Context()).ID
 
-	gitToken := &repo.GitToken{
+	gitToken := &model.GitToken{
 		ID:       uuid.New().String(),
 		UserID:   userID,
 		Name:     req.Name,

@@ -3,24 +3,16 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"time"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
 
-type Project struct {
-	ID        string    `json:"id" db:"id"`
-	UserID    string    `json:"user_id" db:"user_id"`
-	Title     string    `json:"title" db:"title"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
-}
-
 type ProjectRepoInterface interface {
-	Create(project *Project) error
-	Project(id string) (*Project, error)
-	ProjectsByUser(id string) ([]Project, error)
-	Update(project Project) error
+	Create(project *model.Project) error
+	Project(id string) (*model.Project, error)
+	ProjectsByUser(id string) ([]model.Project, error)
+	Update(project model.Project) error
 	Delete(id string) error
 }
 
@@ -32,7 +24,7 @@ func NewProjectRepo(db *sqlx.DB) *ProjectRepo {
 	return &ProjectRepo{db: db}
 }
 
-func (r *ProjectRepo) Create(project *Project) error {
+func (r *ProjectRepo) Create(project *model.Project) error {
 	query := `INSERT INTO projects (id, user_id, title) VALUES ($1, $2, $3)`
 
 	_, err := r.db.Exec(query, project.ID, project.UserID, project.Title)
@@ -43,8 +35,8 @@ func (r *ProjectRepo) Create(project *Project) error {
 	return nil
 }
 
-func (r *ProjectRepo) Project(id string) (*Project, error) {
-	project := &Project{}
+func (r *ProjectRepo) Project(id string) (*model.Project, error) {
+	project := &model.Project{}
 	query := `SELECT id, user_id, title, created_at, updated_at FROM projects WHERE id = $1`
 
 	err := r.db.Get(project, query, id)
@@ -58,8 +50,8 @@ func (r *ProjectRepo) Project(id string) (*Project, error) {
 	return project, nil
 }
 
-func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
-	projects := []Project{}
+func (r *ProjectRepo) ProjectsByUser(id string) ([]model.Project, error) {
+	projects := []model.Project{}
 	query := `SELECT id, user_id, title, created_at, updated_at FROM projects WHERE user_id = $1`
 
 	err := r.db.Select(&projects, query, id)
@@ -73,7 +65,7 @@ func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 	return projects, nil
 }
 
-func (r *ProjectRepo) Update(project Project) error {
+func (r *ProjectRepo) Update(project model.Project) error {
 	query := `UPDATE projects SET title = $1 WHERE id = $2`
 
 	result, err := r.db.Exec(query, project.Title, project.ID)

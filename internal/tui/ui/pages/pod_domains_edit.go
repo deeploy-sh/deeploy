@@ -9,7 +9,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -17,9 +17,9 @@ import (
 )
 
 type PodDomainsEditPage struct {
-	domain       api.PodDomain
-	pod          *repo.Pod
-	project      *repo.Project
+	domain       model.PodDomain
+	pod          *model.Pod
+	project      *model.Project
 	domainInput  textinput.Model
 	portInput    textinput.Model
 	sslEnabled   bool
@@ -36,7 +36,7 @@ func (p PodDomainsEditPage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keySave, p.keyTab, p.keyToggle, p.keyCancel}
 }
 
-func NewPodDomainsEditPage(domain api.PodDomain, pod *repo.Pod, project *repo.Project) PodDomainsEditPage {
+func NewPodDomainsEditPage(domain model.PodDomain, pod *model.Pod, project *model.Project) PodDomainsEditPage {
 	domainInput := components.NewTextInput(40)
 	domainInput.Placeholder = "app.example.com"
 	domainInput.CharLimit = 100

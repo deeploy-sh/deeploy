@@ -7,6 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -14,7 +15,7 @@ import (
 )
 
 type GitTokenDeletePage struct {
-	token      api.GitToken
+	token      model.GitToken
 	input      textinput.Model
 	keyConfirm key.Binding
 	keyCancel  key.Binding
@@ -26,7 +27,7 @@ func (p GitTokenDeletePage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
-func NewGitTokenDeletePage(token api.GitToken) GitTokenDeletePage {
+func NewGitTokenDeletePage(token model.GitToken) GitTokenDeletePage {
 	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = token.Name

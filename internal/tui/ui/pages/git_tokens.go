@@ -7,13 +7,14 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
 type GitTokensPage struct {
-	tokens    []api.GitToken
+	tokens    []model.GitToken
 	selected  int
 	keyAdd    key.Binding
 	keyDelete key.Binding
@@ -41,9 +42,7 @@ func (m GitTokensPage) Init() tea.Cmd {
 func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.GitTokensLoaded:
-		if tokens, ok := tmsg.Tokens.([]api.GitToken); ok {
-			m.tokens = tokens
-		}
+		m.tokens = tmsg.Tokens
 		return m, nil
 
 	case msg.GitTokenDeleted:

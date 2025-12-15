@@ -7,7 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -33,7 +33,7 @@ func (p PodDeletePage) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
-func NewPodDeletePage(pod *repo.Pod) PodDeletePage {
+func NewPodDeletePage(pod *model.Pod) PodDeletePage {
 	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = pod.Title

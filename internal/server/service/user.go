@@ -4,15 +4,16 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
 	"github.com/deeploy-sh/deeploy/internal/server/forms"
 	"github.com/deeploy-sh/deeploy/internal/server/jwt"
-	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
 
 type UserServiceInterface interface {
 	Register(form forms.RegisterForm) (string, error)
 	Login(email, password string) (string, error)
-	GetUserByID(id string) (*repo.User, error)
+	GetUserByID(id string) (*model.User, error)
 	HasUser() (bool, error)
 }
 
@@ -45,7 +46,7 @@ func (s *UserService) Register(form forms.RegisterForm) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	user := &repo.User{
+	user := &model.User{
 		ID:       uuid.New().String(),
 		Email:    form.Email,
 		Password: hashedPwd,
@@ -79,7 +80,7 @@ func (s *UserService) Login(email, password string) (string, error) {
 	return token, nil
 }
 
-func (s *UserService) GetUserByID(id string) (*repo.User, error) {
+func (s *UserService) GetUserByID(id string) (*model.User, error) {
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
 		return nil, err

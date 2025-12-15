@@ -9,11 +9,11 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/server/repo"
 )
 
 type podDomainsMode int
@@ -24,9 +24,9 @@ const (
 )
 
 type PodDomainsPage struct {
-	pod          *repo.Pod
-	project      *repo.Project
-	domains      []api.PodDomain
+	pod          *model.Pod
+	project      *model.Project
+	domains      []model.PodDomain
 	selected     int
 	mode         podDomainsMode
 	domainInput  textinput.Model
@@ -53,7 +53,7 @@ func (m PodDomainsPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyBack}
 }
 
-func NewPodDomainsPage(pod *repo.Pod, project *repo.Project) PodDomainsPage {
+func NewPodDomainsPage(pod *model.Pod, project *model.Project) PodDomainsPage {
 	domainInput := components.NewTextInput(40)
 	domainInput.Placeholder = "app.example.com"
 	domainInput.CharLimit = 100
@@ -86,11 +86,7 @@ func (m PodDomainsPage) Init() tea.Cmd {
 func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
-		if domains, ok := tmsg.Domains.([]api.PodDomain); ok {
-			m.domains = domains
-		} else {
-			m.domains = []api.PodDomain{}
-		}
+		m.domains = tmsg.Domains
 		return m, nil
 
 	case msg.PodDomainCreated, msg.PodDomainUpdated, msg.PodDomainDeleted:
