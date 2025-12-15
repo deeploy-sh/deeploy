@@ -71,12 +71,6 @@ func (m authPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			m.waiting = true
 			return m, m.startBrowserAuth()
 		}
-	case msg.AuthSuccess:
-		return m, func() tea.Msg {
-			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-			}
-		}
 	}
 	return m, cmd
 }
@@ -178,8 +172,6 @@ func (m authPage) startBrowserAuth() tea.Cmd {
 			return msg.AuthError{Err: err}
 		}
 
-		return msg.ChangePage{
-			PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-		}
+		return msg.AuthSuccess{}
 	}
 }

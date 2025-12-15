@@ -525,9 +525,6 @@ func CheckConnection() tea.Cmd {
 
 		_, err = get("/health")
 		if err != nil {
-			if err == errs.ErrUnauthorized {
-				return msg.ConnectionResult{NeedsAuth: true}
-			}
 			return msg.ConnectionResult{Offline: true}
 		}
 

@@ -223,6 +223,16 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 
+	case msg.AuthSuccess:
+		return m, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+				}
+			},
+		)
+
 	// CRUD Success -> Reload data
 	case msg.ProjectCreated, msg.ProjectUpdated, msg.ProjectDeleted,
 		msg.PodCreated, msg.PodUpdated, msg.PodDeleted:
