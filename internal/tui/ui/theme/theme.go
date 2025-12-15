@@ -35,8 +35,8 @@ func Color(s string) color.Color {
 	return lipgloss.Color(s)
 }
 
-// Current is the active theme - defaults to OpenCode
-var Current Theme = Dracula()
+// Current is the active theme - defaults to Deeploy
+var Current Theme = Deeploy()
 
 // Available themes registry (26 themes)
 var Available = map[string]Theme{
@@ -57,7 +57,7 @@ var Available = map[string]Theme{
 	"nightowl":    NightOwl(),
 	"nord":        Nord(),
 	"one-dark":    OneDark(),
-	"opencode":    OpenCode(),
+	"deeploy":     Deeploy(),
 	"palenight":   Palenight(),
 	"rose-pine":   RosePine(),
 	"solarized":   Solarized(),
@@ -85,6 +85,7 @@ func ThemeNames() []string {
 		"ayu",
 		"catppuccin",
 		"cobalt2",
+		"deeploy",
 		"dracula",
 		"everforest",
 		"flexoki",
@@ -98,7 +99,6 @@ func ThemeNames() []string {
 		"nightowl",
 		"nord",
 		"one-dark",
-		"opencode",
 		"palenight",
 		"rose-pine",
 		"solarized",
