@@ -1,30 +1,3 @@
 <svg width="32" height="32" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Body - Yellow #EAB308 -->
-  <rect x="4" y="4" width="2" height="2" fill="#EAB308"/>
-  <rect x="6" y="4" width="2" height="2" fill="#EAB308"/>
-  <rect x="8" y="4" width="2" height="2" fill="#EAB308"/>
-  <rect x="10" y="4" width="2" height="2" fill="#EAB308"/>
-  <rect x="2" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="4" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="6" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="8" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="10" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="12" y="6" width="2" height="2" fill="#EAB308"/>
-  <rect x="2" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="4" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="6" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="8" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="10" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="12" y="8" width="2" height="2" fill="#EAB308"/>
-  <rect x="2" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="4" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="6" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="8" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="10" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="12" y="10" width="2" height="2" fill="#EAB308"/>
-  <rect x="4" y="12" width="2" height="2" fill="#EAB308"/>
-  <rect x="10" y="12" width="2" height="2" fill="#EAB308"/>
-  <!-- Eyes - Dark -->
-  <rect x="4" y="6" width="2" height="2" fill="#18181B"/>
-  <rect x="10" y="6" width="2" height="2" fill="#18181B"/>
+  <path fill-rule="evenodd" d="M 4 4 H 12 V 6 H 14 V 12 H 12 V 14 H 10 V 12 H 6 V 14 H 4 V 12 H 2 V 6 H 4 Z M 4 6 V 8 H 6 V 6 Z M 10 6 V 8 H 12 V 6 Z" fill="#FF79C6"/>
 </svg>

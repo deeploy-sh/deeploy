@@ -2,36 +2,12 @@ package modules
 
 import "fmt"
 
-// Blob Logo Icon (16x16)
+// Blob Logo Icon - Pink
 templ BlobIcon() {
-	<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-yellow-500">
-		<rect x="4" y="4" width="2" height="2" fill="currentColor"></rect>
-		<rect x="6" y="4" width="2" height="2" fill="currentColor"></rect>
-		<rect x="8" y="4" width="2" height="2" fill="currentColor"></rect>
-		<rect x="10" y="4" width="2" height="2" fill="currentColor"></rect>
-		<rect x="2" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="4" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="6" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="8" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="10" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="12" y="6" width="2" height="2" fill="currentColor"></rect>
-		<rect x="2" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="4" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="6" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="8" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="10" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="12" y="8" width="2" height="2" fill="currentColor"></rect>
-		<rect x="2" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="4" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="6" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="8" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="10" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="12" y="10" width="2" height="2" fill="currentColor"></rect>
-		<rect x="4" y="12" width="2" height="2" fill="currentColor"></rect>
-		<rect x="10" y="12" width="2" height="2" fill="currentColor"></rect>
-		<!-- Eyes -->
-		<rect x="4" y="6" width="2" height="2" class="text-background" fill="currentColor"></rect>
-		<rect x="10" y="6" width="2" height="2" class="text-background" fill="currentColor"></rect>
+	<svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<path d="M 4 4 H 12 V 6 H 14 V 12 H 12 V 14 H 10 V 12 H 6 V 14 H 4 V 12 H 2 V 6 H 4 Z" fill="#FF79C6"/>
+		<rect x="4" y="6" width="2" height="2" class="fill-background"/>
+		<rect x="10" y="6" width="2" height="2" class="fill-background"/>
 	</svg>
 }
 
@@ -52,14 +28,14 @@ templ Navbar(props ...NavbarProps) {
 	if len(props) > 0 {
 		{{ p = props[0] }}
 	}
-	<nav class="px-20 py-6 border-b border-border flex justify-between items-center">
+	<nav class="px-4 py-4 md:px-20 md:py-6 border-b border-border flex justify-between items-center">
 		<!-- Logo left -->
 		<a href="/" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
 			@BlobIcon()
 			deeploy
 		</a>
 		<!-- Nav right -->
-		<div class="flex items-center gap-6">
+		<div class="flex items-center gap-4 md:gap-6">
 			<!-- GitHub -->
 			<a
 				href="https://github.com/deeploy-sh/deeploy"
