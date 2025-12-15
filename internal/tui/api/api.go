@@ -437,6 +437,24 @@ func DeletePodDomain(podID, domainID string) tea.Cmd {
 	}
 }
 
+func UpdatePodDomain(podID, domainID, domain string, port int, sslEnabled bool) tea.Cmd {
+	return func() tea.Msg {
+		data := model.PodDomain{
+			Domain:     domain,
+			Port:       port,
+			SSLEnabled: sslEnabled,
+		}
+
+		resp, err := put("/pods/"+podID+"/domains/"+domainID, data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.PodDomainUpdated{}
+	}
+}
+
 func GenerateAutoDomain(podID string, port int, sslEnabled bool) tea.Cmd {
 	return func() tea.Msg {
 		data := struct {
