@@ -15,7 +15,6 @@ import (
 type GitTokensPage struct {
 	tokens    []api.GitToken
 	selected  int
-	loading   bool
 	keyAdd    key.Binding
 	keyDelete key.Binding
 	keyBack   key.Binding
@@ -32,7 +31,6 @@ func NewGitTokensPage() GitTokensPage {
 		keyAdd:    key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add")),
 		keyDelete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
-		loading:   true,
 	}
 }
 
@@ -43,7 +41,6 @@ func (m GitTokensPage) Init() tea.Cmd {
 func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.GitTokensLoaded:
-		m.loading = false
 		if tokens, ok := tmsg.Tokens.([]api.GitToken); ok {
 			m.tokens = tokens
 		}
@@ -115,9 +112,7 @@ func (m GitTokensPage) View() tea.View {
 	b.WriteString(styles.MutedStyle().Render("Personal Access Tokens for private repositories"))
 	b.WriteString("\n\n")
 
-	if m.loading {
-		b.WriteString("Loading...")
-	} else if len(m.tokens) == 0 {
+	if len(m.tokens) == 0 {
 		b.WriteString(styles.MutedStyle().Render("No tokens configured. Press 'a' to add one."))
 	} else {
 		for i, t := range m.tokens {

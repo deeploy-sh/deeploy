@@ -24,7 +24,6 @@ type PodDomainsEditPage struct {
 	portInput    textinput.Model
 	sslEnabled   bool
 	focusedInput int
-	loading      bool
 	keySave      key.Binding
 	keyTab       key.Binding
 	keyToggle    key.Binding
@@ -56,7 +55,7 @@ func NewPodDomainsEditPage(domain api.PodDomain, pod *repo.Pod, project *repo.Pr
 		domainInput: domainInput,
 		portInput:   portInput,
 		sslEnabled:  domain.SSLEnabled,
-		keySave:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
 		keyToggle:   key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle SSL")),
 		keyCancel:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
@@ -118,7 +117,6 @@ func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				port = pVal
 			}
 
-			p.loading = true
 			return p, api.UpdatePodDomain(p.pod.ID, p.domain.ID, domain, port, p.sslEnabled)
 		}
 
@@ -144,11 +142,6 @@ func (p PodDomainsEditPage) View() tea.View {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
 	b.WriteString(titleStyle.Render("Edit Domain"))
 	b.WriteString("\n\n")
-
-	if p.loading {
-		b.WriteString("Saving...")
-		return tea.NewView(p.centeredCard(b.String()))
-	}
 
 	// Type badge (read-only)
 	typeLabel := "custom"

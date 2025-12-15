@@ -19,7 +19,6 @@ type PodDetailPage struct {
 	project     *repo.Project
 	domains     []api.PodDomain
 	envVarCount int
-	loading     bool
 	keyDeploy   key.Binding
 	keyStop     key.Binding
 	keyRestart  key.Binding
@@ -73,7 +72,6 @@ func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.PodDeployed, msg.PodStopped, msg.PodRestarted:
-		m.loading = false
 		return m, api.LoadData()
 
 	case msg.DataLoaded:
@@ -125,11 +123,9 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		)
 
 	case key.Matches(tmsg, m.keyStop):
-		m.loading = true
 		return m, api.StopPod(m.pod.ID)
 
 	case key.Matches(tmsg, m.keyRestart):
-		m.loading = true
 		return m, api.RestartPod(m.pod.ID)
 
 	case key.Matches(tmsg, m.keyLogs):
@@ -231,11 +227,6 @@ func (m PodDetailPage) View() tea.View {
 		b.WriteString(fmt.Sprintf("%d configured", m.envVarCount))
 	} else {
 		b.WriteString(styles.MutedStyle().Render("(none)"))
-	}
-
-	if m.loading {
-		b.WriteString("\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("Loading..."))
 	}
 
 	card := styles.Card(styles.CardProps{

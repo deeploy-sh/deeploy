@@ -35,6 +35,8 @@ type app struct {
 	heartbeatStarted bool
 	offline          bool
 	bootstrapped     bool
+	statusText       string
+	statusType       msg.StatusType
 }
 
 func (m *app) Projects() []repo.Project {
@@ -43,6 +45,12 @@ func (m *app) Projects() []repo.Project {
 
 func (m *app) Pods() []repo.Pod {
 	return m.pods
+}
+
+func (m *app) clearStatusAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(t time.Time) tea.Msg {
+		return msg.ClearStatus{}
+	})
 }
 
 func NewApp() tea.Model {
@@ -218,10 +226,13 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		// Other errors - just forward to current page
+		// Show error in status line
+		m.statusText = tmsg.Err.Error()
+		m.statusType = msg.StatusError
+		// Forward to current page
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
-		return m, cmd
+		return m, tea.Batch(cmd, m.clearStatusAfter(5*time.Second))
 
 	case msg.AuthSuccess:
 		return m, tea.Batch(
@@ -233,10 +244,40 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 		)
 
-	// CRUD Success -> Reload data
-	case msg.ProjectCreated, msg.ProjectUpdated, msg.ProjectDeleted,
-		msg.PodCreated, msg.PodUpdated, msg.PodDeleted:
-		return m, api.LoadData()
+	// CRUD Success -> Reload data + show status
+	case msg.ProjectCreated:
+		m.statusText = "Project created"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+	case msg.ProjectUpdated:
+		m.statusText = "Project saved"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+	case msg.ProjectDeleted:
+		m.statusText = "Project deleted"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+	case msg.PodCreated:
+		m.statusText = "Pod created"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+	case msg.PodUpdated:
+		m.statusText = "Pod saved"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+	case msg.PodDeleted:
+		m.statusText = "Pod deleted"
+		m.statusType = msg.StatusSuccess
+		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
+
+	case msg.ShowStatus:
+		m.statusText = tmsg.Text
+		m.statusType = tmsg.Type
+		return m, m.clearStatusAfter(3 * time.Second)
+
+	case msg.ClearStatus:
+		m.statusText = ""
+		return m, nil
 
 	case msg.ThemeSwitcherClose:
 		m.themeSwitcher = nil
@@ -393,8 +434,34 @@ func (m app) View() tea.View {
 	var helpView string
 	hp, ok := m.currentPage.(HelpProvider)
 	if ok {
+		helpText := components.RenderHelpFooter(hp.HelpKeys())
+
+		// Add status message if present
+		var statusMsg string
+		if m.statusText != "" {
+			var statusStyle lipgloss.Style
+			var icon string
+			switch m.statusType {
+			case msg.StatusSuccess:
+				statusStyle = styles.SuccessStyle()
+				icon = "✓"
+			case msg.StatusError:
+				statusStyle = styles.ErrorStyle()
+				icon = "✗"
+			default:
+				statusStyle = styles.MutedStyle()
+				icon = "●"
+			}
+			statusMsg = statusStyle.Render(icon + " " + m.statusText)
+		}
+
 		hs := lipgloss.NewStyle().Padding(0, 1)
-		helpView = hs.Render(components.RenderHelpFooter(hp.HelpKeys()))
+		if statusMsg != "" {
+			footerGap := max(m.width-lipgloss.Width(helpText)-lipgloss.Width(statusMsg)-4, 1)
+			helpView = hs.Render(helpText + strings.Repeat(" ", footerGap) + statusMsg)
+		} else {
+			helpView = hs.Render(helpText)
+		}
 	}
 
 	base := lipgloss.JoinVertical(lipgloss.Left, header, contentArea, helpView)

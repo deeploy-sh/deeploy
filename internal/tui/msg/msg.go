@@ -79,6 +79,23 @@ type PodEnvVarsUpdated struct{}
 
 type Error struct{ Err error }
 
+// --- Status Line ---
+
+type StatusType int
+
+const (
+	StatusSuccess StatusType = iota
+	StatusError
+	StatusInfo
+)
+
+type ShowStatus struct {
+	Text string
+	Type StatusType
+}
+
+type ClearStatus struct{}
+
 // --- Theme ---
 
 type ThemeSwitcherClose struct{ Theme string }

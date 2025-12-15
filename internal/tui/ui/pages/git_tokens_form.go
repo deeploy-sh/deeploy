@@ -22,7 +22,6 @@ type GitTokenFormPage struct {
 	nameInput    textinput.Model
 	tokenInput   textinput.Model
 	focusedField int
-	loading      bool
 	keySave      key.Binding
 	keyCancel    key.Binding
 	keyTab       key.Binding
@@ -106,7 +105,6 @@ func (m *GitTokenFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.
 		token := strings.TrimSpace(m.tokenInput.Value())
 		if name != "" && token != "" {
 			provider := detectProvider(token)
-			m.loading = true
 			return m, api.CreateGitToken(name, provider, token)
 		}
 		return m, nil
@@ -175,11 +173,6 @@ func (m GitTokenFormPage) View() tea.View {
 	b.WriteString("\n\n")
 
 	b.WriteString(styles.MutedStyle().Render("Provider will be auto-detected from token format"))
-
-	if m.loading {
-		b.WriteString("\n\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("Saving..."))
-	}
 
 	card := styles.Card(styles.CardProps{
 		Width:   60,

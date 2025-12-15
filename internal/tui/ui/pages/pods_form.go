@@ -37,7 +37,7 @@ func NewPodFormPage(projectID string, pod *repo.Pod) PodFormPage {
 
 	podFormPage := PodFormPage{
 		titleInput: titleInput,
-		keySave:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+		keySave:    key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 		projectID:  projectID,
 	}

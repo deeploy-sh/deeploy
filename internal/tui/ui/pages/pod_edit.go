@@ -23,10 +23,9 @@ type PodEditPage struct {
 	repoURLInput    textinput.Model
 	branchInput     textinput.Model
 	dockerfileInput textinput.Model
-	selectedToken   int
-	focusedField    int
-	loading         bool
-	keySave         key.Binding
+	selectedToken int
+	focusedField  int
+	keySave       key.Binding
 	keyBack         key.Binding
 	keyTab          key.Binding
 	keyShiftTab     key.Binding
@@ -115,7 +114,6 @@ func (m PodEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.PodUpdated:
-		m.loading = false
 		pod := m.pod
 		project := m.project
 		return m, func() tea.Msg {
@@ -256,7 +254,6 @@ func (m *PodEditPage) save() (tea.Model, tea.Cmd) {
 		m.pod.GitTokenID = nil
 	}
 
-	m.loading = true
 	return m, api.UpdatePod(m.pod)
 }
 
@@ -330,11 +327,6 @@ func (m PodEditPage) View() tea.View {
 			cursor = "> "
 		}
 		b.WriteString(fmt.Sprintf("%s%s [%s]\n", cursor, t.Name, t.Provider))
-	}
-
-	if m.loading {
-		b.WriteString("\n")
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("Saving..."))
 	}
 
 	card := styles.Card(styles.CardProps{

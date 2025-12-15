@@ -34,7 +34,6 @@ type PodDomainsPage struct {
 	sslEnabled   bool
 	isAuto       bool
 	focusedInput int
-	loading      bool
 	keyAdd       key.Binding
 	keyAuto      key.Binding
 	keyEdit      key.Binding
@@ -74,10 +73,9 @@ func NewPodDomainsPage(pod *repo.Pod, project *repo.Project) PodDomainsPage {
 		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDelete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
-		keySave:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
-		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
-		keyToggle:   key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle SSL")),
-		loading:     true,
+		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
+		keyTab:    key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
+		keyToggle: key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle SSL")),
 	}
 }
 
@@ -88,9 +86,10 @@ func (m PodDomainsPage) Init() tea.Cmd {
 func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
-		m.loading = false
 		if domains, ok := tmsg.Domains.([]api.PodDomain); ok {
 			m.domains = domains
+		} else {
+			m.domains = []api.PodDomain{}
 		}
 		return m, nil
 
@@ -100,7 +99,7 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.portInput.SetValue("")
 		m.sslEnabled = false
 		m.isAuto = false
-		m.loading = true
+		m.domains = nil // trigger loading state
 		return m, api.FetchPodDomains(m.pod.ID)
 
 	case tea.KeyPressMsg:
@@ -232,13 +231,11 @@ func (m PodDomainsPage) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		}
 
 		if m.isAuto {
-			m.loading = true
 			return m, api.GenerateAutoDomain(m.pod.ID, port, m.sslEnabled)
 		}
 
 		domain := strings.TrimSpace(m.domainInput.Value())
 		if domain != "" {
-			m.loading = true
 			return m, api.CreatePodDomain(m.pod.ID, domain, port, m.sslEnabled)
 		}
 		return m, nil
@@ -262,11 +259,6 @@ func (m PodDomainsPage) View() tea.View {
 	b.WriteString("\n")
 	b.WriteString(styles.MutedStyle().Render("Configure domains for " + m.pod.Title))
 	b.WriteString("\n\n")
-
-	if m.loading {
-		b.WriteString("Loading...")
-		return tea.NewView(m.centeredCard(b.String()))
-	}
 
 	if m.mode == modeDomainAdd {
 		b.WriteString(m.renderAddMode())

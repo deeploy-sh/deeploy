@@ -19,7 +19,6 @@ type PodVarsPage struct {
 	project  *repo.Project
 	textarea textarea.Model
 	envVars  []model.PodEnvVar
-	loading  bool
 	keySave  key.Binding
 	keyBack  key.Binding
 	width    int
@@ -42,7 +41,6 @@ func NewPodVarsPage(pod *repo.Pod, project *repo.Project) PodVarsPage {
 		pod:      pod,
 		project:  project,
 		textarea: ta,
-		loading:  true,
 		keySave:  key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyBack:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
@@ -55,7 +53,6 @@ func (m PodVarsPage) Init() tea.Cmd {
 func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodEnvVarsLoaded:
-		m.loading = false
 		envVars, ok := tmsg.EnvVars.([]model.PodEnvVar)
 		if ok {
 			m.envVars = envVars
@@ -64,7 +61,6 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.PodEnvVarsUpdated:
-		m.loading = false
 		pod := m.pod
 		project := m.project
 		return m, func() tea.Msg {
@@ -148,7 +144,6 @@ func (m PodVarsPage) textToEnvVars() []model.PodEnvVar {
 
 func (m *PodVarsPage) save() (tea.Model, tea.Cmd) {
 	vars := m.textToEnvVars()
-	m.loading = true
 	return m, api.UpdatePodEnvVars(m.pod.ID, vars)
 }
 
@@ -161,11 +156,7 @@ func (m PodVarsPage) View() tea.View {
 	b.WriteString(styles.MutedStyle().Render("One KEY=value per line."))
 	b.WriteString("\n\n")
 
-	if m.loading {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("Loading..."))
-	} else {
-		b.WriteString(m.textarea.View())
-	}
+	b.WriteString(m.textarea.View())
 
 	b.WriteString("\n\n")
 	b.WriteString(styles.MutedStyle().Render("Values are encrypted at rest."))

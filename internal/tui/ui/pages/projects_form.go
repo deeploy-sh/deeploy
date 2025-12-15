@@ -36,7 +36,7 @@ func NewProjectFormPage(project *repo.Project) ProjectFormPage {
 
 	projectFormPage := ProjectFormPage{
 		titleInput: titleInput,
-		keySave:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+		keySave:    key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 	if project != nil {
