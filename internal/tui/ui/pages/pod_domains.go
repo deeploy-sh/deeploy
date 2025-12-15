@@ -68,7 +68,7 @@ func NewPodDomainsPage(pod *repo.Pod, project *repo.Project) PodDomainsPage {
 		domainInput: domainInput,
 		portInput:   portInput,
 		sslEnabled:  false,
-		keyAdd:      key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add custom")),
+		keyAdd:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new custom")),
 		keyAuto:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "generate auto")),
 		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDelete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
@@ -275,7 +275,7 @@ func (m PodDomainsPage) renderListMode() string {
 	if len(m.domains) == 0 {
 		b.WriteString(styles.MutedStyle().Render("No domains configured."))
 		b.WriteString("\n\n")
-		b.WriteString(styles.MutedStyle().Render("Press 'g' to generate an auto domain, or 'a' to add a custom one."))
+		b.WriteString(styles.MutedStyle().Render("Press 'g' to generate an auto domain, or 'n' to add a custom one."))
 		b.WriteString("\n")
 		b.WriteString(styles.MutedStyle().Render("A domain is required before you can deploy."))
 	} else {

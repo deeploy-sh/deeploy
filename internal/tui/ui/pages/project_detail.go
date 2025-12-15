@@ -15,7 +15,6 @@ type ProjectDetailPage struct {
 	project        *repo.Project
 	pods           components.ScrollList
 	keyNewPod      key.Binding
-	keyEditPod     key.Binding
 	keySelectPod   key.Binding
 	keyDeletePod   key.Binding
 	keyEditProject key.Binding
@@ -25,7 +24,7 @@ type ProjectDetailPage struct {
 }
 
 func (m ProjectDetailPage) HelpKeys() []key.Binding {
-	return []key.Binding{m.keyNewPod, m.keyEditPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyBack}
+	return []key.Binding{m.keyNewPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyBack}
 }
 
 func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
@@ -55,10 +54,9 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 		pods:           l,
 		project:        &project,
 		keyNewPod:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new pod")),
-		keyEditPod:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit pod")),
 		keyDeletePod:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete pod")),
 		keySelectPod:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select pod")),
-		keyEditProject: key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit project")),
+		keyEditProject: key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit project")),
 		keyBack:        key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
@@ -101,15 +99,6 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			projectID := m.project.ID
 			return m, func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, nil) }}
-			}
-		case key.Matches(tmsg, m.keyEditPod):
-			item := m.pods.SelectedItem()
-			if item != nil {
-				pod := item.(components.PodItem).Pod
-				projectID := m.project.ID
-				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, &pod) }}
-				}
 			}
 		case key.Matches(tmsg, m.keySelectPod):
 			item := m.pods.SelectedItem()

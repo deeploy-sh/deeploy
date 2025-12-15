@@ -141,11 +141,11 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 
 	case key.Matches(tmsg, m.keyEdit):
 		pod := m.pod
-		project := m.project
+		projectID := m.project.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodEditPage(pod, project)
+					return NewPodFormPage(projectID, pod)
 				},
 			}
 		}

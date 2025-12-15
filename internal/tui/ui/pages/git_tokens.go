@@ -28,7 +28,7 @@ func (m GitTokensPage) HelpKeys() []key.Binding {
 
 func NewGitTokensPage() GitTokensPage {
 	return GitTokensPage{
-		keyAdd:    key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "add")),
+		keyAdd:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
 		keyDelete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
@@ -113,7 +113,7 @@ func (m GitTokensPage) View() tea.View {
 	b.WriteString("\n\n")
 
 	if len(m.tokens) == 0 {
-		b.WriteString(styles.MutedStyle().Render("No tokens configured. Press 'a' to add one."))
+		b.WriteString(styles.MutedStyle().Render("No tokens configured. Press 'n' to add one."))
 	} else {
 		for i, t := range m.tokens {
 			cursor := "  "
