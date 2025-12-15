@@ -96,6 +96,7 @@ func setupAssets(mux *http.ServeMux, isDev bool) {
 	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/server/assets", http.FS(serverAssets.Assets))))
 	mux.Handle("GET /assets/fonts/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/js/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
+	mux.Handle("GET /assets/img/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
