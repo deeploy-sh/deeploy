@@ -19,7 +19,7 @@ templ Landing() {
 		<div class="min-h-screen flex flex-col px-4">
 			<div class="max-w-5xl mx-auto w-full flex-1 flex flex-col md:border-x border-border">
 				<!-- Navbar -->
-				@modules.Navbar(modules.NavbarProps{GitHubStars: stars})
+				@modules.Navbar(stars)
 				<!-- Main Content -->
 				<main class="flex-1 px-4 py-16 md:px-20 md:py-28 space-y-12 md:space-y-16">
 					<!-- Hero -->
@@ -55,7 +55,7 @@ templ Landing() {
 					</div>
 				</main>
 				<!-- Footer Links -->
-				@modules.FooterLinks(modules.FooterLinksProps{GitHubStars: stars})
+				@modules.FooterLinks(stars)
 			</div>
 			<!-- Copyright outside box -->
 			@modules.FooterCopyright()

@@ -1,32 +1,18 @@
 package pages
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/icon"
-	"github.com/deeploy-sh/deeploy/internal/shared/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/server/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
 )
 
 templ Landing() {
-	@layouts.AppLayout() {
-		<div class="h-[calc(100vh-65px)] bg-gradient-to-b from-background to-secondary/10">
-			<div class="container mx-auto px-4">
-				<div class="flex flex-col items-center justify-center h-[calc(100vh-65px)] text-center space-y-8">
-					<div class="flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-2 rounded-full text-sm font-medium">
-						@icon.CircleCheck(icon.Props{Color: "green"})
-						Online
-					</div>
-					<h1 class="text-4xl md:text-6xl font-bold">deeploy.sh</h1>
-					<p class="text-xl text-muted-foreground max-w-2xl">
-						This is a terminal-first deployment tool.
-					</p>
-					<div class="bg-secondary/50 rounded-lg p-6 font-mono text-left">
-						<p class="text-muted-foreground text-sm mb-2">Connect via TUI:</p>
-						<code class="text-primary text-lg">$ deeploy</code>
-					</div>
-					<a href="/auth" class="text-sm text-muted-foreground hover:text-primary transition-colors">
-						Web login
-					</a>
-				</div>
-			</div>
+	@layouts.AuthLayout() {
+		<div class="flex flex-col items-center gap-4">
+			<a href="https://deeploy.sh" target="_blank" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
+				@modules.BlobIcon()
+				<span class="font-bold">deeploy</span>
+			</a>
+			<p class="text-muted-foreground">Running instance</p>
 		</div>
 	}
 }

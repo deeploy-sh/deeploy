@@ -1,55 +1,25 @@
 package modules
 
-import "fmt"
+import (
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
+	"github.com/deeploy-sh/deeploy/internal/shared/utils"
+)
 
-// Blob Logo Icon - Pink
-templ BlobIcon() {
-	<svg width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-		<path d="M 4 4 H 12 V 6 H 14 V 12 H 12 V 14 H 10 V 12 H 6 V 14 H 4 V 12 H 2 V 6 H 4 Z" fill="#FF79C6"/>
-		<rect x="4" y="6" width="2" height="2" class="fill-background"/>
-		<rect x="10" y="6" width="2" height="2" class="fill-background"/>
-	</svg>
-}
-
-// NavbarProps contains props for the navbar
-type NavbarProps struct {
-	GitHubStars int
-}
-
-func formatStars(count int) string {
-	if count >= 1000 {
-		return fmt.Sprintf("%.1fk", float64(count)/1000)
-	}
-	return fmt.Sprintf("%d", count)
-}
-
-templ Navbar(props ...NavbarProps) {
-	{{ var p NavbarProps }}
-	if len(props) > 0 {
-		{{ p = props[0] }}
-	}
+templ Navbar(stars int) {
 	<nav class="px-4 py-4 md:px-20 md:py-6 border-b border-border flex justify-between items-center">
-		<!-- Logo left -->
 		<a href="/" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
-			@BlobIcon()
+			@modules.BlobIcon()
 			deeploy
 		</a>
-		<!-- Nav right -->
 		<div class="flex items-center gap-4 md:gap-6">
-			<!-- GitHub -->
 			<a
 				href="https://github.com/deeploy-sh/deeploy"
 				target="_blank"
 				class="text-muted-foreground hover:text-foreground transition-colors"
 			>
-				if p.GitHubStars > 0 {
-					GitHub [{ formatStars(p.GitHubStars) }]
-				} else {
-					GitHub
-				}
+				GitHub [{ utils.FormatStars(stars) }]
 			</a>
-			<!-- Theme Switcher -->
-			@ThemeSwitcher()
+			@modules.ThemeSwitcher()
 		</div>
 	</nav>
 }

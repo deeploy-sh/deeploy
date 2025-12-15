@@ -18,7 +18,6 @@ func Setup(app *app.App) http.Handler {
 	// Handlers
 	auth := mw.NewAuthMiddleware(app.UserService)
 	userHandler := handlers.NewUserHandler(app.UserService)
-	dashboardHandler := handlers.NewDashboardHandler()
 	projectHandler := handlers.NewProjectHandler(app.ProjectService, app.PodService)
 	podHandler := handlers.NewPodHandler(app.PodService)
 	gitTokenHandler := handlers.NewGitTokenHandler(app.GitTokenService)
@@ -38,9 +37,6 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("POST /register", userHandler.Register)
 	mux.HandleFunc("GET /logout", userHandler.Logout)
 
-	// Dashboard
-	mux.HandleFunc("GET /dashboard", mw.RequireAuth(auth.Auth(dashboardHandler.DashboardView)))
-	mux.HandleFunc("GET /api/dashboard", auth.Auth(dashboardPlaceholder))
 
 	// Projects
 	mux.HandleFunc("POST /api/projects", auth.Auth(projectHandler.Create))
@@ -119,6 +115,3 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func dashboardPlaceholder(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from server!"))
-}

@@ -9,7 +9,8 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/input"
 	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/label"
 	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/toast"
-	"github.com/deeploy-sh/deeploy/internal/shared/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/server/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
 )
 
 var loginURL = ""
@@ -22,10 +23,9 @@ templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, port strin
 	}
 	@layouts.AuthLayout() {
 		<div class="w-full flex flex-col justify-center items-center gap-4">
-			<a href="/">
-				<p class="font-extrabold text-xl">
-					🔥 deeploy.sh
-				</p>
+			<a href="/" class="flex items-center gap-2 hover:text-muted-foreground transition-colors">
+				@modules.BlobIcon()
+				<span class="font-bold">deeploy</span>
 			</a>
 			<div class="max-w-sm w-full">
 				@card.Card(card.Props{}) {

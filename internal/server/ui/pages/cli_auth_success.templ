@@ -1,81 +1,43 @@
 package pages
 
 import (
-	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/card"
-	"github.com/deeploy-sh/deeploy/internal/shared/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/server/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
 )
-
-var cliAuthScriptHandle = templ.NewOnceHandle()
 
 templ CliAuthSuccess(port, token string) {
 	@layouts.AuthLayout() {
-		@cliAuthScriptHandle.Once() {
-			@templ.JSONScript("cli-data", map[string]string{
-				"port":  port,
-				"token": token,
-			})
-			<script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const { port, token } = JSON.parse(document.getElementById('cli-data').textContent);
-                    
-                    // Wait a brief moment to ensure all elements are rendered
-                    setTimeout(() => {
-                        // Status Elements
-                        const title = document.getElementById('title');
-                        const description = document.getElementById('description');
-                        const spinner = document.getElementById('loading-spinner');
-                        const successIcon = document.getElementById('success-icon');
-                        
-                        if (!title || !description || !spinner || !successIcon) {
-                            console.error('Required elements not found');
-                            return;
-                        }
-
-                        // Show loading, hide success
-                        spinner.classList.remove('hidden');
-                        successIcon.classList.add('hidden');
-                        
-                        fetch("http://localhost:" + port + "/callback", {
-                            method: 'POST',
-                            body: token
-                        })
-                        .then(() => {
-                            console.log("Connection successful");
-                            // Show success, hide loading
-                            spinner.classList.add('hidden');
-                            successIcon.classList.remove('hidden');
-                            title.textContent = 'Successfully Connected!';
-                            description.textContent = 'Your CLI has been authenticated successfully.';
-                        })
-                        .catch(err => {
-                            console.error("Connection error:", err);
-                            // Show error, hide loading
-                            spinner.classList.add('hidden');
-                            title.textContent = 'Connection Error';
-                            description.textContent = 'There was a problem connecting to your CLI. Please try again.';
-                        });
-                    }, 100); // Small delay to ensure rendering
-                });
-            </script>
-		}
-		<div class="flex justify-center items-center">
-			@card.Card(card.Props{Class: "max-w-md"}) {
-				@card.Content() {
-					<div class="text-center space-y-4">
-						<div id="loading-spinner" class="w-24 h-24 mx-auto">
-							<div class="w-full h-full border-4 border-gray-200 border-t-primary-foreground rounded-full animate-spin"></div>
-						</div>
-						<div id="success-icon" class="w-24 h-24 rounded-full bg-green-500/10 mx-auto flex items-center justify-center hidden">
-							<svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-							</svg>
-						</div>
-						<h2 id="title" class="text-2xl font-bold">Connecting...</h2>
-						<p id="description" class="text-base">Please wait while we connect your CLI...</p>
-						<p class="text-sm text-gray-500">You can safely close this window after completion.</p>
-					</div>
-				}
-			}
+		<div class="flex flex-col items-center gap-4">
+			<div class="flex items-center gap-2">
+				@modules.BlobIcon()
+				<span class="font-bold">deeploy</span>
+			</div>
+			<p id="status" class="text-muted-foreground">Connecting...</p>
+			<p id="hint" class="text-muted-foreground hidden">You can close this window</p>
 		</div>
+		@templ.JSONScript("cli-data", map[string]string{
+			"port":  port,
+			"token": token,
+		})
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				const { port, token } = JSON.parse(document.getElementById('cli-data').textContent);
+				const status = document.getElementById('status');
+
+				fetch("http://localhost:" + port + "/callback", {
+					method: 'POST',
+					body: token
+				})
+				.then(() => {
+					status.textContent = 'Connected!';
+					status.classList.remove('text-muted-foreground');
+				})
+				.catch(() => {
+					status.textContent = 'Connection failed';
+					status.classList.remove('text-muted-foreground');
+					status.classList.add('text-destructive');
+				});
+			});
+		</script>
 	}
 }

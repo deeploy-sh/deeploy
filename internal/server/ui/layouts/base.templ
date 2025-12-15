@@ -1,0 +1,32 @@
+package layouts
+
+templ BaseLayout() {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full dark">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>deeploy</title>
+			<!-- Favicon -->
+			<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg"/>
+			<!-- Preload fonts -->
+			<link rel="preload" href="/assets/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
+			<link rel="preload" href="/assets/fonts/jetbrains-mono/JetBrainsMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
+			<!-- Tailwind CSS -->
+			<link href="/assets/css/output.css" rel="stylesheet"/>
+			<!-- Theme initialization - must run before body renders to prevent flash -->
+			<script nonce={ templ.GetNonce(ctx) }>
+				(function() {
+					const pref = localStorage.getItem('themePreference');
+					// Default to dark, only go light if explicitly set
+					if (pref !== 'light') {
+						document.documentElement.classList.add('dark');
+					}
+				})();
+			</script>
+		</head>
+		<body class="font-mono antialiased">
+			{ children... }
+		</body>
+	</html>
+}
