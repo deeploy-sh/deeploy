@@ -39,10 +39,9 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	project := &repo.Project{
-		ID:          uuid.New().String(),
-		UserID:      auth.GetUser(r.Context()).ID,
-		Title:       form.Title,
-		Description: form.Description,
+		ID:     uuid.New().String(),
+		UserID: auth.GetUser(r.Context()).ID,
+		Title:  form.Title,
 	}
 
 	_, err = h.service.Create(project)

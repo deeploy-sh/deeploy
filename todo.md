@@ -6,7 +6,6 @@
 - refactor: avoid inline statement checks (ok/err/etc.)
 - fix: copy/paste doesn't work
 - fix: no data affter reauth
-- feat: remove desc. on pods/projects -- yagni
 - feat: zero downtime for redployments
 - fix: realtime/live pod status updates
-- docs: favicon + seo stuff
+- docs: docs + seo stuff

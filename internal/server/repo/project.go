@@ -9,12 +9,11 @@ import (
 )
 
 type Project struct {
-	ID          string    `json:"id" db:"id"`
-	UserID      string    `json:"user_id" db:"user_id"`
-	Title       string    `json:"title" db:"title"`
-	Description string    `json:"description" db:"description"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID        string    `json:"id" db:"id"`
+	UserID    string    `json:"user_id" db:"user_id"`
+	Title     string    `json:"title" db:"title"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type ProjectRepoInterface interface {
@@ -34,9 +33,9 @@ func NewProjectRepo(db *sqlx.DB) *ProjectRepo {
 }
 
 func (r *ProjectRepo) Create(project *Project) error {
-	query := `INSERT INTO projects (id, user_id, title, description) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO projects (id, user_id, title) VALUES ($1, $2, $3)`
 
-	_, err := r.db.Exec(query, project.ID, project.UserID, project.Title, project.Description)
+	_, err := r.db.Exec(query, project.ID, project.UserID, project.Title)
 	if err != nil {
 		return err
 	}
@@ -46,7 +45,7 @@ func (r *ProjectRepo) Create(project *Project) error {
 
 func (r *ProjectRepo) Project(id string) (*Project, error) {
 	project := &Project{}
-	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE id = $1`
+	query := `SELECT id, user_id, title, created_at, updated_at FROM projects WHERE id = $1`
 
 	err := r.db.Get(project, query, id)
 	if err == sql.ErrNoRows {
@@ -61,7 +60,7 @@ func (r *ProjectRepo) Project(id string) (*Project, error) {
 
 func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 	projects := []Project{}
-	query := `SELECT id, user_id, title, description, created_at, updated_at FROM projects WHERE user_id = $1`
+	query := `SELECT id, user_id, title, created_at, updated_at FROM projects WHERE user_id = $1`
 
 	err := r.db.Select(&projects, query, id)
 	if err == sql.ErrNoRows {
@@ -75,9 +74,9 @@ func (r *ProjectRepo) ProjectsByUser(id string) ([]Project, error) {
 }
 
 func (r *ProjectRepo) Update(project Project) error {
-	query := `UPDATE projects SET title = $1, description = $2 WHERE id = $3`
+	query := `UPDATE projects SET title = $1 WHERE id = $2`
 
-	result, err := r.db.Exec(query, project.Title, project.Description, project.ID)
+	result, err := r.db.Exec(query, project.Title, project.ID)
 	if err != nil {
 		return err
 	}

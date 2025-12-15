@@ -13,7 +13,6 @@ type Pod struct {
 	UserID         string    `json:"user_id" db:"user_id"`
 	ProjectID      string    `json:"project_id" db:"project_id"`
 	Title          string    `json:"title" db:"title"`
-	Description    string    `json:"description" db:"description"`
 	RepoURL        *string   `json:"repo_url" db:"repo_url"`
 	Branch         string    `json:"branch" db:"branch"`
 	DockerfilePath string    `json:"dockerfile_path" db:"dockerfile_path"`
@@ -43,9 +42,9 @@ func NewPodRepo(db *sqlx.DB) *PodRepo {
 }
 
 func (r *PodRepo) Create(pod *Pod) error {
-	query := `INSERT INTO pods (id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, git_token_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	query := `INSERT INTO pods (id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-	_, err := r.db.Exec(query, pod.ID, pod.UserID, pod.ProjectID, pod.Title, pod.Description, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.Status)
+	_, err := r.db.Exec(query, pod.ID, pod.UserID, pod.ProjectID, pod.Title, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.Status)
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,7 @@ func (r *PodRepo) Create(pod *Pod) error {
 
 func (r *PodRepo) Pod(id string) (*Pod, error) {
 	pod := &Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE id = $1`
+	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE id = $1`
 
 	err := r.db.Get(pod, query, id)
 	if err == sql.ErrNoRows {
@@ -70,7 +69,7 @@ func (r *PodRepo) Pod(id string) (*Pod, error) {
 
 func (r *PodRepo) PodsByProject(id string) ([]Pod, error) {
 	pods := []Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE project_id = $1`
+	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE project_id = $1`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {
@@ -97,7 +96,7 @@ func (r *PodRepo) CountByProject(id string) (int, error) {
 
 func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 	pods := []Pod{}
-	query := `SELECT id, user_id, project_id, title, description, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE user_id = $1`
+	query := `SELECT id, user_id, project_id, title, repo_url, branch, dockerfile_path, git_token_id, container_id, status, created_at, updated_at FROM pods WHERE user_id = $1`
 
 	err := r.db.Select(&pods, query, id)
 	if err == sql.ErrNoRows {
@@ -111,9 +110,9 @@ func (r *PodRepo) PodsByUser(id string) ([]Pod, error) {
 }
 
 func (r *PodRepo) Update(pod Pod) error {
-	query := `UPDATE pods SET title = $1, description = $2, repo_url = $3, branch = $4, dockerfile_path = $5, git_token_id = $6, container_id = $7, status = $8 WHERE id = $9`
+	query := `UPDATE pods SET title = $1, repo_url = $2, branch = $3, dockerfile_path = $4, git_token_id = $5, container_id = $6, status = $7 WHERE id = $8`
 
-	result, err := r.db.Exec(query, pod.Title, pod.Description, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.ContainerID, pod.Status, pod.ID)
+	result, err := r.db.Exec(query, pod.Title, pod.RepoURL, pod.Branch, pod.DockerfilePath, pod.GitTokenID, pod.ContainerID, pod.Status, pod.ID)
 	if err != nil {
 		return err
 	}

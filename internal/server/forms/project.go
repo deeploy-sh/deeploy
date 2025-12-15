@@ -1,8 +1,7 @@
 package forms
 
 type ProjectForm struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Title string `json:"title"`
 }
 
 type ProjectFormErrors struct {

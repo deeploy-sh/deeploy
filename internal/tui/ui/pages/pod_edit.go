@@ -20,7 +20,6 @@ type PodEditPage struct {
 	project         *repo.Project
 	gitTokens       []api.GitToken
 	titleInput      textinput.Model
-	descInput       textinput.Model
 	repoURLInput    textinput.Model
 	branchInput     textinput.Model
 	dockerfileInput textinput.Model
@@ -37,7 +36,6 @@ type PodEditPage struct {
 
 const (
 	fieldTitle = iota
-	fieldDesc
 	fieldRepoURL
 	fieldBranch
 	fieldDockerfile
@@ -56,10 +54,6 @@ func NewPodEditPage(pod *repo.Pod, project *repo.Project) PodEditPage {
 	titleInput.Placeholder = "My Pod"
 	titleInput.SetValue(pod.Title)
 	titleInput.Focus()
-
-	descInput := components.NewTextInput(inputWidth)
-	descInput.Placeholder = "Description (optional)"
-	descInput.SetValue(pod.Description)
 
 	repoInput := components.NewTextInput(inputWidth)
 	repoInput.Placeholder = "https://github.com/user/repo"
@@ -87,7 +81,6 @@ func NewPodEditPage(pod *repo.Pod, project *repo.Project) PodEditPage {
 		pod:             pod,
 		project:         project,
 		titleInput:      titleInput,
-		descInput:       descInput,
 		repoURLInput:    repoInput,
 		branchInput:     branchInput,
 		dockerfileInput: dockerfileInput,
@@ -147,8 +140,6 @@ func (m PodEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.focusedField {
 	case fieldTitle:
 		m.titleInput, cmd = m.titleInput.Update(tmsg)
-	case fieldDesc:
-		m.descInput, cmd = m.descInput.Update(tmsg)
 	case fieldRepoURL:
 		m.repoURLInput, cmd = m.repoURLInput.Update(tmsg)
 	case fieldBranch:
@@ -176,11 +167,11 @@ func (m *PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return m.save()
 
 	case key.Matches(tmsg, m.keyTab):
-		m.focusedField = (m.focusedField + 1) % 6
+		m.focusedField = (m.focusedField + 1) % 5
 		return m, m.updateFocus()
 
 	case key.Matches(tmsg, m.keyShiftTab):
-		m.focusedField = (m.focusedField + 5) % 6 // +5 is same as -1 mod 6
+		m.focusedField = (m.focusedField + 4) % 5 // +4 is same as -1 mod 5
 		return m, m.updateFocus()
 
 	case tmsg.Code == tea.KeyUp:
@@ -201,8 +192,6 @@ func (m *PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	switch m.focusedField {
 	case fieldTitle:
 		m.titleInput, cmd = m.titleInput.Update(tmsg)
-	case fieldDesc:
-		m.descInput, cmd = m.descInput.Update(tmsg)
 	case fieldRepoURL:
 		m.repoURLInput, cmd = m.repoURLInput.Update(tmsg)
 	case fieldBranch:
@@ -215,7 +204,6 @@ func (m *PodEditPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 func (m *PodEditPage) blurAll() {
 	m.titleInput.Blur()
-	m.descInput.Blur()
 	m.repoURLInput.Blur()
 	m.branchInput.Blur()
 	m.dockerfileInput.Blur()
@@ -226,8 +214,6 @@ func (m *PodEditPage) updateFocus() tea.Cmd {
 	switch m.focusedField {
 	case fieldTitle:
 		return m.titleInput.Focus()
-	case fieldDesc:
-		return m.descInput.Focus()
 	case fieldRepoURL:
 		return m.repoURLInput.Focus()
 	case fieldBranch:
@@ -245,8 +231,6 @@ func (m *PodEditPage) save() (tea.Model, tea.Cmd) {
 	}
 
 	m.pod.Title = title
-
-	m.pod.Description = strings.TrimSpace(m.descInput.Value())
 
 	repoURL := strings.TrimSpace(m.repoURLInput.Value())
 	if repoURL != "" {
@@ -294,16 +278,6 @@ func (m PodEditPage) View() tea.View {
 	}
 	b.WriteString("\n")
 	b.WriteString(m.titleInput.View())
-	b.WriteString("\n\n")
-
-	// Description
-	if m.focusedField == fieldDesc {
-		b.WriteString(activeLabel.Render("Description"))
-	} else {
-		b.WriteString(labelStyle.Render("Description"))
-	}
-	b.WriteString("\n")
-	b.WriteString(m.descInput.View())
 	b.WriteString("\n\n")
 
 	// Repo URL

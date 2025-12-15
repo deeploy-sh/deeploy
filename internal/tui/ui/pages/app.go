@@ -301,7 +301,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 		project := p
 		items = append(items, components.PaletteItem{
 			ItemTitle:   project.Title,
-			Description: project.Description,
+			Description: "",
 			Category:    "project",
 			Action: func() tea.Msg {
 				return msg.ChangePage{
@@ -315,7 +315,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 		pod := p
 		items = append(items, components.PaletteItem{
 			ItemTitle:   pod.Title,
-			Description: pod.Description,
+			Description: "",
 			Category:    "pod",
 			Action: func() tea.Msg {
 				return msg.ChangePage{

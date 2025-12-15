@@ -38,11 +38,10 @@ func (h *PodHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pod := &repo.Pod{
-		ID:          uuid.New().String(),
-		UserID:      auth.GetUser(r.Context()).ID,
-		ProjectID:   form.ProjectID,
-		Title:       form.Title,
-		Description: form.Description,
+		ID:        uuid.New().String(),
+		UserID:    auth.GetUser(r.Context()).ID,
+		ProjectID: form.ProjectID,
+		Title:     form.Title,
 	}
 
 	_, err = h.service.Create(pod)

@@ -1,9 +1,8 @@
 package forms
 
 type PodForm struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ProjectID   string `json:"project_id"`
+	Title     string `json:"title"`
+	ProjectID string `json:"project_id"`
 }
 
 type PodFormErrors struct {
