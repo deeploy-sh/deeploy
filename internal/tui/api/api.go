@@ -126,6 +126,7 @@ func LoadData() tea.Cmd {
 	return func() tea.Msg {
 		projects, errP := fetchProjects()
 		pods, errPod := fetchPods()
+		gitTokens, errT := fetchGitTokens()
 
 		if errP != nil {
 			return msg.Error{Err: errP}
@@ -133,10 +134,14 @@ func LoadData() tea.Cmd {
 		if errPod != nil {
 			return msg.Error{Err: errPod}
 		}
+		if errT != nil {
+			return msg.Error{Err: errT}
+		}
 
 		return msg.DataLoaded{
-			Projects: projects,
-			Pods:     pods,
+			Projects:  projects,
+			Pods:      pods,
+			GitTokens: gitTokens,
 		}
 	}
 }
@@ -319,22 +324,19 @@ func FetchPodLogs(id string) tea.Cmd {
 
 // --- Git Tokens ---
 
-func FetchGitTokens() tea.Cmd {
-	return func() tea.Msg {
-		resp, err := get("/git-tokens")
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-		defer resp.Body.Close()
-
-		var tokens []model.GitToken
-		err = json.NewDecoder(resp.Body).Decode(&tokens)
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-
-		return msg.GitTokensLoaded{Tokens: tokens}
+func fetchGitTokens() ([]model.GitToken, error) {
+	resp, err := get("/git-tokens")
+	if err != nil {
+		return nil, err
 	}
+	defer resp.Body.Close()
+
+	var tokens []model.GitToken
+	err = json.NewDecoder(resp.Body).Decode(&tokens)
+	if err != nil {
+		return nil, err
+	}
+	return tokens, nil
 }
 
 func CreateGitToken(name, provider, token string) tea.Cmd {

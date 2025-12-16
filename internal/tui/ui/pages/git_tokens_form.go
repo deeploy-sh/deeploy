@@ -65,11 +65,14 @@ func (m GitTokenFormPage) Init() tea.Cmd {
 func (m GitTokenFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.GitTokenCreated:
-		return m, func() tea.Msg {
-			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage() },
-			}
-		}
+		return m, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
+				}
+			},
+		)
 
 	case tea.KeyPressMsg:
 		return m.handleKeyPress(tmsg)
@@ -96,7 +99,7 @@ func (m *GitTokenFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.
 	case key.Matches(tmsg, m.keyCancel):
 		return m, func() tea.Msg {
 			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage() },
+				PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
 			}
 		}
 

@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"fmt"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -18,12 +17,10 @@ import (
 type PodFormPage struct {
 	pod             *model.Pod
 	projectID       string
-	gitTokens       []model.GitToken
 	titleInput      textinput.Model
 	repoURLInput    textinput.Model
 	branchInput     textinput.Model
 	dockerfileInput textinput.Model
-	selectedToken   int
 	focusedField    int
 	keySave         key.Binding
 	keyBack         key.Binding
@@ -38,8 +35,9 @@ const (
 	fieldRepoURL
 	fieldBranch
 	fieldDockerfile
-	fieldGitToken
 )
+
+const numFields = 4
 
 func (m PodFormPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyTab, m.keyBack}
@@ -85,7 +83,6 @@ func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
 		repoURLInput:    repoInput,
 		branchInput:     branchInput,
 		dockerfileInput: dockerfileInput,
-		selectedToken:   0,
 		focusedField:    fieldTitle,
 		keySave:         key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyBack:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
@@ -95,24 +92,11 @@ func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
 }
 
 func (m PodFormPage) Init() tea.Cmd {
-	return tea.Batch(api.FetchGitTokens(), textinput.Blink)
+	return textinput.Blink
 }
 
 func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.GitTokensLoaded:
-		m.gitTokens = tmsg.Tokens
-		// Find current token selection
-		if m.pod != nil && m.pod.GitTokenID != nil {
-			for i, t := range m.gitTokens {
-				if t.ID == *m.pod.GitTokenID {
-					m.selectedToken = i + 1
-					break
-				}
-			}
-		}
-		return m, nil
-
 	case msg.PodCreated:
 		projectID := m.projectID
 		return m, tea.Batch(
@@ -122,11 +106,24 @@ func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case msg.PodUpdated:
+		pod := m.pod
 		projectID := m.projectID
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Pod saved", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }} },
+			func() tea.Msg {
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
+					var proj *model.Project
+					for _, p := range s.Projects() {
+						if p.ID == projectID {
+							pr := p
+							proj = &pr
+							break
+						}
+					}
+					return NewPodDetailPage(pod, proj, s.GitTokens())
+				}}
+			},
 		)
 
 	case tea.KeyPressMsg:
@@ -169,24 +166,12 @@ func (m *PodFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return m.save()
 
 	case key.Matches(tmsg, m.keyTab):
-		m.focusedField = (m.focusedField + 1) % 5
+		m.focusedField = (m.focusedField + 1) % numFields
 		return m, m.updateFocus()
 
 	case key.Matches(tmsg, m.keyShiftTab):
-		m.focusedField = (m.focusedField + 4) % 5 // +4 is same as -1 mod 5
+		m.focusedField = (m.focusedField + numFields - 1) % numFields
 		return m, m.updateFocus()
-
-	case tmsg.Code == tea.KeyUp:
-		if m.focusedField == fieldGitToken && m.selectedToken > 0 {
-			m.selectedToken--
-		}
-		return m, nil
-
-	case tmsg.Code == tea.KeyDown:
-		if m.focusedField == fieldGitToken && m.selectedToken < len(m.gitTokens) {
-			m.selectedToken++
-		}
-		return m, nil
 	}
 
 	// Update focused input
@@ -255,13 +240,6 @@ func (m *PodFormPage) save() (tea.Model, tea.Cmd) {
 		m.pod.DockerfilePath = "Dockerfile"
 	}
 
-	if m.selectedToken > 0 && m.selectedToken <= len(m.gitTokens) {
-		tokenID := m.gitTokens[m.selectedToken-1].ID
-		m.pod.GitTokenID = &tokenID
-	} else {
-		m.pod.GitTokenID = nil
-	}
-
 	return m, api.UpdatePod(m.pod)
 }
 
@@ -317,29 +295,6 @@ func (m PodFormPage) View() tea.View {
 	}
 	b.WriteString("\n")
 	b.WriteString(m.dockerfileInput.View())
-	b.WriteString("\n\n")
-
-	// Git Token
-	if m.focusedField == fieldGitToken {
-		b.WriteString(activeLabel.Render("Git Token"))
-	} else {
-		b.WriteString(labelStyle.Render("Git Token"))
-	}
-	b.WriteString("\n")
-
-	cursor := "  "
-	if m.focusedField == fieldGitToken && m.selectedToken == 0 {
-		cursor = "> "
-	}
-	b.WriteString(fmt.Sprintf("%s(none - public repo)\n", cursor))
-
-	for i, t := range m.gitTokens {
-		cursor = "  "
-		if m.focusedField == fieldGitToken && m.selectedToken == i+1 {
-			cursor = "> "
-		}
-		b.WriteString(fmt.Sprintf("%s%s [%s]\n", cursor, t.Name, t.Provider))
-	}
 
 	card := styles.Card(styles.CardProps{
 		Width:   70,

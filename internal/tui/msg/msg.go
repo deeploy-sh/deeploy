@@ -15,6 +15,7 @@ type ChangePage struct {
 type Store interface {
 	Projects() []model.Project
 	Pods() []model.Pod
+	GitTokens() []model.GitToken
 }
 
 // --- Connection ---
@@ -34,8 +35,9 @@ type AuthSuccess struct{}
 // --- Data Loaded ---
 
 type DataLoaded struct {
-	Projects []model.Project
-	Pods     []model.Pod
+	Projects  []model.Project
+	Pods      []model.Pod
+	GitTokens []model.GitToken
 }
 
 type ProjectsLoaded struct{ Projects []model.Project }
@@ -59,7 +61,6 @@ type PodLogsLoaded struct{ Logs []string }
 
 // --- Git Tokens ---
 
-type GitTokensLoaded struct{ Tokens []model.GitToken }
 type GitTokenCreated struct{}
 type GitTokenDeleted struct{}
 

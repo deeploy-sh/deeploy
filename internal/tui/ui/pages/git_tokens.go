@@ -27,8 +27,9 @@ func (m GitTokensPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyAdd, m.keyDelete, m.keyBack}
 }
 
-func NewGitTokensPage() GitTokensPage {
+func NewGitTokensPage(tokens []model.GitToken) GitTokensPage {
 	return GitTokensPage{
+		tokens:    tokens,
 		keyAdd:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
 		keyDelete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
@@ -36,17 +37,17 @@ func NewGitTokensPage() GitTokensPage {
 }
 
 func (m GitTokensPage) Init() tea.Cmd {
-	return api.FetchGitTokens()
+	return nil
 }
 
 func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.GitTokensLoaded:
-		m.tokens = tmsg.Tokens
+	case msg.DataLoaded:
+		m.tokens = tmsg.GitTokens
 		return m, nil
 
 	case msg.GitTokenDeleted:
-		return m, api.FetchGitTokens()
+		return m, api.LoadData()
 
 	case tea.KeyPressMsg:
 		switch {

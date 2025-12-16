@@ -123,7 +123,7 @@ func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(pod, project)
+					return NewPodDetailPage(pod, project, s.GitTokens())
 				},
 			}
 		}

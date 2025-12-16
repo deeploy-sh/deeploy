@@ -16,6 +16,7 @@ import (
 type PodDetailPage struct {
 	pod         *model.Pod
 	project     *model.Project
+	gitTokens   []model.GitToken
 	domains     []model.PodDomain
 	envVarCount int
 	keyDeploy   key.Binding
@@ -25,19 +26,21 @@ type PodDetailPage struct {
 	keyEdit     key.Binding
 	keyDomains  key.Binding
 	keyVars     key.Binding
+	keyToken    key.Binding
 	keyBack     key.Binding
 	width       int
 	height      int
 }
 
 func (m PodDetailPage) HelpKeys() []key.Binding {
-	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyVars, m.keyBack}
+	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyVars, m.keyToken, m.keyBack}
 }
 
-func NewPodDetailPage(pod *model.Pod, project *model.Project) PodDetailPage {
+func NewPodDetailPage(pod *model.Pod, project *model.Project, gitTokens []model.GitToken) PodDetailPage {
 	return PodDetailPage{
 		pod:        pod,
 		project:    project,
+		gitTokens:  gitTokens,
 		keyDeploy:  key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "deploy")),
 		keyStop:    key.NewBinding(key.WithKeys("S"), key.WithHelp("S", "stop")),
 		keyRestart: key.NewBinding(key.WithKeys("R"), key.WithHelp("R", "restart")),
@@ -45,6 +48,7 @@ func NewPodDetailPage(pod *model.Pod, project *model.Project) PodDetailPage {
 		keyEdit:    key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDomains: key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "domains")),
 		keyVars:    key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "env vars")),
+		keyToken:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "token")),
 		keyBack:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
@@ -166,6 +170,17 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 				},
 			}
 		}
+
+	case key.Matches(tmsg, m.keyToken):
+		pod := m.pod
+		project := m.project
+		return m, func() tea.Msg {
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model {
+					return NewPodTokenPage(pod, project, s.GitTokens())
+				},
+			}
+		}
 	}
 
 	return m, nil
@@ -202,6 +217,26 @@ func (m PodDetailPage) View() tea.View {
 		b.WriteString(m.pod.DockerfilePath)
 	} else {
 		b.WriteString("Dockerfile")
+	}
+	b.WriteString("\n\n")
+
+	// Git Token
+	b.WriteString(labelStyle.Render("Git Token"))
+	b.WriteString("\n")
+	if m.pod.GitTokenID != nil {
+		tokenFound := false
+		for _, t := range m.gitTokens {
+			if t.ID == *m.pod.GitTokenID {
+				b.WriteString(fmt.Sprintf("%s [%s]", t.Name, t.Provider))
+				tokenFound = true
+				break
+			}
+		}
+		if !tokenFound {
+			b.WriteString(styles.MutedStyle().Render("(unknown)"))
+		}
+	} else {
+		b.WriteString(styles.MutedStyle().Render("(none)"))
 	}
 	b.WriteString("\n\n")
 

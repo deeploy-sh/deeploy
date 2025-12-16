@@ -30,6 +30,7 @@ type app struct {
 	themeSwitcher    *components.ThemeSwitcher
 	projects         []model.Project
 	pods             []model.Pod
+	gitTokens        []model.GitToken
 	width            int
 	height           int
 	heartbeatStarted bool
@@ -45,6 +46,10 @@ func (m *app) Projects() []model.Project {
 
 func (m *app) Pods() []model.Pod {
 	return m.pods
+}
+
+func (m *app) GitTokens() []model.GitToken {
+	return m.gitTokens
 }
 
 func (m *app) clearStatusAfter(d time.Duration) tea.Cmd {
@@ -202,6 +207,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	case msg.DataLoaded:
 		m.projects = tmsg.Projects
 		m.pods = tmsg.Pods
+		m.gitTokens = tmsg.GitTokens
 
 		// Forward to current page so it can update its list
 		var cmd tea.Cmd
@@ -317,7 +323,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "settings",
 			Action: func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage() },
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
 				}
 			},
 		},
@@ -355,7 +361,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 								break
 							}
 						}
-						return NewPodDetailPage(&pod, project)
+						return NewPodDetailPage(&pod, project, s.GitTokens())
 					},
 				}
 			},
