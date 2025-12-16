@@ -1,7 +1,6 @@
 ## Todo
 
 - feat: implement per pod_domain ssl stuff + (tui to server without https (ip only) secure?)
-- feat(pod): simplify git token choice
 - feat: show version number, how to handle updates on tui/server, implement minimum version update "wall"
 - docs: docs + seo stuff
 - simplify/beautify combo logs
