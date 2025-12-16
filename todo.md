@@ -1,6 +1,5 @@
 ## Todo
 
-- feat: zero downtime for redeployments
 - feat(pod): simplify git token choice
 - feat: show version number, how to handle updates on tui/server, implement minimum version update "wall"
 - feat: implement ssl stuff
