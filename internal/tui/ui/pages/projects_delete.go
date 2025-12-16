@@ -64,6 +64,13 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
+	case msg.ProjectDeleted:
+		return p, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg { return msg.ShowStatus{Text: "Project deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }} },
+		)
+
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:
@@ -78,12 +85,7 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.project.Title {
 				return p, nil
 			}
-			return p, tea.Batch(
-				api.DeleteProject(p.project.ID),
-				func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
-				},
-			)
+			return p, api.DeleteProject(p.project.ID)
 		}
 	case tea.WindowSizeMsg:
 		p.width = tmsg.Width

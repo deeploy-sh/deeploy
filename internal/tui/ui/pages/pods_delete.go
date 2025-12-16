@@ -56,6 +56,14 @@ func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
+	case msg.PodDeleted:
+		projectID := p.pod.ProjectID
+		return p, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }} },
+		)
+
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:
@@ -64,17 +72,11 @@ func (p PodDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
 			}
 		case tea.KeyEnter:
-			projectID := p.pod.ProjectID
 			// Only delete if input matches pod title exactly
 			if p.input.Value() != p.pod.Title {
 				return p, nil
 			}
-			return p, tea.Batch(
-				api.DeletePod(p.pod.ID),
-				func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
-				},
-			)
+			return p, api.DeletePod(p.pod.ID)
 		}
 	case tea.WindowSizeMsg:
 		p.width = tmsg.Width

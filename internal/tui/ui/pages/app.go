@@ -245,32 +245,6 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 		)
 
-	// CRUD Success -> Reload data + show status
-	case msg.ProjectCreated:
-		m.statusText = "Project created"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-	case msg.ProjectUpdated:
-		m.statusText = "Project saved"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-	case msg.ProjectDeleted:
-		m.statusText = "Project deleted"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-	case msg.PodCreated:
-		m.statusText = "Pod created"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-	case msg.PodUpdated:
-		m.statusText = "Pod saved"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-	case msg.PodDeleted:
-		m.statusText = "Pod deleted"
-		m.statusType = msg.StatusSuccess
-		return m, tea.Batch(api.LoadData(), m.clearStatusAfter(3*time.Second))
-
 	case msg.ShowStatus:
 		m.statusText = tmsg.Text
 		m.statusType = tmsg.Type

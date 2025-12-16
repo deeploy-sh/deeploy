@@ -89,14 +89,17 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.domains = tmsg.Domains
 		return m, nil
 
-	case msg.PodDomainCreated, msg.PodDomainUpdated, msg.PodDomainDeleted:
+	case msg.PodDomainCreated, msg.PodDomainUpdated:
 		m.mode = modeDomainList
 		m.domainInput.SetValue("")
 		m.portInput.SetValue("")
 		m.sslEnabled = false
 		m.isAuto = false
 		m.domains = nil // trigger loading state
-		return m, api.FetchPodDomains(m.pod.ID)
+		return m, tea.Batch(
+			api.FetchPodDomains(m.pod.ID),
+			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Deploy required to apply.", Type: msg.StatusSuccess} },
+		)
 
 	case tea.KeyPressMsg:
 		if m.mode == modeDomainAdd {

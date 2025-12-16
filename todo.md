@@ -14,3 +14,4 @@
 - support multiple git host providers (gitlab, bitbucket, etc.)
 - support docker compose
 - feat: seperate container logs from deployment logs
+- feat: add restart e.g. for var/domain changes (redeployment not neccessary here)
