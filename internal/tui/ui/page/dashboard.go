@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"charm.land/bubbles/v2/key"
@@ -9,7 +9,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type DashboardPage struct {
+type dashboard struct {
 	store     msg.Store
 	list      components.ScrollList
 	keyNew    key.Binding
@@ -19,18 +19,18 @@ type DashboardPage struct {
 	height    int
 }
 
-func (m DashboardPage) HelpKeys() []key.Binding {
+func (m dashboard) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyNew, m.keyDelete, m.keySelect}
 }
 
-func NewDashboard(s msg.Store) DashboardPage {
+func NewDashboard(s msg.Store) dashboard {
 	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	l := components.NewScrollList(components.ProjectsToItems(s.Projects(), s.Pods()), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
 	})
 
-	return DashboardPage{
+	return dashboard{
 		store:     s,
 		list:      l,
 		keyNew:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new project")),
@@ -39,11 +39,11 @@ func NewDashboard(s msg.Store) DashboardPage {
 	}
 }
 
-func (m DashboardPage) Init() tea.Cmd {
+func (m dashboard) Init() tea.Cmd {
 	return nil
 }
 
-func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m dashboard) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(tmsg)
 
@@ -57,7 +57,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(tmsg, m.keyNew):
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(nil) },
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectForm(nil) },
 				}
 			}
 		case key.Matches(tmsg, m.keyDelete):
@@ -66,7 +66,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				project := item.(components.ProjectItem).Project
 				return m, func() tea.Msg {
 					return msg.ChangePage{
-						PageFactory: func(s msg.Store) tea.Model { return NewProjectDeletePage(s, &project) },
+						PageFactory: func(s msg.Store) tea.Model { return NewProjectDelete(s, &project) },
 					}
 				}
 			}
@@ -76,7 +76,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				i := item.(components.ProjectItem)
 				return m, func() tea.Msg {
 					return msg.ChangePage{
-						PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, i.ID) },
+						PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, i.ID) },
 					}
 				}
 			}
@@ -91,7 +91,7 @@ func (m DashboardPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m DashboardPage) View() tea.View {
+func (m dashboard) View() tea.View {
 	contentHeight := m.height
 
 	var content string
@@ -107,7 +107,7 @@ func (m DashboardPage) View() tea.View {
 	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, centered))
 }
 
-func (m DashboardPage) renderEmptyState() string {
+func (m dashboard) renderEmptyState() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(styles.ColorForeground()).
@@ -119,7 +119,7 @@ func (m DashboardPage) renderEmptyState() string {
 	)
 }
 
-func (m DashboardPage) renderList() string {
+func (m dashboard) renderList() string {
 	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
@@ -143,6 +143,6 @@ func (m DashboardPage) renderList() string {
 	return styles.Card(card).Render(content)
 }
 
-func (m DashboardPage) Breadcrumbs() []string {
-	return []string{"Dashboard"}
+func (m dashboard) Breadcrumbs() []string {
+	return []string{"dashboard"}
 }

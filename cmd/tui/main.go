@@ -5,7 +5,7 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/deeploy-sh/deeploy/internal/tui/ui/pages"
+	"github.com/deeploy-sh/deeploy/internal/tui/ui/page"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Start App
-	m := pages.NewApp()
+	m := page.NewApp()
 	p := tea.NewProgram(m)
 	_, err := p.Run()
 	if err != nil {

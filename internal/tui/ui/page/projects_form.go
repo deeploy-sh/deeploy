@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"charm.land/bubbles/v2/key"
@@ -12,7 +12,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type ProjectFormPage struct {
+type projectForm struct {
 	titleInput textinput.Model
 	keySave    key.Binding
 	keyCancel  key.Binding
@@ -21,11 +21,11 @@ type ProjectFormPage struct {
 	height     int
 }
 
-func (p ProjectFormPage) HelpKeys() []key.Binding {
+func (p projectForm) HelpKeys() []key.Binding {
 	return []key.Binding{p.keySave, p.keyCancel}
 }
 
-func NewProjectFormPage(project *model.Project) ProjectFormPage {
+func NewProjectForm(project *model.Project) projectForm {
 	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
@@ -34,22 +34,22 @@ func NewProjectFormPage(project *model.Project) ProjectFormPage {
 		titleInput.SetValue(project.Title)
 	}
 
-	projectFormPage := ProjectFormPage{
+	projectForm := projectForm{
 		titleInput: titleInput,
 		keySave:    key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 	if project != nil {
-		projectFormPage.project = project
+		projectForm.project = project
 	}
-	return projectFormPage
+	return projectForm
 }
 
-func (p ProjectFormPage) Init() tea.Cmd {
+func (p projectForm) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (p projectForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
@@ -65,7 +65,7 @@ func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return p, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Project saved", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }} },
 		)
 
 	case tea.KeyPressMsg:
@@ -74,7 +74,7 @@ func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.project != nil {
 				projectID := p.project.ID
 				return p, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }}
 				}
 			}
 			return p, func() tea.Msg {
@@ -102,7 +102,7 @@ func (p ProjectFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p ProjectFormPage) View() tea.View {
+func (p projectForm) View() tea.View {
 	var titleText string
 	if p.project != nil {
 		titleText = "Edit Project"
@@ -132,13 +132,13 @@ func (p ProjectFormPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (p ProjectFormPage) Breadcrumbs() []string {
+func (p projectForm) Breadcrumbs() []string {
 	if p.project != nil {
 		return []string{"Projects", "Edit"}
 	}
 	return []string{"Projects", "New"}
 }
 
-func (p ProjectFormPage) HasFocusedInput() bool {
+func (p projectForm) HasFocusedInput() bool {
 	return p.titleInput.Focused()
 }

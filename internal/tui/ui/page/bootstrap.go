@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"charm.land/bubbles/v2/spinner"

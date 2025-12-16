@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type GitTokensPage struct {
+type gitTokens struct {
 	tokens    []model.GitToken
 	selected  int
 	keyAdd    key.Binding
@@ -23,12 +23,12 @@ type GitTokensPage struct {
 	height    int
 }
 
-func (m GitTokensPage) HelpKeys() []key.Binding {
+func (m gitTokens) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyAdd, m.keyDelete, m.keyBack}
 }
 
-func NewGitTokensPage(tokens []model.GitToken) GitTokensPage {
-	return GitTokensPage{
+func NewGitTokens(tokens []model.GitToken) gitTokens {
+	return gitTokens{
 		tokens:    tokens,
 		keyAdd:    key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
 		keyDelete: key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
@@ -36,11 +36,11 @@ func NewGitTokensPage(tokens []model.GitToken) GitTokensPage {
 	}
 }
 
-func (m GitTokensPage) Init() tea.Cmd {
+func (m gitTokens) Init() tea.Cmd {
 	return nil
 }
 
-func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m gitTokens) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.DataLoaded:
 		m.tokens = tmsg.GitTokens
@@ -61,7 +61,7 @@ func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(tmsg, m.keyAdd):
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokenFormPage() },
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokenForm() },
 				}
 			}
 
@@ -70,7 +70,7 @@ func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				token := m.tokens[m.selected]
 				return m, func() tea.Msg {
 					return msg.ChangePage{
-						PageFactory: func(s msg.Store) tea.Model { return NewGitTokenDeletePage(token) },
+						PageFactory: func(s msg.Store) tea.Model { return NewGitTokenDelete(token) },
 					}
 				}
 			}
@@ -103,7 +103,7 @@ func (m GitTokensPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m GitTokensPage) View() tea.View {
+func (m gitTokens) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -142,6 +142,6 @@ func (m GitTokensPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m GitTokensPage) Breadcrumbs() []string {
+func (m gitTokens) Breadcrumbs() []string {
 	return []string{"Settings", "Git Tokens"}
 }

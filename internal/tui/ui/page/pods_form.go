@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"strings"
@@ -14,7 +14,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type PodFormPage struct {
+type podForm struct {
 	pod             *model.Pod
 	projectID       string
 	titleInput      textinput.Model
@@ -39,11 +39,11 @@ const (
 
 const numFields = 4
 
-func (m PodFormPage) HelpKeys() []key.Binding {
+func (m podForm) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyTab, m.keyBack}
 }
 
-func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
+func NewPodForm(projectID string, pod *model.Pod) podForm {
 	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
 	inputWidth := card.InnerWidth()
 
@@ -76,7 +76,7 @@ func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
 		dockerfileInput.SetValue("Dockerfile")
 	}
 
-	return PodFormPage{
+	return podForm{
 		pod:             pod,
 		projectID:       projectID,
 		titleInput:      titleInput,
@@ -91,18 +91,18 @@ func NewPodFormPage(projectID string, pod *model.Pod) PodFormPage {
 	}
 }
 
-func (m PodFormPage) Init() tea.Cmd {
+func (m podForm) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodCreated:
 		projectID := m.projectID
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Pod created", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, projectID) }} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }} },
 		)
 
 	case msg.PodUpdated:
@@ -112,7 +112,7 @@ func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			func() tea.Msg { return msg.ShowStatus{Text: "Pod saved", Type: msg.StatusSuccess} },
 			func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(s, podID)
+					return NewPodDetail(s, podID)
 				}}
 			},
 		)
@@ -141,14 +141,14 @@ func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *PodFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m *podForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		projectID := m.projectID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewProjectDetailPage(s, projectID)
+					return NewProjectDetail(s, projectID)
 				},
 			}
 		}
@@ -180,14 +180,14 @@ func (m *PodFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	return m, cmd
 }
 
-func (m *PodFormPage) blurAll() {
+func (m *podForm) blurAll() {
 	m.titleInput.Blur()
 	m.repoURLInput.Blur()
 	m.branchInput.Blur()
 	m.dockerfileInput.Blur()
 }
 
-func (m *PodFormPage) updateFocus() tea.Cmd {
+func (m *podForm) updateFocus() tea.Cmd {
 	m.blurAll()
 	switch m.focusedField {
 	case fieldTitle:
@@ -202,7 +202,7 @@ func (m *PodFormPage) updateFocus() tea.Cmd {
 	return nil
 }
 
-func (m *PodFormPage) save() (tea.Model, tea.Cmd) {
+func (m *podForm) save() (tea.Model, tea.Cmd) {
 	title := strings.TrimSpace(m.titleInput.Value())
 	if title == "" {
 		return m, nil
@@ -234,7 +234,7 @@ func (m *PodFormPage) save() (tea.Model, tea.Cmd) {
 	return m, api.UpdatePod(m.pod)
 }
 
-func (m PodFormPage) View() tea.View {
+func (m podForm) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -299,7 +299,7 @@ func (m PodFormPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m PodFormPage) Breadcrumbs() []string {
+func (m podForm) Breadcrumbs() []string {
 	if m.pod == nil {
 		return []string{"Projects", "Pods", "New"}
 	}

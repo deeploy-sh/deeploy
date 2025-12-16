@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ const (
 	modeDomainAdd
 )
 
-type PodDomainsPage struct {
+type podDomains struct {
 	pod          *model.Pod
 	project      *model.Project
 	domains      []model.PodDomain
@@ -46,14 +46,14 @@ type PodDomainsPage struct {
 	height       int
 }
 
-func (m PodDomainsPage) HelpKeys() []key.Binding {
+func (m podDomains) HelpKeys() []key.Binding {
 	if m.mode == modeDomainAdd {
 		return []key.Binding{m.keySave, m.keyTab, m.keyToggle, m.keyBack}
 	}
 	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyBack}
 }
 
-func NewPodDomainsPage(pod *model.Pod, project *model.Project) PodDomainsPage {
+func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 	domainInput := components.NewTextInput(40)
 	domainInput.Placeholder = "app.example.com"
 	domainInput.CharLimit = 100
@@ -62,7 +62,7 @@ func NewPodDomainsPage(pod *model.Pod, project *model.Project) PodDomainsPage {
 	portInput.Placeholder = "8080"
 	portInput.CharLimit = 5
 
-	return PodDomainsPage{
+	return podDomains{
 		pod:         pod,
 		project:     project,
 		domainInput: domainInput,
@@ -79,11 +79,11 @@ func NewPodDomainsPage(pod *model.Pod, project *model.Project) PodDomainsPage {
 	}
 }
 
-func (m PodDomainsPage) Init() tea.Cmd {
+func (m podDomains) Init() tea.Cmd {
 	return tea.Batch(api.FetchPodDomains(m.pod.ID), textinput.Blink)
 }
 
-func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
 		m.domains = tmsg.Domains
@@ -115,14 +115,14 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		podID := m.pod.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(s, podID)
+					return NewPodDetail(s, podID)
 				},
 			}
 		}
@@ -152,7 +152,7 @@ func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodDomainsEditPage(domain, pod, project)
+						return NewPodDomainsEdit(domain, pod, project)
 					},
 				}
 			}
@@ -166,7 +166,7 @@ func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodDomainsDeletePage(domain, pod, project)
+						return NewPodDomainsDelete(domain, pod, project)
 					},
 				}
 			}
@@ -186,7 +186,7 @@ func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd
 	return m, nil
 }
 
-func (m PodDomainsPage) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m podDomains) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		m.mode = modeDomainList
@@ -250,7 +250,7 @@ func (m PodDomainsPage) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 	return m, cmd
 }
 
-func (m PodDomainsPage) View() tea.View {
+func (m podDomains) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -268,7 +268,7 @@ func (m PodDomainsPage) View() tea.View {
 	return tea.NewView(m.centeredCard(b.String()))
 }
 
-func (m PodDomainsPage) renderListMode() string {
+func (m podDomains) renderListMode() string {
 	var b strings.Builder
 
 	if len(m.domains) == 0 {
@@ -308,7 +308,7 @@ func (m PodDomainsPage) renderListMode() string {
 	return b.String()
 }
 
-func (m PodDomainsPage) renderAddMode() string {
+func (m podDomains) renderAddMode() string {
 	var b strings.Builder
 
 	if m.isAuto {
@@ -358,7 +358,7 @@ func (m PodDomainsPage) renderAddMode() string {
 	return b.String()
 }
 
-func (m PodDomainsPage) centeredCard(content string) string {
+func (m podDomains) centeredCard(content string) string {
 	card := styles.Card(styles.CardProps{
 		Width:   60,
 		Padding: []int{1, 2},
@@ -369,6 +369,6 @@ func (m PodDomainsPage) centeredCard(content string) string {
 		lipgloss.Center, lipgloss.Center, card)
 }
 
-func (m PodDomainsPage) Breadcrumbs() []string {
+func (m podDomains) Breadcrumbs() []string {
 	return []string{"Projects", m.project.Title, "Pods", m.pod.Title, "Domains"}
 }

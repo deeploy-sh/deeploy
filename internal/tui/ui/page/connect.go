@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"log"
@@ -13,20 +13,20 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/utils"
 )
 
-type connectPage struct {
+type connect struct {
 	serverInput textinput.Model
-	keyConnect  key.Binding
+	keyconnect  key.Binding
 	status      string
 	width       int
 	height      int
 	err         error
 }
 
-func (p connectPage) HelpKeys() []key.Binding {
-	return []key.Binding{p.keyConnect}
+func (p connect) HelpKeys() []key.Binding {
+	return []key.Binding{p.keyconnect}
 }
 
-func NewConnectPage(err error) connectPage {
+func NewConnect(err error) connect {
 	log.Println(err)
 	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
@@ -34,18 +34,18 @@ func NewConnectPage(err error) connectPage {
 	ti.CharLimit = 50
 	ti.Focus()
 
-	return connectPage{
+	return connect{
 		serverInput: ti,
-		keyConnect:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "connect")),
+		keyconnect:  key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "connect")),
 		err:         err,
 	}
 }
 
-func (m connectPage) Init() tea.Cmd {
+func (m connect) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m connectPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m connect) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
@@ -64,7 +64,7 @@ func (m connectPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage(input) },
+					PageFactory: func(s msg.Store) tea.Model { return NewAuth(input) },
 				}
 			}
 		}
@@ -79,8 +79,8 @@ func (m connectPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m connectPage) View() tea.View {
-	content := "Connect to deeploy.sh server\n\n" + m.serverInput.View()
+func (m connect) View() tea.View {
+	content := "connect to deeploy.sh server\n\n" + m.serverInput.View()
 	if m.err != nil {
 		content += styles.ErrorStyle().Render("\n* " + m.err.Error())
 	}
@@ -93,10 +93,10 @@ func (m connectPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m connectPage) Breadcrumbs() []string {
-	return []string{"Connect"}
+func (m connect) Breadcrumbs() []string {
+	return []string{"connect"}
 }
 
-func (m *connectPage) resetErr() {
+func (m *connect) resetErr() {
 	m.err = nil
 }

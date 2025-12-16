@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"charm.land/bubbles/v2/key"
@@ -10,7 +10,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type ProjectDetailPage struct {
+type projectDetail struct {
 	store          msg.Store
 	project        *model.Project
 	pods           components.ScrollList
@@ -23,11 +23,11 @@ type ProjectDetailPage struct {
 	height         int
 }
 
-func (m ProjectDetailPage) HelpKeys() []key.Binding {
+func (m projectDetail) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyNewPod, m.keySelectPod, m.keyDeletePod, m.keyEditProject, m.keyBack}
 }
 
-func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
+func NewProjectDetail(s msg.Store, projectID string) projectDetail {
 	var project model.Project
 	for _, p := range s.Projects() {
 		if p.ID == projectID {
@@ -49,7 +49,7 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 		Height: 15,
 	})
 
-	return ProjectDetailPage{
+	return projectDetail{
 		store:          s,
 		pods:           l,
 		project:        &project,
@@ -61,11 +61,11 @@ func NewProjectDetailPage(s msg.Store, projectID string) ProjectDetailPage {
 	}
 }
 
-func (m ProjectDetailPage) Init() tea.Cmd {
+func (m projectDetail) Init() tea.Cmd {
 	return nil
 }
 
-func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m projectDetail) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.pods, cmd = m.pods.Update(tmsg)
 
@@ -98,14 +98,14 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(tmsg, m.keyNewPod):
 			projectID := m.project.ID
 			return m, func() tea.Msg {
-				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodFormPage(projectID, nil) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodForm(projectID, nil) }}
 			}
 		case key.Matches(tmsg, m.keySelectPod):
 			item := m.pods.SelectedItem()
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, pod.ID) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, pod.ID) }}
 				}
 			}
 		case key.Matches(tmsg, m.keyDeletePod):
@@ -113,14 +113,14 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDeletePage(&pod) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDelete(&pod) }}
 				}
 			}
 		case key.Matches(tmsg, m.keyEditProject):
 			if m.project != nil {
 				project := m.project
 				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectFormPage(project) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectForm(project) }}
 				}
 			}
 		}
@@ -134,14 +134,14 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m ProjectDetailPage) View() tea.View {
+func (m projectDetail) View() tea.View {
 	contentHeight := m.height
 	content := m.renderContent()
 	centered := lipgloss.Place(m.width, contentHeight, lipgloss.Center, lipgloss.Center, content)
 	return tea.NewView(centered)
 }
 
-func (m ProjectDetailPage) renderContent() string {
+func (m projectDetail) renderContent() string {
 	if len(m.pods.Items()) == 0 {
 		return m.renderEmptyState()
 	}
@@ -169,7 +169,7 @@ func (m ProjectDetailPage) renderContent() string {
 	return styles.Card(card).Render(content)
 }
 
-func (m ProjectDetailPage) renderEmptyState() string {
+func (m projectDetail) renderEmptyState() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(styles.ColorForeground()).
@@ -181,6 +181,6 @@ func (m ProjectDetailPage) renderEmptyState() string {
 	)
 }
 
-func (m ProjectDetailPage) Breadcrumbs() []string {
+func (m projectDetail) Breadcrumbs() []string {
 	return []string{"Projects", m.project.Title}
 }

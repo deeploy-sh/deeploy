@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type PodTokenPage struct {
+type podToken struct {
 	pod       *model.Pod
 	project   *model.Project
 	gitTokens []model.GitToken
@@ -24,11 +24,11 @@ type PodTokenPage struct {
 	height    int
 }
 
-func (m PodTokenPage) HelpKeys() []key.Binding {
+func (m podToken) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySelect, m.keyBack}
 }
 
-func NewPodTokenPage(pod *model.Pod, project *model.Project, gitTokens []model.GitToken) PodTokenPage {
+func NewPodToken(pod *model.Pod, project *model.Project, gitTokens []model.GitToken) podToken {
 	// Find current selection
 	selected := 0
 	if pod.GitTokenID != nil {
@@ -40,7 +40,7 @@ func NewPodTokenPage(pod *model.Pod, project *model.Project, gitTokens []model.G
 		}
 	}
 
-	return PodTokenPage{
+	return podToken{
 		pod:       pod,
 		project:   project,
 		gitTokens: gitTokens,
@@ -50,11 +50,11 @@ func NewPodTokenPage(pod *model.Pod, project *model.Project, gitTokens []model.G
 	}
 }
 
-func (m PodTokenPage) Init() tea.Cmd {
+func (m podToken) Init() tea.Cmd {
 	return nil
 }
 
-func (m PodTokenPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podToken) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodUpdated:
 		podID := m.pod.ID
@@ -63,7 +63,7 @@ func (m PodTokenPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			func() tea.Msg { return msg.ShowStatus{Text: "Token updated", Type: msg.StatusSuccess} },
 			func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(s, podID)
+					return NewPodDetail(s, podID)
 				}}
 			},
 		)
@@ -80,14 +80,14 @@ func (m PodTokenPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *PodTokenPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m *podToken) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		podID := m.pod.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(s, podID)
+					return NewPodDetail(s, podID)
 				},
 			}
 		}
@@ -111,7 +111,7 @@ func (m *PodTokenPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 	return m, nil
 }
 
-func (m *PodTokenPage) selectToken() (tea.Model, tea.Cmd) {
+func (m *podToken) selectToken() (tea.Model, tea.Cmd) {
 	if m.selected == 0 {
 		m.pod.GitTokenID = nil
 	} else if m.selected <= len(m.gitTokens) {
@@ -122,7 +122,7 @@ func (m *PodTokenPage) selectToken() (tea.Model, tea.Cmd) {
 	return m, api.UpdatePod(m.pod)
 }
 
-func (m PodTokenPage) View() tea.View {
+func (m podToken) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -176,6 +176,6 @@ func (m PodTokenPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m PodTokenPage) Breadcrumbs() []string {
+func (m podToken) Breadcrumbs() []string {
 	return []string{"Projects", m.project.Title, "Pods", m.pod.Title, "Token"}
 }

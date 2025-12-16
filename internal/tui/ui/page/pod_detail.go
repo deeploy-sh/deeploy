@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type PodDetailPage struct {
+type podDetail struct {
 	store       msg.Store
 	pod         *model.Pod
 	project     *model.Project
@@ -32,11 +32,11 @@ type PodDetailPage struct {
 	height      int
 }
 
-func (m PodDetailPage) HelpKeys() []key.Binding {
+func (m podDetail) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyVars, m.keyToken, m.keyBack}
 }
 
-func NewPodDetailPage(s msg.Store, podID string) PodDetailPage {
+func NewPodDetail(s msg.Store, podID string) podDetail {
 	var pod model.Pod
 	for _, p := range s.Pods() {
 		if p.ID == podID {
@@ -53,7 +53,7 @@ func NewPodDetailPage(s msg.Store, podID string) PodDetailPage {
 		}
 	}
 
-	return PodDetailPage{
+	return podDetail{
 		store:      s,
 		pod:        &pod,
 		project:    &project,
@@ -69,14 +69,14 @@ func NewPodDetailPage(s msg.Store, podID string) PodDetailPage {
 	}
 }
 
-func (m PodDetailPage) Init() tea.Cmd {
+func (m podDetail) Init() tea.Cmd {
 	return tea.Batch(
 		api.FetchPodDomains(m.pod.ID),
 		api.FetchPodEnvVars(m.pod.ID),
 	)
 }
 
-func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podDetail) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
 		m.domains = tmsg.Domains
@@ -123,14 +123,14 @@ func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		projectID := m.project.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewProjectDetailPage(s, projectID)
+					return NewProjectDetail(s, projectID)
 				},
 			}
 		}
@@ -142,7 +142,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 			func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodLogsPage(s, podID)
+						return NewPodLogs(s, podID)
 					},
 				}
 			},
@@ -159,7 +159,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodLogsPage(s, podID)
+					return NewPodLogs(s, podID)
 				},
 			}
 		}
@@ -170,7 +170,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodFormPage(projectID, pod)
+					return NewPodForm(projectID, pod)
 				},
 			}
 		}
@@ -181,7 +181,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDomainsPage(pod, project)
+					return NewPodDomains(pod, project)
 				},
 			}
 		}
@@ -192,7 +192,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodVarsPage(pod, project)
+					return NewPodVars(pod, project)
 				},
 			}
 		}
@@ -203,7 +203,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodTokenPage(pod, project, s.GitTokens())
+					return NewPodToken(pod, project, s.GitTokens())
 				},
 			}
 		}
@@ -212,7 +212,7 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 	return m, nil
 }
 
-func (m PodDetailPage) View() tea.View {
+func (m podDetail) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -297,7 +297,7 @@ func (m PodDetailPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m PodDetailPage) renderStatus() string {
+func (m podDetail) renderStatus() string {
 	status := m.pod.Status
 	if status == "" {
 		status = "idle"
@@ -316,6 +316,6 @@ func (m PodDetailPage) renderStatus() string {
 	return style.Render("[" + status + "]")
 }
 
-func (m PodDetailPage) Breadcrumbs() []string {
+func (m podDetail) Breadcrumbs() []string {
 	return []string{"Projects", m.project.Title, "Pods", m.pod.Title}
 }

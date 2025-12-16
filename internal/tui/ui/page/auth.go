@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type authPage struct {
-	keyAuthenticate key.Binding
+type auth struct {
+	keyauthenticate key.Binding
 	keyQuit         key.Binding
 	isReauth        bool
 	waiting         bool
@@ -28,8 +28,8 @@ type authPage struct {
 	err             string
 }
 
-func (p authPage) HelpKeys() []key.Binding {
-	return []key.Binding{p.keyAuthenticate, p.keyQuit}
+func (p auth) HelpKeys() []key.Binding {
+	return []key.Binding{p.keyauthenticate, p.keyQuit}
 }
 
 type authCallback struct {
@@ -37,25 +37,25 @@ type authCallback struct {
 	err   error
 }
 
-func NewAuthPage(server string) authPage {
+func NewAuth(server string) auth {
 	isReauth := server == ""
 	if isReauth {
 		cfg, _ := config.Load()
 		server = cfg.Server
 	}
-	return authPage{
-		keyAuthenticate: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "authenticate")),
+	return auth{
+		keyauthenticate: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "authenticate")),
 		keyQuit:         key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "quit")),
 		isReauth:        isReauth,
 		serverURL:       server,
 	}
 }
 
-func (p authPage) Init() tea.Cmd {
+func (p auth) Init() tea.Cmd {
 	return nil
 }
 
-func (m authPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m auth) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
@@ -69,19 +69,19 @@ func (m authPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tmsg.Code == tea.KeyEnter:
 			m.waiting = true
-			return m, m.startBrowserAuth()
+			return m, m.startBrowserauth()
 		}
 	}
 	return m, cmd
 }
 
-func (p authPage) View() tea.View {
+func (p auth) View() tea.View {
 	var b strings.Builder
 
 	if p.waiting {
 		b.WriteString("Waiting for browser authentication...")
 	} else {
-		title := "Authenticate"
+		title := "authenticate"
 		if p.isReauth {
 			title = "Re-authenticate"
 		}
@@ -98,15 +98,15 @@ func (p authPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (p authPage) Breadcrumbs() []string {
-	return []string{"Auth"}
+func (p auth) Breadcrumbs() []string {
+	return []string{"auth"}
 }
 
-func (p *authPage) resetErr() {
+func (p *auth) resetErr() {
 	p.err = ""
 }
 
-func startLocalAuthServer() (int, chan authCallback) {
+func startLocalauthServer() (int, chan authCallback) {
 	callback := make(chan authCallback)
 
 	mux := http.NewServeMux()
@@ -148,9 +148,9 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, append(args, url)...).Start()
 }
 
-func (m authPage) startBrowserAuth() tea.Cmd {
+func (m auth) startBrowserauth() tea.Cmd {
 	return func() tea.Msg {
-		port, callback := startLocalAuthServer()
+		port, callback := startLocalauthServer()
 
 		authURL := fmt.Sprintf(
 			"%s/auth?cli=true&port=%d",

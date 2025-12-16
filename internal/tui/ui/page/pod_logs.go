@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"encoding/json"
@@ -32,7 +32,7 @@ type logsUpdated struct {
 	status string
 }
 
-type PodLogsPage struct {
+type podLogs struct {
 	store     msg.Store
 	pod       *model.Pod
 	project   *model.Project
@@ -45,7 +45,7 @@ type PodLogsPage struct {
 	height    int
 }
 
-func NewPodLogsPage(s msg.Store, podID string) PodLogsPage {
+func NewPodLogs(s msg.Store, podID string) podLogs {
 	var pod model.Pod
 	for _, p := range s.Pods() {
 		if p.ID == podID {
@@ -63,7 +63,7 @@ func NewPodLogsPage(s msg.Store, podID string) PodLogsPage {
 	}
 
 	vp := viewport.New()
-	return PodLogsPage{
+	return podLogs{
 		store:     s,
 		pod:       &pod,
 		project:   &project,
@@ -74,20 +74,20 @@ func NewPodLogsPage(s msg.Store, podID string) PodLogsPage {
 	}
 }
 
-func (m PodLogsPage) Init() tea.Cmd {
+func (m podLogs) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchLogs(),
 		m.schedulePoll(),
 	)
 }
 
-func (m PodLogsPage) schedulePoll() tea.Cmd {
+func (m podLogs) schedulePoll() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return pollLogsMsg{}
 	})
 }
 
-func (m PodLogsPage) fetchLogs() tea.Cmd {
+func (m podLogs) fetchLogs() tea.Cmd {
 	return func() tea.Msg {
 		cfg, err := config.Load()
 		if err != nil {
@@ -117,7 +117,7 @@ func (m PodLogsPage) fetchLogs() tea.Cmd {
 	}
 }
 
-func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case pollLogsMsg:
 		// Keep polling while building
@@ -137,7 +137,7 @@ func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			podID := m.pod.ID
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, podID) },
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
 				}
 			}
 		}
@@ -179,7 +179,7 @@ func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PodLogsPage) triggerDeploy() tea.Cmd {
+func (m podLogs) triggerDeploy() tea.Cmd {
 	return func() tea.Msg {
 		cfg, _ := config.Load()
 		url := fmt.Sprintf("%s/api/pods/%s/deploy", cfg.Server, m.pod.ID)
@@ -190,7 +190,7 @@ func (m PodLogsPage) triggerDeploy() tea.Cmd {
 	}
 }
 
-func (m *PodLogsPage) updateViewport() {
+func (m *podLogs) updateViewport() {
 	content := strings.Join(m.logs, "\n")
 	m.viewport.SetContent(content)
 	if m.status == "building" {
@@ -198,7 +198,7 @@ func (m *PodLogsPage) updateViewport() {
 	}
 }
 
-func (m PodLogsPage) View() tea.View {
+func (m podLogs) View() tea.View {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
 	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.pod.Title))
 
@@ -243,6 +243,6 @@ func (m PodLogsPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m PodLogsPage) Breadcrumbs() []string {
+func (m podLogs) Breadcrumbs() []string {
 	return []string{"Build Logs", m.pod.Title}
 }

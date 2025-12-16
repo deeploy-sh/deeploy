@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -14,14 +14,14 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type projectToDelete struct {
-	ID    string
-	Title string
+type podToDelete struct {
+	ID        string
+	Title     string
+	ProjectID string
 }
 
-type ProjectDeletePage struct {
-	project    projectToDelete
-	podCount   int
+type podDelete struct {
+	pod        podToDelete
 	input      textinput.Model
 	keyConfirm key.Binding
 	keyCancel  key.Binding
@@ -29,63 +29,54 @@ type ProjectDeletePage struct {
 	height     int
 }
 
-func (p ProjectDeletePage) HelpKeys() []key.Binding {
+func (p podDelete) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyConfirm, p.keyCancel}
 }
 
-func NewProjectDeletePage(s msg.Store, project *model.Project) ProjectDeletePage {
-	podCount := 0
-	for _, p := range s.Pods() {
-		if p.ProjectID == project.ID {
-			podCount++
-		}
-	}
-
+func NewPodDelete(pod *model.Pod) podDelete {
 	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
-	ti.Placeholder = project.Title
+	ti.Placeholder = pod.Title
 	ti.Focus()
 	ti.CharLimit = 100
 
-	return ProjectDeletePage{
-		project:    projectToDelete{ID: project.ID, Title: project.Title},
-		podCount:   podCount,
+	return podDelete{
+		pod:        podToDelete{ID: pod.ID, Title: pod.Title, ProjectID: pod.ProjectID},
 		input:      ti,
 		keyConfirm: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "confirm")),
 		keyCancel:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
 }
 
-func (p ProjectDeletePage) Init() tea.Cmd {
+func (p podDelete) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (p podDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
-	case msg.ProjectDeleted:
+	case msg.PodDeleted:
+		projectID := p.pod.ProjectID
 		return p, tea.Batch(
 			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Project deleted", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }} },
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }} },
 		)
 
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:
+			projectID := p.pod.ProjectID
 			return p, func() tea.Msg {
-				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }}
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }}
 			}
 		case tea.KeyEnter:
-			if p.podCount > 0 {
+			// Only delete if input matches pod title exactly
+			if p.input.Value() != p.pod.Title {
 				return p, nil
 			}
-			// Only delete if input matches project title exactly
-			if p.input.Value() != p.project.Title {
-				return p, nil
-			}
-			return p, api.DeleteProject(p.project.ID)
+			return p, api.DeletePod(p.pod.ID)
 		}
 	case tea.WindowSizeMsg:
 		p.width = tmsg.Width
@@ -97,23 +88,15 @@ func (p ProjectDeletePage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p ProjectDeletePage) View() tea.View {
+func (p podDelete) View() tea.View {
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Render(fmt.Sprintf("Delete Project (%v)", p.project.Title))
+		Render(fmt.Sprintf("Delete Pod (%v)", p.pod.Title))
 
-	var hint string
-	if p.podCount > 0 {
-		hint = styles.MutedStyle().
-			PaddingTop(1).
-			PaddingBottom(1).
-			Render(fmt.Sprintf("Delete all %d pods first", p.podCount))
-	} else {
-		hint = styles.MutedStyle().
-			PaddingTop(1).
-			PaddingBottom(1).
-			Render("Type '" + p.project.Title + "' to confirm")
-	}
+	hint := styles.MutedStyle().
+		PaddingTop(1).
+		PaddingBottom(1).
+		Render("Type '" + p.pod.Title + "' to confirm")
 
 	content := lipgloss.JoinVertical(lipgloss.Left, title, hint, p.input.View())
 
@@ -129,6 +112,6 @@ func (p ProjectDeletePage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (p ProjectDeletePage) Breadcrumbs() []string {
-	return []string{"Projects", "Delete"}
+func (p podDelete) Breadcrumbs() []string {
+	return []string{"Projects", "Pods", "Delete"}
 }

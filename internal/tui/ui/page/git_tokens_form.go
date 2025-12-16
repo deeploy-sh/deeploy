@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"strings"
@@ -18,7 +18,7 @@ const (
 	fieldToken
 )
 
-type GitTokenFormPage struct {
+type gitTokenForm struct {
 	nameInput    textinput.Model
 	tokenInput   textinput.Model
 	focusedField int
@@ -30,11 +30,11 @@ type GitTokenFormPage struct {
 	height       int
 }
 
-func (m GitTokenFormPage) HelpKeys() []key.Binding {
+func (m gitTokenForm) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyTab, m.keyCancel}
 }
 
-func NewGitTokenFormPage() GitTokenFormPage {
+func NewGitTokenForm() gitTokenForm {
 	card := styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
 	inputWidth := card.InnerWidth()
 
@@ -48,7 +48,7 @@ func NewGitTokenFormPage() GitTokenFormPage {
 	tokenInput.CharLimit = 200
 	tokenInput.EchoMode = textinput.EchoPassword
 
-	return GitTokenFormPage{
+	return gitTokenForm{
 		nameInput:   nameInput,
 		tokenInput:  tokenInput,
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
@@ -58,18 +58,18 @@ func NewGitTokenFormPage() GitTokenFormPage {
 	}
 }
 
-func (m GitTokenFormPage) Init() tea.Cmd {
+func (m gitTokenForm) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m GitTokenFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m gitTokenForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.GitTokenCreated:
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
 				}
 			},
 		)
@@ -94,12 +94,12 @@ func (m GitTokenFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *GitTokenFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m *gitTokenForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyCancel):
 		return m, func() tea.Msg {
 			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
+				PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
 			}
 		}
 
@@ -132,7 +132,7 @@ func (m *GitTokenFormPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.
 	return m, cmd
 }
 
-func (m *GitTokenFormPage) updateFocus() tea.Cmd {
+func (m *gitTokenForm) updateFocus() tea.Cmd {
 	m.nameInput.Blur()
 	m.tokenInput.Blur()
 
@@ -145,7 +145,7 @@ func (m *GitTokenFormPage) updateFocus() tea.Cmd {
 	return nil
 }
 
-func (m GitTokenFormPage) View() tea.View {
+func (m gitTokenForm) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -189,7 +189,7 @@ func (m GitTokenFormPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m GitTokenFormPage) Breadcrumbs() []string {
+func (m gitTokenForm) Breadcrumbs() []string {
 	return []string{"Settings", "Git Tokens", "Add"}
 }
 

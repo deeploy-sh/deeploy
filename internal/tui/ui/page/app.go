@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"strings"
@@ -85,13 +85,13 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		case tmsg.NeedsSetup:
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewConnectPage(nil) },
+					PageFactory: func(s msg.Store) tea.Model { return NewConnect(nil) },
 				}
 			}
 		case tmsg.NeedsAuth:
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage("") },
+					PageFactory: func(s msg.Store) tea.Model { return NewAuth("") },
 				}
 			}
 		case tmsg.Offline:
@@ -229,7 +229,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		if tmsg.Err == errs.ErrUnauthorized {
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewAuthPage("") },
+					PageFactory: func(s msg.Store) tea.Model { return NewAuth("") },
 				}
 			}
 		}
@@ -305,7 +305,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "action",
 			Action: func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(m msg.Store) tea.Model { return NewProjectFormPage(nil) },
+					PageFactory: func(m msg.Store) tea.Model { return NewProjectForm(nil) },
 				}
 			},
 		},
@@ -323,7 +323,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "settings",
 			Action: func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokensPage(s.GitTokens()) },
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
 				}
 			},
 		},
@@ -337,7 +337,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Category:    "project",
 			Action: func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetailPage(s, project.ID) },
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, project.ID) },
 				}
 			},
 		})
@@ -352,7 +352,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Action: func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodDetailPage(s, pod.ID)
+						return NewPodDetail(s, pod.ID)
 					},
 				}
 			},

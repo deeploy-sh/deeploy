@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"strings"
@@ -13,7 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type PodVarsPage struct {
+type podVars struct {
 	pod      *model.Pod
 	project  *model.Project
 	textarea textarea.Model
@@ -24,11 +24,11 @@ type PodVarsPage struct {
 	height   int
 }
 
-func (m PodVarsPage) HelpKeys() []key.Binding {
+func (m podVars) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyBack}
 }
 
-func NewPodVarsPage(pod *model.Pod, project *model.Project) PodVarsPage {
+func NewPodVars(pod *model.Pod, project *model.Project) podVars {
 	ta := textarea.New()
 	ta.Placeholder = "DATABASE_URL=postgres://..."
 	ta.Prompt = ""
@@ -36,7 +36,7 @@ func NewPodVarsPage(pod *model.Pod, project *model.Project) PodVarsPage {
 	ta.SetHeight(10)
 	ta.Focus()
 
-	return PodVarsPage{
+	return podVars{
 		pod:      pod,
 		project:  project,
 		textarea: ta,
@@ -45,11 +45,11 @@ func NewPodVarsPage(pod *model.Pod, project *model.Project) PodVarsPage {
 	}
 }
 
-func (m PodVarsPage) Init() tea.Cmd {
+func (m podVars) Init() tea.Cmd {
 	return tea.Batch(api.FetchPodEnvVars(m.pod.ID), textarea.Blink)
 }
 
-func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (m podVars) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodEnvVarsLoaded:
 		m.envVars = tmsg.EnvVars
@@ -60,7 +60,7 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		podID := m.pod.ID
 		return m, tea.Batch(
 			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, podID) }} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) }} },
 		)
 
 	case tea.KeyPressMsg:
@@ -69,7 +69,7 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodDetailPage(s, podID)
+						return NewPodDetail(s, podID)
 					},
 				}
 			}
@@ -94,7 +94,7 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PodVarsPage) envVarsToText() string {
+func (m podVars) envVarsToText() string {
 	var lines []string
 	for _, v := range m.envVars {
 		lines = append(lines, v.Key+"="+v.Value)
@@ -102,7 +102,7 @@ func (m PodVarsPage) envVarsToText() string {
 	return strings.Join(lines, "\n")
 }
 
-func (m PodVarsPage) textToEnvVars() []model.PodEnvVar {
+func (m podVars) textToEnvVars() []model.PodEnvVar {
 	var vars []model.PodEnvVar
 	lines := strings.Split(m.textarea.Value(), "\n")
 
@@ -133,12 +133,12 @@ func (m PodVarsPage) textToEnvVars() []model.PodEnvVar {
 	return vars
 }
 
-func (m *PodVarsPage) save() (tea.Model, tea.Cmd) {
+func (m *podVars) save() (tea.Model, tea.Cmd) {
 	vars := m.textToEnvVars()
 	return m, api.UpdatePodEnvVars(m.pod.ID, vars)
 }
 
-func (m PodVarsPage) View() tea.View {
+func (m podVars) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -163,6 +163,6 @@ func (m PodVarsPage) View() tea.View {
 	return tea.NewView(centered)
 }
 
-func (m PodVarsPage) Breadcrumbs() []string {
+func (m podVars) Breadcrumbs() []string {
 	return []string{"Projects", m.project.Title, "Pods", m.pod.Title, "Env Vars"}
 }

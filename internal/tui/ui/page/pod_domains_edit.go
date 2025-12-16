@@ -1,4 +1,4 @@
-package pages
+package page
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
 
-type PodDomainsEditPage struct {
+type podDomainsEdit struct {
 	domain       model.PodDomain
 	pod          *model.Pod
 	project      *model.Project
@@ -32,11 +32,11 @@ type PodDomainsEditPage struct {
 	height       int
 }
 
-func (p PodDomainsEditPage) HelpKeys() []key.Binding {
+func (p podDomainsEdit) HelpKeys() []key.Binding {
 	return []key.Binding{p.keySave, p.keyTab, p.keyToggle, p.keyCancel}
 }
 
-func NewPodDomainsEditPage(domain model.PodDomain, pod *model.Pod, project *model.Project) PodDomainsEditPage {
+func NewPodDomainsEdit(domain model.PodDomain, pod *model.Pod, project *model.Project) podDomainsEdit {
 	domainInput := components.NewTextInput(40)
 	domainInput.Placeholder = "app.example.com"
 	domainInput.CharLimit = 100
@@ -48,7 +48,7 @@ func NewPodDomainsEditPage(domain model.PodDomain, pod *model.Pod, project *mode
 	portInput.CharLimit = 5
 	portInput.SetValue(strconv.Itoa(domain.Port))
 
-	return PodDomainsEditPage{
+	return podDomainsEdit{
 		domain:      domain,
 		pod:         pod,
 		project:     project,
@@ -62,18 +62,18 @@ func NewPodDomainsEditPage(domain model.PodDomain, pod *model.Pod, project *mode
 	}
 }
 
-func (p PodDomainsEditPage) Init() tea.Cmd {
+func (p podDomainsEdit) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainUpdated:
 		pod := p.pod
 		project := p.project
 		return p, tea.Batch(
 			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDomainsPage(pod, project) }} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDomains(pod, project) }} },
 		)
 
 	case tea.KeyPressMsg:
@@ -83,7 +83,7 @@ func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			project := p.project
 			return p, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewPodDomainsPage(pod, project) },
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDomains(pod, project) },
 				}
 			}
 
@@ -136,7 +136,7 @@ func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, cmd
 }
 
-func (p PodDomainsEditPage) View() tea.View {
+func (p podDomainsEdit) View() tea.View {
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -188,7 +188,7 @@ func (p PodDomainsEditPage) View() tea.View {
 	return tea.NewView(p.centeredCard(b.String()))
 }
 
-func (p PodDomainsEditPage) centeredCard(content string) string {
+func (p podDomainsEdit) centeredCard(content string) string {
 	card := styles.Card(styles.CardProps{
 		Width:   60,
 		Padding: []int{1, 2},
@@ -199,6 +199,6 @@ func (p PodDomainsEditPage) centeredCard(content string) string {
 		lipgloss.Center, lipgloss.Center, card)
 }
 
-func (p PodDomainsEditPage) Breadcrumbs() []string {
+func (p podDomainsEdit) Breadcrumbs() []string {
 	return []string{"Projects", p.project.Title, "Pods", p.pod.Title, "Domains", "Edit"}
 }
