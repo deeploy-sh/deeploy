@@ -58,6 +58,10 @@ services:
       - deeploy
     ports:
       - "8090:8090"
+    volumes:
+      # Docker socket: App needs to build images and start/stop containers
+      # Without this, the Go Docker SDK can't reach the host's Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_URL: postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable
     depends_on:
