@@ -11,6 +11,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
@@ -32,8 +33,9 @@ type logsUpdated struct {
 }
 
 type PodLogsPage struct {
-	podID     string
-	podTitle  string
+	store     msg.Store
+	pod       *model.Pod
+	project   *model.Project
 	viewport  viewport.Model
 	logs      []string
 	status    string
@@ -43,11 +45,28 @@ type PodLogsPage struct {
 	height    int
 }
 
-func NewPodLogsPage(podID, podTitle string) PodLogsPage {
+func NewPodLogsPage(s msg.Store, podID string) PodLogsPage {
+	var pod model.Pod
+	for _, p := range s.Pods() {
+		if p.ID == podID {
+			pod = p
+			break
+		}
+	}
+
+	var project model.Project
+	for _, pr := range s.Projects() {
+		if pr.ID == pod.ProjectID {
+			project = pr
+			break
+		}
+	}
+
 	vp := viewport.New()
 	return PodLogsPage{
-		podID:     podID,
-		podTitle:  podTitle,
+		store:     s,
+		pod:       &pod,
+		project:   &project,
 		viewport:  vp,
 		status:    "building",
 		keyBack:   key.NewBinding(key.WithKeys("esc", "q"), key.WithHelp("esc/q", "back")),
@@ -75,7 +94,7 @@ func (m PodLogsPage) fetchLogs() tea.Cmd {
 			return logsUpdated{logs: []string{"Error: " + err.Error()}, status: "error"}
 		}
 
-		url := fmt.Sprintf("%s/api/pods/%s/logs", cfg.Server, m.podID)
+		url := fmt.Sprintf("%s/api/pods/%s/logs", cfg.Server, m.pod.ID)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return logsUpdated{logs: []string{"Error: " + err.Error()}, status: "error"}
@@ -115,9 +134,10 @@ func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		if key.Matches(tmsg, m.keyBack) {
+			podID := m.pod.ID
 			return m, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, podID) },
 				}
 			}
 		}
@@ -139,8 +159,17 @@ func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = tmsg.Width
 		m.height = tmsg.Height
-		m.viewport.SetWidth(m.width)
-		m.viewport.SetHeight(m.height - 4)
+		// Card width: responsive, max 120
+		cardWidth := m.width - 8
+		if cardWidth > 120 {
+			cardWidth = 120
+		}
+		// Inner width: card width minus padding (2 on each side) and accent border (1)
+		innerWidth := cardWidth - 5
+		// Height: total minus card padding (1 top, 1 bottom), header, help, spacing
+		innerHeight := m.height - 10
+		m.viewport.SetWidth(innerWidth)
+		m.viewport.SetHeight(innerHeight)
 		m.updateViewport()
 		return m, nil
 	}
@@ -153,7 +182,7 @@ func (m PodLogsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (m PodLogsPage) triggerDeploy() tea.Cmd {
 	return func() tea.Msg {
 		cfg, _ := config.Load()
-		url := fmt.Sprintf("%s/api/pods/%s/deploy", cfg.Server, m.podID)
+		url := fmt.Sprintf("%s/api/pods/%s/deploy", cfg.Server, m.pod.ID)
 		req, _ := http.NewRequest("POST", url, nil)
 		req.Header.Set("Authorization", "Bearer "+cfg.Token)
 		http.DefaultClient.Do(req)
@@ -171,7 +200,7 @@ func (m *PodLogsPage) updateViewport() {
 
 func (m PodLogsPage) View() tea.View {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
-	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.podTitle))
+	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.pod.Title))
 
 	var statusText string
 	switch m.status {
@@ -196,9 +225,24 @@ func (m PodLogsPage) View() tea.View {
 		help,
 	)
 
-	return tea.NewView(content)
+	// Card width: responsive, max 120
+	cardWidth := m.width - 8
+	if cardWidth > 120 {
+		cardWidth = 120
+	}
+
+	card := styles.Card(styles.CardProps{
+		Width:   cardWidth,
+		Padding: []int{1, 2},
+		Accent:  true,
+	}).Render(content)
+
+	centered := lipgloss.Place(m.width, m.height,
+		lipgloss.Center, lipgloss.Center, card)
+
+	return tea.NewView(centered)
 }
 
 func (m PodLogsPage) Breadcrumbs() []string {
-	return []string{"Build Logs", m.podTitle}
+	return []string{"Build Logs", m.pod.Title}
 }

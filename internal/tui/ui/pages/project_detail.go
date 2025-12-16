@@ -105,7 +105,7 @@ func (m ProjectDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if item != nil {
 				pod := item.(components.PodItem).Pod
 				return m, func() tea.Msg {
-					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(&pod, m.project, s.GitTokens()) }}
+					return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, pod.ID) }}
 				}
 			}
 		case key.Matches(tmsg, m.keyDeletePod):

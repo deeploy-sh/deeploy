@@ -57,21 +57,19 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.PodEnvVarsUpdated:
-		pod := m.pod
-		project := m.project
+		podID := m.pod.ID
 		return m, tea.Batch(
 			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(pod, project, s.GitTokens()) }} },
+			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(s, podID) }} },
 		)
 
 	case tea.KeyPressMsg:
 		if key.Matches(tmsg, m.keyBack) {
-			pod := m.pod
-			project := m.project
+			podID := m.pod.ID
 			return m, func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodDetailPage(pod, project, s.GitTokens())
+						return NewPodDetailPage(s, podID)
 					},
 				}
 			}

@@ -106,22 +106,13 @@ func (m PodFormPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case msg.PodUpdated:
-		pod := m.pod
-		projectID := m.projectID
+		podID := m.pod.ID
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Pod saved", Type: msg.StatusSuccess} },
 			func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					var proj *model.Project
-					for _, p := range s.Projects() {
-						if p.ID == projectID {
-							pr := p
-							proj = &pr
-							break
-						}
-					}
-					return NewPodDetailPage(pod, proj, s.GitTokens())
+					return NewPodDetailPage(s, podID)
 				}}
 			},
 		)

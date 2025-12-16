@@ -14,9 +14,9 @@ import (
 )
 
 type PodDetailPage struct {
+	store       msg.Store
 	pod         *model.Pod
 	project     *model.Project
-	gitTokens   []model.GitToken
 	domains     []model.PodDomain
 	envVarCount int
 	keyDeploy   key.Binding
@@ -36,11 +36,27 @@ func (m PodDetailPage) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyDeploy, m.keyStop, m.keyRestart, m.keyLogs, m.keyEdit, m.keyDomains, m.keyVars, m.keyToken, m.keyBack}
 }
 
-func NewPodDetailPage(pod *model.Pod, project *model.Project, gitTokens []model.GitToken) PodDetailPage {
+func NewPodDetailPage(s msg.Store, podID string) PodDetailPage {
+	var pod model.Pod
+	for _, p := range s.Pods() {
+		if p.ID == podID {
+			pod = p
+			break
+		}
+	}
+
+	var project model.Project
+	for _, pr := range s.Projects() {
+		if pr.ID == pod.ProjectID {
+			project = pr
+			break
+		}
+	}
+
 	return PodDetailPage{
-		pod:        pod,
-		project:    project,
-		gitTokens:  gitTokens,
+		store:      s,
+		pod:        &pod,
+		project:    &project,
 		keyDeploy:  key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "deploy")),
 		keyStop:    key.NewBinding(key.WithKeys("S"), key.WithHelp("S", "stop")),
 		keyRestart: key.NewBinding(key.WithKeys("R"), key.WithHelp("R", "restart")),
@@ -121,13 +137,12 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 
 	case key.Matches(tmsg, m.keyDeploy):
 		podID := m.pod.ID
-		podTitle := m.pod.Title
 		return m, tea.Batch(
 			api.DeployPod(podID),
 			func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						return NewPodLogsPage(podID, podTitle)
+						return NewPodLogsPage(s, podID)
 					},
 				}
 			},
@@ -141,11 +156,10 @@ func (m PodDetailPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 
 	case key.Matches(tmsg, m.keyLogs):
 		podID := m.pod.ID
-		podTitle := m.pod.Title
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodLogsPage(podID, podTitle)
+					return NewPodLogsPage(s, podID)
 				},
 			}
 		}
@@ -237,7 +251,7 @@ func (m PodDetailPage) View() tea.View {
 	b.WriteString("\n")
 	if m.pod.GitTokenID != nil {
 		tokenFound := false
-		for _, t := range m.gitTokens {
+		for _, t := range m.store.GitTokens() {
 			if t.ID == *m.pod.GitTokenID {
 				b.WriteString(fmt.Sprintf("%s [%s]", t.Name, t.Provider))
 				tokenFound = true

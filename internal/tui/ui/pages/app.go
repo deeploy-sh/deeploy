@@ -352,16 +352,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			Action: func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model {
-						// Find project for this pod
-						var project *model.Project
-						for _, pr := range s.Projects() {
-							if pr.ID == pod.ProjectID {
-								proj := pr
-								project = &proj
-								break
-							}
-						}
-						return NewPodDetailPage(&pod, project, s.GitTokens())
+						return NewPodDetailPage(s, pod.ID)
 					},
 				}
 			},

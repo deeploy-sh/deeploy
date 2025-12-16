@@ -57,14 +57,13 @@ func (m PodTokenPage) Init() tea.Cmd {
 func (m PodTokenPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodUpdated:
-		pod := m.pod
-		project := m.project
+		podID := m.pod.ID
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Token updated", Type: msg.StatusSuccess} },
 			func() tea.Msg {
 				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(pod, project, s.GitTokens())
+					return NewPodDetailPage(s, podID)
 				}}
 			},
 		)
@@ -84,12 +83,11 @@ func (m PodTokenPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *PodTokenPage) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
-		pod := m.pod
-		project := m.project
+		podID := m.pod.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(pod, project, s.GitTokens())
+					return NewPodDetailPage(s, podID)
 				},
 			}
 		}

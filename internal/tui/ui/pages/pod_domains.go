@@ -118,12 +118,11 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (m PodDomainsPage) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
-		pod := m.pod
-		project := m.project
+		podID := m.pod.ID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetailPage(pod, project, s.GitTokens())
+					return NewPodDetailPage(s, podID)
 				},
 			}
 		}
