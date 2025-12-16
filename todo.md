@@ -2,6 +2,7 @@
 
 - feat(pod): simplify git token choice
 - feat: show version number, how to handle updates on tui/server, implement minimum version update "wall"
+- feat: zero downtime for redeployments
 - feat: implement ssl stuff
 - docs: docs + seo stuff
 - create uninstall script for vps
@@ -14,3 +15,4 @@
 - support docker compose
 - feat: seperate container logs from deployment logs
 - feat: add restart e.g. for var/domain changes (redeployment not neccessary here)
+- feat(domains): allow www to none wwww or vice versa
