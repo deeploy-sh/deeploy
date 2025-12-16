@@ -20,6 +20,9 @@ curl -fsSL https://deeploy.sh/server.sh | sudo bash
 # Specific version/branch
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s v1.0.0
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s dev
+
+# Uninstall (dev/admin only - removes everything)
+curl -fsSL https://raw.githubusercontent.com/deeploy-sh/deeploy/main/scripts/uninstall.sh | sudo bash
 ```
 
 ### TUI (Local)

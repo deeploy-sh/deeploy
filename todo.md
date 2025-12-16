@@ -2,10 +2,8 @@
 
 - feat(pod): simplify git token choice
 - feat: show version number, how to handle updates on tui/server, implement minimum version update "wall"
-- feat: zero downtime for redeployments
 - feat: implement ssl stuff
 - docs: docs + seo stuff
-- create uninstall script for vps
 - simplify/beautify combo logs
 - ist tui to server without https (ip only) secure?
 
