@@ -60,7 +60,7 @@ func (m PodVarsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		pod := m.pod
 		project := m.project
 		return m, tea.Batch(
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Deploy required to apply.", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
 			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetailPage(pod, project, s.GitTokens()) }} },
 		)
 

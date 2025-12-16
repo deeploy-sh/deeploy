@@ -70,8 +70,20 @@ func (m PodDetailPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.envVarCount = len(tmsg.EnvVars)
 		return m, nil
 
-	case msg.PodDeployed, msg.PodStopped, msg.PodRestarted:
+	case msg.PodDeployed:
 		return m, api.LoadData()
+
+	case msg.PodStopped:
+		return m, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod stopped", Type: msg.StatusSuccess} },
+		)
+
+	case msg.PodRestarted:
+		return m, tea.Batch(
+			api.LoadData(),
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod restarted", Type: msg.StatusSuccess} },
+		)
 
 	case msg.DataLoaded:
 		for _, p := range tmsg.Pods {

@@ -72,7 +72,7 @@ func (p PodDomainsEditPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		pod := p.pod
 		project := p.project
 		return p, tea.Batch(
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Deploy required to apply.", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
 			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDomainsPage(pod, project) }} },
 		)
 

@@ -241,24 +241,23 @@ func (d *DockerService) RenameContainer(ctx context.Context, containerID, newNam
 	return d.client.ContainerRename(ctx, containerID, newName)
 }
 
-// WaitForHealthy waits for a container to respond to HTTP requests.
-func (d *DockerService) WaitForHealthy(ctx context.Context, containerID string, port int, timeout time.Duration) error {
+// GetContainerImage returns the image name of a container.
+func (d *DockerService) GetContainerImage(ctx context.Context, containerID string) (string, error) {
 	info, err := d.client.ContainerInspect(ctx, containerID)
 	if err != nil {
-		return fmt.Errorf("failed to inspect container: %w", err)
+		return "", fmt.Errorf("failed to inspect container: %w", err)
 	}
+	return info.Config.Image, nil
+}
 
-	ip := info.NetworkSettings.Networks[NetworkName].IPAddress
-	if ip == "" {
-		return fmt.Errorf("container has no IP in network %s", NetworkName)
-	}
-
-	url := fmt.Sprintf("http://%s:%d/", ip, port)
+// WaitForHealthy waits for a container to respond to HTTP requests via its domain.
+func (d *DockerService) WaitForHealthy(ctx context.Context, domain string, timeout time.Duration) error {
+	healthURL := fmt.Sprintf("http://%s/", domain)
 	deadline := time.Now().Add(timeout)
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	for time.Now().Before(deadline) {
-		resp, err := client.Get(url)
+		resp, err := client.Get(healthURL)
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode < 500 {
@@ -332,9 +331,9 @@ func (d *DockerService) PruneDanglingImages(ctx context.Context) {
 	}
 }
 
-// PruneBuildContainers removes exited build containers.
+// PruneBuildContainers removes stopped containers.
 func (d *DockerService) PruneBuildContainers(ctx context.Context) {
-	report, err := d.client.ContainersPrune(ctx, filters.NewArgs(filters.Arg("status", "exited")))
+	report, err := d.client.ContainersPrune(ctx, filters.NewArgs())
 	if err != nil {
 		slog.Warn("failed to prune containers", "error", err)
 		return

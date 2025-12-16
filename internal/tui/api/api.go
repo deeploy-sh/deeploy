@@ -3,6 +3,9 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 
 	tea "charm.land/bubbletea/v2"
@@ -16,6 +19,21 @@ import (
 
 func getConfig() (*config.Config, error) {
 	return config.Load()
+}
+
+// checkResponse checks the HTTP response for errors and returns an error if the status code indicates failure.
+func checkResponse(resp *http.Response) error {
+	if resp.StatusCode == http.StatusUnauthorized {
+		return errs.ErrUnauthorized
+	}
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		if len(body) > 0 {
+			return errors.New(string(body))
+		}
+		return fmt.Errorf("request failed with status %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func get(path string) (*http.Response, error) {
@@ -35,8 +53,9 @@ func get(path string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, errs.ErrUnauthorized
+	err = checkResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 	return resp, nil
 }
@@ -63,8 +82,9 @@ func post(path string, data any) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, errs.ErrUnauthorized
+	err = checkResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 	return resp, nil
 }
@@ -91,8 +111,9 @@ func put(path string, data any) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, errs.ErrUnauthorized
+	err = checkResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 	return resp, nil
 }
@@ -114,8 +135,9 @@ func del(path string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, errs.ErrUnauthorized
+	err = checkResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 	return resp, nil
 }

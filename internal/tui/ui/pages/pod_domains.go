@@ -98,7 +98,7 @@ func (m PodDomainsPage) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.domains = nil // trigger loading state
 		return m, tea.Batch(
 			api.FetchPodDomains(m.pod.ID),
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Deploy required to apply.", Type: msg.StatusSuccess} },
+			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
 		)
 
 	case tea.KeyPressMsg:
