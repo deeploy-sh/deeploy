@@ -1,6 +1,7 @@
 package page
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
+	"github.com/deeploy-sh/deeploy/internal/shared/version"
 	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
@@ -38,6 +40,8 @@ type app struct {
 	bootstrapped     bool
 	statusText       string
 	statusType       msg.StatusType
+	serverVersion    string // From /health endpoint
+	latestVersion    string // From GitHub API
 }
 
 func (m *app) Projects() []model.Project {
@@ -75,6 +79,7 @@ func (m app) Init() tea.Cmd {
 		tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
 			return api.CheckConnection()()
 		}),
+		api.CheckLatestVersion(), // Check for updates on startup
 	)
 }
 
@@ -107,6 +112,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tmsg.Online:
 			m.offline = false
+			m.serverVersion = tmsg.ServerVersion
 		}
 
 		if m.heartbeatStarted {
@@ -270,6 +276,15 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.themeSwitcher = &switcher
 		return m, switcher.Init()
 
+	case msg.LatestVersionResult:
+		if tmsg.Error == nil && tmsg.Version != "" {
+			m.latestVersion = tmsg.Version
+		}
+		// Check again in 1 hour
+		return m, tea.Tick(1*time.Hour, func(t time.Time) tea.Msg {
+			return api.CheckLatestVersion()()
+		})
+
 	default:
 		if m.palette != nil {
 			var cmd tea.Cmd
@@ -327,6 +342,18 @@ func (m app) getPaletteItems() []components.PaletteItem {
 				}
 			},
 		},
+		{
+			ItemTitle:   "About / Updates",
+			Description: "Version info and updates",
+			Category:    "settings",
+			Action: func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewInfo(version.Version, m.serverVersion, m.latestVersion)
+					},
+				}
+			},
+		},
 	}
 
 	for _, p := range m.projects {
@@ -378,6 +405,36 @@ func (m app) View() tea.View {
 		statusStyle = styles.OnlineStyle()
 	}
 
+	// Build version info
+	tuiVersion := version.Version
+	serverVersion := m.serverVersion
+	if serverVersion == "" {
+		serverVersion = "..."
+	}
+
+	var versionInfo string
+	if tuiVersion == serverVersion {
+		versionInfo = fmt.Sprintf(" %s", tuiVersion)
+	} else {
+		versionInfo = fmt.Sprintf(" TUI %s · Server %s", tuiVersion, serverVersion)
+	}
+
+	// Check if update available
+	updateAvailable := false
+	if m.latestVersion != "" {
+		if tuiVersion != "dev" && tuiVersion != m.latestVersion {
+			updateAvailable = true
+		}
+		if serverVersion != "dev" && serverVersion != "..." && serverVersion != m.latestVersion {
+			updateAvailable = true
+		}
+	}
+	if updateAvailable {
+		versionInfo += " ⬆"
+	}
+
+	status = statusStyle.Render(status) + styles.MutedStyle().Render(versionInfo)
+
 	logo := "⚡ deeploy.sh"
 	breadcrumbParts := []string{logo}
 	p, ok := m.currentPage.(PageInfo)
@@ -387,7 +444,7 @@ func (m app) View() tea.View {
 	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render("  >  "))
 
 	gap := max(m.width-lipgloss.Width(breadcrumbs)-lipgloss.Width(status)-2, 1)
-	headerContent := breadcrumbs + strings.Repeat(" ", gap) + statusStyle.Render(status)
+	headerContent := breadcrumbs + strings.Repeat(" ", gap) + status
 	header := lipgloss.NewStyle().
 		Width(m.width).
 		Padding(0, 1).

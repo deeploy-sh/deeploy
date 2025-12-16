@@ -21,10 +21,18 @@ type Store interface {
 // --- Connection ---
 
 type ConnectionResult struct {
-	NeedsSetup bool
-	NeedsAuth  bool
-	Offline    bool
-	Online     bool
+	NeedsSetup    bool
+	NeedsAuth     bool
+	Offline       bool
+	Online        bool
+	ServerVersion string // Server version from /health
+}
+
+// --- Version Check ---
+
+type LatestVersionResult struct {
+	Version string
+	Error   error
 }
 
 // --- Auth ---

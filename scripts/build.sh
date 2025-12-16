@@ -22,7 +22,7 @@ for platform in "${platforms[@]}"; do
 
     echo "Building $output_name..."
     env GOOS=$GOOS GOARCH=$GOARCH go build \
-        -ldflags "-X main.Version=$VERSION" \
+        -ldflags "-X github.com/deeploy-sh/deeploy/internal/shared/version.Version=$VERSION" \
         -o "$OUTPUT_DIR/$output_name" \
         ./cmd/tui
 done

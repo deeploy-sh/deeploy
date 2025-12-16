@@ -10,6 +10,7 @@ import (
 	handlers "github.com/deeploy-sh/deeploy/internal/server/handler"
 	mw "github.com/deeploy-sh/deeploy/internal/server/middleware"
 	sharedAssets "github.com/deeploy-sh/deeploy/internal/shared/assets"
+	"github.com/deeploy-sh/deeploy/internal/shared/version"
 )
 
 func Setup(app *app.App) http.Handler {
@@ -105,7 +106,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		Version string `json:"version"`
 	}{
 		Service: "deeploy",
-		Version: "0.0.1",
+		Version: version.Version,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

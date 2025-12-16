@@ -5,10 +5,17 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/deeploy-sh/deeploy/internal/shared/version"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/page"
 )
 
 func main() {
+	// Handle --version flag
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Printf("deeploy %s\n", version.Version)
+		os.Exit(0)
+	}
+
 	// Logging Setup
 	if len(os.Getenv("DEBUG")) > 0 {
 		f, err := tea.LogToFile("debug.log", "debug")

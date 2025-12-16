@@ -535,11 +535,45 @@ func CheckConnection() tea.Cmd {
 			return msg.ConnectionResult{NeedsAuth: true}
 		}
 
-		_, err = get("/health")
+		resp, err := get("/health")
 		if err != nil {
 			return msg.ConnectionResult{Offline: true}
 		}
+		defer resp.Body.Close()
 
-		return msg.ConnectionResult{Online: true}
+		var health struct {
+			Version string `json:"version"`
+		}
+		json.NewDecoder(resp.Body).Decode(&health)
+
+		return msg.ConnectionResult{
+			Online:        true,
+			ServerVersion: health.Version,
+		}
+	}
+}
+
+// --- Version Check ---
+
+func CheckLatestVersion() tea.Cmd {
+	return func() tea.Msg {
+		resp, err := http.Get("https://api.github.com/repos/deeploy-sh/deeploy/releases/latest")
+		if err != nil {
+			return msg.LatestVersionResult{Error: err}
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return msg.LatestVersionResult{Error: fmt.Errorf("github api returned %d", resp.StatusCode)}
+		}
+
+		var release struct {
+			TagName string `json:"tag_name"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+			return msg.LatestVersionResult{Error: err}
+		}
+
+		return msg.LatestVersionResult{Version: release.TagName}
 	}
 }
