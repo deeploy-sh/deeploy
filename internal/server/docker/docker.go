@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -179,6 +181,12 @@ func (d *DockerService) RunContainer(ctx context.Context, opts RunContainerOptio
 	}
 	labels["traefik.http.services."+opts.PodID+".loadbalancer.server.port"] = fmt.Sprintf("%d", port)
 
+	// Traefik health checks: Traefik pings each container every 2s.
+	// Only containers that respond get traffic. This ensures zero-downtime
+	// during redeploys - new container only gets traffic once it's ready.
+	labels["traefik.http.services."+opts.PodID+".loadbalancer.healthcheck.path"] = "/"
+	labels["traefik.http.services."+opts.PodID+".loadbalancer.healthcheck.interval"] = "2s"
+
 	// Container config
 	config := &container.Config{
 		Image:  opts.ImageName,
@@ -226,6 +234,41 @@ func (d *DockerService) StopContainer(ctx context.Context, containerID string) e
 // RemoveContainer removes a container.
 func (d *DockerService) RemoveContainer(ctx context.Context, containerID string) error {
 	return d.client.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+}
+
+// RenameContainer renames a container.
+func (d *DockerService) RenameContainer(ctx context.Context, containerID, newName string) error {
+	return d.client.ContainerRename(ctx, containerID, newName)
+}
+
+// WaitForHealthy waits for a container to respond to HTTP requests.
+func (d *DockerService) WaitForHealthy(ctx context.Context, containerID string, port int, timeout time.Duration) error {
+	info, err := d.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return fmt.Errorf("failed to inspect container: %w", err)
+	}
+
+	ip := info.NetworkSettings.Networks[NetworkName].IPAddress
+	if ip == "" {
+		return fmt.Errorf("container has no IP in network %s", NetworkName)
+	}
+
+	url := fmt.Sprintf("http://%s:%d/", ip, port)
+	deadline := time.Now().Add(timeout)
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	for time.Now().Before(deadline) {
+		resp, err := client.Get(url)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode < 500 {
+				return nil
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	return fmt.Errorf("container did not become healthy within %s", timeout)
 }
 
 // GetLogs returns a reader for container logs.

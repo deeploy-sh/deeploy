@@ -2,6 +2,13 @@
 
 Modern Deployment. Terminal First.
 
+## Features
+
+- Zero-downtime deployments
+- Terminal-first UI
+- Git-based deployments
+- Automatic HTTPS via Traefik
+
 ## Install
 
 ### Server (VPS)

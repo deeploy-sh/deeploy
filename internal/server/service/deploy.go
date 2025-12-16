@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/deeploy-sh/deeploy/internal/server/docker"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
@@ -183,16 +184,17 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		s.appendBuildLog(podID, fmt.Sprintf("Loaded %d environment variables", len(envMap)))
 	}
 
-	// 8. Stop existing container if running
+	// 8. Rename existing container to make room for new one (zero-downtime)
+	oldContainerID := ""
 	if pod.ContainerID != nil && *pod.ContainerID != "" {
-		s.appendBuildLog(podID, "Stopping existing container...")
-		s.docker.StopContainer(ctx, *pod.ContainerID)
-		s.docker.RemoveContainer(ctx, *pod.ContainerID)
+		oldContainerID = *pod.ContainerID
+		s.appendBuildLog(podID, "Preparing zero-downtime deployment...")
+		s.docker.RenameContainer(ctx, oldContainerID, fmt.Sprintf("deeploy-%s-old", podID))
 	}
 
-	// 9. Run container
+	// 9. Run new container (old still running for zero-downtime)
 	s.appendBuildLog(podID, "")
-	s.appendBuildLog(podID, "=== Starting container ===")
+	s.appendBuildLog(podID, "=== Starting new container ===")
 	containerID, err := s.docker.RunContainer(ctx, docker.RunContainerOptions{
 		ImageName:     imageName,
 		ContainerName: fmt.Sprintf("deeploy-%s", podID),
@@ -201,13 +203,42 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		EnvVars:       envMap,
 	})
 	if err != nil {
+		// Rollback: rename old container back
+		if oldContainerID != "" {
+			s.docker.RenameContainer(ctx, oldContainerID, fmt.Sprintf("deeploy-%s", podID))
+		}
 		pod.Status = "failed"
 		s.podRepo.Update(*pod)
 		s.appendBuildLog(podID, fmt.Sprintf("ERROR: failed to run container: %v", err))
 		return fmt.Errorf("failed to run container: %w", err)
 	}
 
-	// 10. Update pod with container ID and status
+	// 10. Wait for new container to be healthy
+	s.appendBuildLog(podID, "Waiting for container to be healthy...")
+	port := domainConfigs[0].Port
+	if err := s.docker.WaitForHealthy(ctx, containerID, port, 60*time.Second); err != nil {
+		// Rollback: stop new container, rename old back
+		s.appendBuildLog(podID, fmt.Sprintf("ERROR: health check failed: %v", err))
+		s.docker.StopContainer(ctx, containerID)
+		s.docker.RemoveContainer(ctx, containerID)
+		if oldContainerID != "" {
+			s.docker.RenameContainer(ctx, oldContainerID, fmt.Sprintf("deeploy-%s", podID))
+			s.appendBuildLog(podID, "Rolled back to previous container")
+		}
+		pod.Status = "failed"
+		s.podRepo.Update(*pod)
+		return fmt.Errorf("health check failed: %w", err)
+	}
+	s.appendBuildLog(podID, "Container is healthy!")
+
+	// 11. Stop old container (zero-downtime complete)
+	if oldContainerID != "" {
+		s.appendBuildLog(podID, "Stopping old container...")
+		s.docker.StopContainer(ctx, oldContainerID)
+		s.docker.RemoveContainer(ctx, oldContainerID)
+	}
+
+	// 12. Update pod with container ID and status
 	pod.ContainerID = &containerID
 	pod.Status = "running"
 	err = s.podRepo.Update(*pod)
