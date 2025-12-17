@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -283,26 +281,6 @@ func (d *DockerService) GetContainerImage(ctx context.Context, containerID strin
 		return "", fmt.Errorf("failed to inspect container: %w", err)
 	}
 	return info.Config.Image, nil
-}
-
-// WaitForHealthy waits for a container to respond to HTTP requests via its domain.
-func (d *DockerService) WaitForHealthy(ctx context.Context, domain string, timeout time.Duration) error {
-	healthURL := fmt.Sprintf("http://%s/", domain)
-	deadline := time.Now().Add(timeout)
-	client := &http.Client{Timeout: 2 * time.Second}
-
-	for time.Now().Before(deadline) {
-		resp, err := client.Get(healthURL)
-		if err == nil {
-			resp.Body.Close()
-			if resp.StatusCode < 500 {
-				return nil
-			}
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-
-	return fmt.Errorf("container did not become healthy within %s", timeout)
 }
 
 // GetLogs returns a reader for container logs.

@@ -202,7 +202,12 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		}
 	}
 
-	// 9. Run new container (old still running for zero-downtime)
+	// 9. Clean up any orphaned container with target name (from previous failed deploys)
+	// This handles edge case where deploy failed after container creation but before DB update
+	s.docker.StopContainer(ctx, containerName)
+	s.docker.RemoveContainer(ctx, containerName)
+
+	// 10. Run new container (old still running for zero-downtime)
 	s.appendBuildLog(podID, "")
 	s.appendBuildLog(podID, "=== Starting new container ===")
 	containerID, err := s.docker.RunContainer(ctx, docker.RunContainerOptions{
@@ -223,25 +228,14 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		return fmt.Errorf("failed to run container: %w", err)
 	}
 
-	// 10. Wait for new container to be healthy
-	s.appendBuildLog(podID, "Waiting for container to be healthy...")
-	if err := s.docker.WaitForHealthy(ctx, domainConfigs[0].Domain, 60*time.Second); err != nil {
-		// Rollback: stop new container, rename old back
-		s.appendBuildLog(podID, fmt.Sprintf("ERROR: health check failed: %v", err))
-		s.docker.StopContainer(ctx, containerID)
-		s.docker.RemoveContainer(ctx, containerID)
-		if oldContainerID != "" {
-			s.docker.RenameContainer(ctx, oldContainerID, fmt.Sprintf("deeploy-%s", podID))
-			s.appendBuildLog(podID, "Rolled back to previous container")
-		}
-		pod.Status = "failed"
-		s.podRepo.Update(*pod)
-		return fmt.Errorf("health check failed: %w", err)
-	}
-	s.appendBuildLog(podID, "Container is healthy!")
-
-	// 11. Stop old container (zero-downtime complete)
+	// 11. Stop old container (Traefik handles health checks and routing)
+	// Wait 5s before stopping old container for zero-downtime deployment:
+	// - Traefik health check interval is 2s
+	// - Gives new container time to be detected and marked healthy
+	// - Old container handles in-flight requests during transition
+	// TODO: For v0.2+, could query Traefik API to confirm routing instead of fixed delay
 	if oldContainerID != "" {
+		time.Sleep(5 * time.Second)
 		s.appendBuildLog(podID, "Stopping old container...")
 		s.docker.StopContainer(ctx, oldContainerID)
 		s.docker.RemoveContainer(ctx, oldContainerID)
@@ -360,20 +354,13 @@ func (s *DeployService) Restart(ctx context.Context, podID string) error {
 		return fmt.Errorf("failed to run container: %w", err)
 	}
 
-	// 7. Wait for healthy
-	if err := s.docker.WaitForHealthy(ctx, domainConfigs[0].Domain, 60*time.Second); err != nil {
-		// Rollback: stop new, rename old back
-		s.docker.StopContainer(ctx, containerID)
-		s.docker.RemoveContainer(ctx, containerID)
-		s.docker.RenameContainer(ctx, oldContainerID, fmt.Sprintf("deeploy-%s", podID))
-		return fmt.Errorf("health check failed: %w", err)
-	}
-
-	// 8. Stop old container
+	// 7. Stop old container (Traefik handles health checks and routing)
+	// Wait 5s for zero-downtime (see Deploy function for detailed comment)
+	time.Sleep(5 * time.Second)
 	s.docker.StopContainer(ctx, oldContainerID)
 	s.docker.RemoveContainer(ctx, oldContainerID)
 
-	// 9. Update pod
+	// 8. Update pod
 	pod.ContainerID = &containerID
 	pod.Status = "running"
 	err = s.podRepo.Update(*pod)
