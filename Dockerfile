@@ -39,7 +39,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
     -o main ./cmd/server
 
 # Deploy-Stage
-FROM alpine:3.20.2
+FROM alpine:3.21
 WORKDIR /app
 
 # Install runtime dependencies

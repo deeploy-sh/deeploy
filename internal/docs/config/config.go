@@ -33,16 +33,9 @@ func LoadConfig() {
 		ResendAudienceID: envString("RESEND_AUDIENCE_ID", ""),
 	}
 
-	// Production: validate required services
-	if AppConfig.IsProduction() {
-		if AppConfig.ResendAPIKey == "" {
-			slog.Error("production requires RESEND_API_KEY")
-			os.Exit(1)
-		}
-		if AppConfig.ResendAudienceID == "" {
-			slog.Error("production requires RESEND_AUDIENCE_ID")
-			os.Exit(1)
-		}
+	// Warn if email subscription won't work (but don't crash - it's optional)
+	if AppConfig.ResendAPIKey == "" || AppConfig.ResendAudienceID == "" {
+		slog.Warn("RESEND_API_KEY or RESEND_AUDIENCE_ID not set, email subscription disabled")
 	}
 }
 
