@@ -1,36 +1,169 @@
+# =============================================================================
+# CI: Build & Push Docker Images
+# =============================================================================
+#
+# What this does:
+#   1. Builds Docker image for Intel (amd64) and ARM (arm64) separately
+#   2. Combines them into a single "manifest" (so docker pull auto-picks the right one)
+#   3. Cleans up any leftover garbage
+#
+# Result after push to "main":
+#   - deeploy:main-amd64   (Intel version)
+#   - deeploy:main-arm64   (ARM version)
+#   - deeploy:main         (manifest pointing to both)
+#   - deeploy:latest       (only for main branch)
+#
+# Why separate builds instead of one multi-platform build?
+#   → Single multi-platform creates untagged sha256 images that pile up as garbage
+#   → Separate builds create tagged images that get overwritten = no garbage
+#
+# =============================================================================
+
 name: CI
 
 on:
   push:
-    branches: ["**"]
-    tags: ["v*"]
+    branches: ["**"]  # All branches
+    tags: ["v*"]      # Version tags like v1.0.0
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: deeploy-sh/deeploy
+
+# =============================================================================
+# JOB 1: Build Intel (amd64) version
+# =============================================================================
 jobs:
-  docker:
+  build-amd64:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
-        id: meta
-        with:
-          images: ghcr.io/deeploy-sh/deeploy
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-      - uses: docker/build-push-action@v5
+
+      # Convert branch name: feature/foo → feature-foo (Docker tags can't have /)
+      - name: Get tag name
+        id: tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          TAG="${TAG//\//-}"
+          echo "name=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push (amd64)
+        uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            VERSION=${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-amd64
+          build-args: VERSION=${{ github.ref_name }}
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+  # ===========================================================================
+  # JOB 2: Build ARM (arm64) version
+  # ===========================================================================
+  build-arm64:
+    runs-on: ubuntu-24.04-arm  # GitHub's ARM runner
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get tag name
+        id: tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          TAG="${TAG//\//-}"
+          echo "name=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push (arm64)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-arm64
+          build-args: VERSION=${{ github.ref_name }}
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,mode=max,scope=arm64
+
+  # ===========================================================================
+  # JOB 3: Create manifest (combines amd64 + arm64)
+  # ===========================================================================
+  # A manifest is like a menu: "I have Intel and ARM versions, pick the right one"
+  # When someone does `docker pull deeploy:main`, Docker reads the manifest
+  # and automatically downloads the correct version for their CPU.
+  # ===========================================================================
+  manifest:
+    needs: [build-amd64, build-arm64]  # Wait for both builds
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get tag name
+        id: tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          TAG="${TAG//\//-}"
+          echo "name=$TAG" >> $GITHUB_OUTPUT
+
+      # Create manifest: deeploy:main → points to deeploy:main-amd64 + deeploy:main-arm64
+      - name: Create manifest
+        run: |
+          docker buildx imagetools create \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-arm64 \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}
+
+      # Only main branch gets the "latest" tag
+      - name: Create latest tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker buildx imagetools create \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-arm64 \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  # ===========================================================================
+  # JOB 4: Cleanup untagged garbage
+  # ===========================================================================
+  # Even with separate builds, some untagged manifest layers can remain.
+  # This job deletes them immediately after each build.
+  # ===========================================================================
+  cleanup:
+    needs: [manifest]  # Wait for manifest to finish
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: deeploy
+          package-type: container
+          owner: deeploy-sh
+          delete-only-untagged-versions: true
+          min-versions-to-keep: 0
