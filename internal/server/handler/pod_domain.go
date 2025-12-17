@@ -57,13 +57,15 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Port = 80
 	}
 
+	// SSL is always enabled in production (automatic via Let's Encrypt)
+	// The actual SSL handling is done by Traefik based on isDevelopment flag
 	domain := &model.PodDomain{
 		ID:         uuid.New().String(),
 		PodID:      podID,
 		Domain:     req.Domain,
 		Type:       "custom",
 		Port:       req.Port,
-		SSLEnabled: req.SSLEnabled,
+		SSLEnabled: true, // Always true - SSL is automatic in production
 	}
 
 	_, err = h.service.Create(domain)
@@ -192,13 +194,15 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	}
 	domainName := fmt.Sprintf("%s.%s.sslip.io", subdomain, ip)
 
+	// SSL is always enabled in production (automatic via Let's Encrypt)
+	// sslip.io domains work with HTTP challenge just like custom domains
 	domain := &model.PodDomain{
 		ID:         uuid.New().String(),
 		PodID:      podID,
 		Domain:     domainName,
 		Type:       "auto",
 		Port:       req.Port,
-		SSLEnabled: req.SSLEnabled,
+		SSLEnabled: true, // Always true - SSL is automatic in production
 	}
 
 	_, err = h.service.Create(domain)

@@ -28,10 +28,10 @@ func (p connect) HelpKeys() []key.Binding {
 
 func NewConnect(err error) connect {
 	log.Println(err)
-	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
-	ti.Placeholder = "http://123.45.67.89:8090"
-	ti.CharLimit = 50
+	ti.Placeholder = "https://deeploy.yourdomain.com"
+	ti.CharLimit = 100
 	ti.Focus()
 
 	return connect{
@@ -82,10 +82,15 @@ func (m connect) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (m connect) View() tea.View {
 	content := "connect to deeploy.sh server\n\n" + m.serverInput.View()
 	if m.err != nil {
-		content += styles.ErrorStyle().Render("\n* " + m.err.Error())
+		content += styles.ErrorStyle().Render("\n\n* " + m.err.Error())
 	}
 
-	card := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(content)
+	// Helpful hint about HTTPS
+	content += "\n\n"
+	content += styles.MutedStyle().Render("Tip: Use https:// for secure connection.\n")
+	content += styles.MutedStyle().Render("Setup: Point DNS to your VPS, Traefik handles SSL.")
+
+	card := styles.Card(styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)

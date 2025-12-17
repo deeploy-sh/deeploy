@@ -43,9 +43,12 @@ docker rmi -f ghcr.io/deeploy-sh/deeploy 2>/dev/null || true
 docker rmi -f postgres:16-alpine 2>/dev/null || true
 docker rmi -f traefik:v3.2 2>/dev/null || true
 
-echo "Removing docker volume..."
+echo "Removing docker volumes..."
 docker volume rm deeploy_postgres_data 2>/dev/null || true
 docker volume rm postgres_data 2>/dev/null || true
+# SSL certificates volume (Let's Encrypt)
+docker volume rm deeploy_letsencrypt_certs 2>/dev/null || true
+docker volume rm letsencrypt_certs 2>/dev/null || true
 
 echo "Removing docker network..."
 docker network rm deeploy 2>/dev/null || true

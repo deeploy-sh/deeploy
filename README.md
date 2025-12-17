@@ -4,10 +4,25 @@ Modern Deployment. Terminal First.
 
 ## Features
 
+**Deployment**
 - Zero-downtime deployments
-- Terminal-first UI
-- Git-based deployments
-- Automatic HTTPS via Traefik
+- Git-based deployments with private repo support
+- Real-time build logs
+
+**Security**
+- Zero-Config SSL - HTTPS automatic for all domains
+- Auto-Provisioned Certificates via Let's Encrypt
+- Secure by Default - HTTP redirects to HTTPS
+- Auto-Renewal - Certificates renewed automatically
+
+**Domains**
+- Wildcard DNS via sslip.io - Instant domains without DNS config
+- Custom domains with automatic SSL
+- Multiple domains per pod
+
+**Developer Experience**
+- Terminal-first UI (TUI)
+- Self-hosted - Full control over your infrastructure
 
 ## Install
 

@@ -1,4 +1,11 @@
 # Dev overrides - auto-loaded by "docker compose up"
+# This file OVERRIDES docker-compose.yml settings for local development
+#
+# Key differences from production:
+# - No HTTPS/SSL (Let's Encrypt won't work on localhost)
+# - No HTTP→HTTPS redirect
+# - Traefik dashboard enabled for debugging
+# - Deeploy app disabled (we run via "go run" instead)
 
 services:
   postgres:
@@ -7,17 +14,32 @@ services:
 
   traefik:
     command:
-      # Repeat base commands (override replaces entire command)
+      #─────────────────────────────────────────────────────────────────────────
+      # DEV CONFIG: HTTP only, no SSL
+      # Production uses HTTPS + Let's Encrypt, but that won't work on localhost
+      #─────────────────────────────────────────────────────────────────────────
+
+      # Docker provider (same as prod)
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=deeploy"
+
+      # HTTP only - no HTTPS entrypoint, no redirect
       - "--entrypoints.web.address=:80"
+
       # DEV ONLY: Enable dashboard without auth (insecure!)
+      # Access at http://localhost:8080
       - "--api.insecure=true"
+
+      # NOTE: No ACME/Let's Encrypt config here
+      # SSL certificates require a real domain reachable from the internet
     ports:
       - "80:80"
-      # DEV ONLY: Traefik dashboard for debugging
+      # DEV ONLY: Traefik dashboard for debugging routing
       - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # No letsencrypt volume needed for dev
 
   deeploy:
     # Disable in dev - we run via "go run" instead

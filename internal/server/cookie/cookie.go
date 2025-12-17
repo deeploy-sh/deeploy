@@ -2,18 +2,15 @@ package cookie
 
 import (
 	"net/http"
-	"os"
 )
 
 func SetCookie(w http.ResponseWriter, token string) {
-	secure := os.Getenv("GO_ENV") != "development"
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   false, // HTTP allowed, Traefik enforces HTTPS when domain configured
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   3600 * 24,
 	})

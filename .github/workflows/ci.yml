@@ -5,7 +5,6 @@
 # What this does:
 #   1. Builds Docker image for Intel (amd64) and ARM (arm64) separately
 #   2. Combines them into a single "manifest" (so docker pull auto-picks the right one)
-#   3. Cleans up any leftover garbage
 #
 # Result after push to "main":
 #   - deeploy:main-amd64   (Intel version)
@@ -147,23 +146,3 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-arm64 \
             --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-  # ===========================================================================
-  # JOB 4: Cleanup untagged garbage
-  # ===========================================================================
-  # Even with separate builds, some untagged manifest layers can remain.
-  # This job deletes them immediately after each build.
-  # ===========================================================================
-  cleanup:
-    needs: [manifest]  # Wait for manifest to finish
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    steps:
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: deeploy
-          package-type: container
-          owner: deeploy-sh
-          delete-only-untagged-versions: true
-          min-versions-to-keep: 0
