@@ -42,6 +42,8 @@ type app struct {
 	statusType       msg.StatusType
 	serverVersion    string // From /health endpoint
 	latestVersion    string // From GitHub API
+	// Security: true if using HTTPS, false if using plain HTTP
+	secureConnection bool
 }
 
 func (m *app) Projects() []model.Project {
@@ -68,8 +70,15 @@ func NewApp() tea.Model {
 		theme.SetTheme(cfg.Theme)
 	}
 
+	// Check if connection is secure (HTTPS)
+	secureConnection := false
+	if err == nil && cfg.Server != "" {
+		secureConnection = strings.HasPrefix(cfg.Server, "https://")
+	}
+
 	return &app{
-		currentPage: NewBootstrap(),
+		currentPage:      NewBootstrap(),
+		secureConnection: secureConnection,
 	}
 }
 
@@ -133,7 +142,8 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case tea.KeyPressMsg:
-		if m.offline && tmsg.String() != "ctrl+c" {
+		// Allow palette (alt+p) even when offline so user can change server
+		if m.offline && tmsg.String() != "ctrl+c" && tmsg.String() != "alt+p" {
 			return m, nil
 		}
 		if tmsg.String() == "ctrl+c" {
@@ -354,6 +364,16 @@ func (m app) getPaletteItems() []components.PaletteItem {
 				}
 			},
 		},
+		{
+			ItemTitle:   "Server Domain",
+			Description: "Setup HTTPS with custom domain",
+			Category:    "settings",
+			Action: func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewServerDomain() },
+				}
+			},
+		},
 	}
 
 	for _, p := range m.projects {
@@ -400,6 +420,10 @@ func (m app) View() tea.View {
 	if m.offline {
 		status = "● reconnecting"
 		statusStyle = styles.OfflineStyle()
+	} else if !m.secureConnection {
+		// Show warning for insecure HTTP connection
+		status = "⚠ insecure"
+		statusStyle = styles.WarningStyle()
 	} else {
 		status = "● online"
 		statusStyle = styles.OnlineStyle()

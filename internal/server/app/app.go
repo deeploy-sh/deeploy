@@ -39,7 +39,8 @@ func New(cfg *config.Config) (*App, error) {
 	}
 
 	// Docker service
-	dockerService, err := docker.NewDockerService(cfg.BuildDir)
+	// isDevelopment determines if we use HTTP (dev) or HTTPS (prod) for Traefik routing
+	dockerService, err := docker.NewDockerService(cfg.BuildDir, cfg.IsDevelopment())
 	if err != nil {
 		return nil, err
 	}

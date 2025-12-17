@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -32,11 +30,12 @@ import (
 const NetworkName = "deeploy"
 
 type DockerService struct {
-	client   *client.Client
-	buildDir string
+	client        *client.Client
+	buildDir      string
+	isDevelopment bool
 }
 
-func NewDockerService(buildDir string) (*DockerService, error) {
+func NewDockerService(buildDir string, isDevelopment bool) (*DockerService, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
@@ -49,8 +48,9 @@ func NewDockerService(buildDir string) (*DockerService, error) {
 	}
 
 	return &DockerService{
-		client:   cli,
-		buildDir: buildDir,
+		client:        cli,
+		buildDir:      buildDir,
+		isDevelopment: isDevelopment,
 	}, nil
 }
 
@@ -160,28 +160,61 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 
 // RunContainer starts a container with the given configuration.
 func (d *DockerService) RunContainer(ctx context.Context, opts RunContainerOptions) (string, error) {
-	// Build Traefik labels for all domains
+	//─────────────────────────────────────────────────────────────────────────
+	// TRAEFIK LABELS
+	// These labels tell Traefik how to route traffic to this container
+	//─────────────────────────────────────────────────────────────────────────
+
 	labels := map[string]string{
+		// Enable Traefik for this container
+		// Without this, Traefik ignores the container completely
 		"traefik.enable": "true",
+
+		// Deeploy metadata for container identification
 		"deeploy.pod.id": opts.PodID,
 	}
 
-	// Create a router for each domain
-	// Note: Service name must include @docker suffix because Traefik auto-appends it to services
-	for i, domain := range opts.Domains {
-		routerName := fmt.Sprintf("%s-%d", opts.PodID, i)
-		labels["traefik.http.routers."+routerName+".rule"] = fmt.Sprintf("Host(`%s`)", domain.Domain)
-		labels["traefik.http.routers."+routerName+".service"] = opts.PodID + "@docker"
+	// Determine entrypoint based on environment
+	// - Development: "web" (HTTP on port 80) - Let's Encrypt won't work locally
+	// - Production: "websecure" (HTTPS on port 443) - with automatic SSL
+	entrypoint := "websecure"
+	if d.isDevelopment {
+		entrypoint = "web"
 	}
 
-	// One service for all routers (use port from first domain)
+	// Create a router for each domain
+	// Each domain gets its own router but shares the same service (load balancer)
+	for i, domain := range opts.Domains {
+		routerName := fmt.Sprintf("%s-%d", opts.PodID, i)
+
+		// Routing rule: Which domain goes to this container?
+		// Host(`example.com`) matches requests with that exact Host header
+		labels["traefik.http.routers."+routerName+".rule"] = fmt.Sprintf("Host(`%s`)", domain.Domain)
+
+		// Service: Where to forward the traffic
+		// @docker suffix is required because Traefik auto-appends it to Docker services
+		labels["traefik.http.routers."+routerName+".service"] = opts.PodID + "@docker"
+
+		// Entrypoint: Which port to listen on (web=80, websecure=443)
+		labels["traefik.http.routers."+routerName+".entrypoints"] = entrypoint
+
+		// SSL/TLS: Only in production (not development)
+		// certresolver=letsencrypt tells Traefik to automatically get a certificate
+		// from Let's Encrypt using the HTTP challenge
+		if !d.isDevelopment {
+			labels["traefik.http.routers."+routerName+".tls.certresolver"] = "letsencrypt"
+		}
+	}
+
+	// Service configuration: One service for all routers
+	// All domains for this pod route to the same container/port
 	port := 8080
 	if len(opts.Domains) > 0 {
 		port = opts.Domains[0].Port
 	}
 	labels["traefik.http.services."+opts.PodID+".loadbalancer.server.port"] = fmt.Sprintf("%d", port)
 
-	// Traefik health checks: Traefik pings each container every 2s.
+	// Health checks: Traefik pings each container every 2 seconds
 	// Only containers that respond get traffic. This ensures zero-downtime
 	// during redeploys - new container only gets traffic once it's ready.
 	labels["traefik.http.services."+opts.PodID+".loadbalancer.healthcheck.path"] = "/"
@@ -248,26 +281,6 @@ func (d *DockerService) GetContainerImage(ctx context.Context, containerID strin
 		return "", fmt.Errorf("failed to inspect container: %w", err)
 	}
 	return info.Config.Image, nil
-}
-
-// WaitForHealthy waits for a container to respond to HTTP requests via its domain.
-func (d *DockerService) WaitForHealthy(ctx context.Context, domain string, timeout time.Duration) error {
-	healthURL := fmt.Sprintf("http://%s/", domain)
-	deadline := time.Now().Add(timeout)
-	client := &http.Client{Timeout: 2 * time.Second}
-
-	for time.Now().Before(deadline) {
-		resp, err := client.Get(healthURL)
-		if err == nil {
-			resp.Body.Close()
-			if resp.StatusCode < 500 {
-				return nil
-			}
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-
-	return fmt.Errorf("container did not become healthy within %s", timeout)
 }
 
 // GetLogs returns a reader for container logs.

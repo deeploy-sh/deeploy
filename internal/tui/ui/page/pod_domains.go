@@ -31,7 +31,6 @@ type podDomains struct {
 	mode         podDomainsMode
 	domainInput  textinput.Model
 	portInput    textinput.Model
-	sslEnabled   bool
 	isAuto       bool
 	focusedInput int
 	keyAdd       key.Binding
@@ -41,14 +40,15 @@ type podDomains struct {
 	keyBack      key.Binding
 	keySave      key.Binding
 	keyTab       key.Binding
-	keyToggle    key.Binding
 	width        int
 	height       int
+	// Note: SSL toggle removed - SSL is now always enabled automatically
+	// via Let's Encrypt in production (see docker.go RunContainer)
 }
 
 func (m podDomains) HelpKeys() []key.Binding {
 	if m.mode == modeDomainAdd {
-		return []key.Binding{m.keySave, m.keyTab, m.keyToggle, m.keyBack}
+		return []key.Binding{m.keySave, m.keyTab, m.keyBack}
 	}
 	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyBack}
 }
@@ -67,15 +67,14 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 		project:     project,
 		domainInput: domainInput,
 		portInput:   portInput,
-		sslEnabled:  false,
 		keyAdd:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new custom")),
 		keyAuto:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "generate auto")),
 		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDelete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
-		keyTab:    key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
-		keyToggle: key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle SSL")),
+		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
+		// Note: SSL toggle removed - SSL is automatic in production
 	}
 }
 
@@ -93,7 +92,6 @@ func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.mode = modeDomainList
 		m.domainInput.SetValue("")
 		m.portInput.SetValue("")
-		m.sslEnabled = false
 		m.isAuto = false
 		m.domains = nil // trigger loading state
 		return m, tea.Batch(
@@ -192,20 +190,17 @@ func (m podDomains) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.mode = modeDomainList
 		m.domainInput.SetValue("")
 		m.portInput.SetValue("")
-		m.sslEnabled = false
 		m.isAuto = false
 		return m, nil
 
 	case key.Matches(tmsg, m.keyTab):
 		if m.isAuto {
-			// Only port and SSL for auto domains
-			m.focusedInput = (m.focusedInput + 1) % 2
-			if m.focusedInput == 0 {
-				m.focusedInput = 1 // Skip domain field for auto
-			}
-		} else {
-			m.focusedInput = (m.focusedInput + 1) % 3
+			// Only port for auto domains (SSL is automatic)
+			// Keep focus on port field
+			return m, nil
 		}
+		// For custom domains: toggle between domain and port
+		m.focusedInput = (m.focusedInput + 1) % 2
 		m.domainInput.Blur()
 		m.portInput.Blur()
 		switch m.focusedInput {
@@ -216,12 +211,6 @@ func (m podDomains) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case key.Matches(tmsg, m.keyToggle):
-		if m.focusedInput == 2 {
-			m.sslEnabled = !m.sslEnabled
-		}
-		return m, nil
-
 	case key.Matches(tmsg, m.keySave):
 		port := 8080
 		pVal, err := strconv.Atoi(m.portInput.Value())
@@ -229,13 +218,14 @@ func (m podDomains) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			port = pVal
 		}
 
+		// SSL is always enabled - it's automatic in production via Let's Encrypt
 		if m.isAuto {
-			return m, api.GenerateAutoDomain(m.pod.ID, port, m.sslEnabled)
+			return m, api.GenerateAutoDomain(m.pod.ID, port, true)
 		}
 
 		domain := strings.TrimSpace(m.domainInput.Value())
 		if domain != "" {
-			return m, api.CreatePodDomain(m.pod.ID, domain, port, m.sslEnabled)
+			return m, api.CreatePodDomain(m.pod.ID, domain, port, true)
 		}
 		return m, nil
 	}
@@ -342,17 +332,9 @@ func (m podDomains) renderAddMode() string {
 	b.WriteString(m.portInput.View())
 	b.WriteString("\n\n")
 
-	// SSL toggle
-	if m.focusedInput == 2 {
-		b.WriteString(activeLabel.Render("SSL:"))
-	} else {
-		b.WriteString(labelStyle.Render("SSL:"))
-	}
-	if m.sslEnabled {
-		b.WriteString("[x] Enabled")
-	} else {
-		b.WriteString("[ ] Disabled")
-	}
+	// SSL info (no toggle - SSL is automatic in production)
+	b.WriteString(labelStyle.Render("SSL:"))
+	b.WriteString(styles.MutedStyle().Render("Automatic (Let's Encrypt)"))
 	b.WriteString("\n")
 
 	return b.String()

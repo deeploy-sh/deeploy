@@ -33,14 +33,14 @@ RUN ./tailwindcss -i ./internal/docs/assets/css/input.css -o ./internal/docs/ass
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/docs
 
 # Deploy-Stage
-FROM alpine:3.20.2
+FROM alpine:3.21
 WORKDIR /app
 
 # Install ca-certificates
 RUN apk add --no-cache ca-certificates
 
 # Set environment variable for runtime
-ENV GO_ENV=production
+ENV APP_ENV=production
 
 # Copy the binary and CSS output
 COPY --from=build /app/main .

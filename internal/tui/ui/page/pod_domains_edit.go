@@ -22,18 +22,17 @@ type podDomainsEdit struct {
 	project      *model.Project
 	domainInput  textinput.Model
 	portInput    textinput.Model
-	sslEnabled   bool
 	focusedInput int
 	keySave      key.Binding
 	keyTab       key.Binding
-	keyToggle    key.Binding
 	keyCancel    key.Binding
 	width        int
 	height       int
+	// Note: SSL toggle removed - SSL is automatic in production via Let's Encrypt
 }
 
 func (p podDomainsEdit) HelpKeys() []key.Binding {
-	return []key.Binding{p.keySave, p.keyTab, p.keyToggle, p.keyCancel}
+	return []key.Binding{p.keySave, p.keyTab, p.keyCancel}
 }
 
 func NewPodDomainsEdit(domain model.PodDomain, pod *model.Pod, project *model.Project) podDomainsEdit {
@@ -54,11 +53,10 @@ func NewPodDomainsEdit(domain model.PodDomain, pod *model.Pod, project *model.Pr
 		project:     project,
 		domainInput: domainInput,
 		portInput:   portInput,
-		sslEnabled:  domain.SSLEnabled,
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
-		keyToggle:   key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "toggle SSL")),
 		keyCancel:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
+		// Note: SSL toggle removed - SSL is automatic in production
 	}
 }
 
@@ -88,7 +86,8 @@ func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(tmsg, p.keyTab):
-			p.focusedInput = (p.focusedInput + 1) % 3
+			// Toggle between domain and port (no SSL toggle anymore)
+			p.focusedInput = (p.focusedInput + 1) % 2
 			p.domainInput.Blur()
 			p.portInput.Blur()
 			switch p.focusedInput {
@@ -96,12 +95,6 @@ func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				p.domainInput.Focus()
 			case 1:
 				p.portInput.Focus()
-			}
-			return p, nil
-
-		case key.Matches(tmsg, p.keyToggle):
-			if p.focusedInput == 2 {
-				p.sslEnabled = !p.sslEnabled
 			}
 			return p, nil
 
@@ -117,7 +110,8 @@ func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				port = pVal
 			}
 
-			return p, api.UpdatePodDomain(p.pod.ID, p.domain.ID, domain, port, p.sslEnabled)
+			// SSL is always enabled - it's automatic in production via Let's Encrypt
+			return p, api.UpdatePodDomain(p.pod.ID, p.domain.ID, domain, port, true)
 		}
 
 	case tea.WindowSizeMsg:
@@ -172,17 +166,9 @@ func (p podDomainsEdit) View() tea.View {
 	b.WriteString(p.portInput.View())
 	b.WriteString("\n\n")
 
-	// SSL toggle
-	if p.focusedInput == 2 {
-		b.WriteString(activeLabel.Render("SSL:"))
-	} else {
-		b.WriteString(labelStyle.Render("SSL:"))
-	}
-	if p.sslEnabled {
-		b.WriteString("[x] Enabled")
-	} else {
-		b.WriteString("[ ] Disabled")
-	}
+	// SSL info (no toggle - SSL is automatic in production)
+	b.WriteString(labelStyle.Render("SSL:"))
+	b.WriteString(styles.MutedStyle().Render("Automatic (Let's Encrypt)"))
 	b.WriteString("\n")
 
 	return tea.NewView(p.centeredCard(b.String()))

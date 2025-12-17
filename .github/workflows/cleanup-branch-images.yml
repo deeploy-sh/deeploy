@@ -1,0 +1,76 @@
+# =============================================================================
+# Cleanup: Delete Docker images when branch is deleted
+# =============================================================================
+#
+# Problem:
+#   When you delete a branch (e.g. "ssl"), the Docker images remain:
+#   - deeploy:ssl
+#   - deeploy:ssl-amd64
+#   - deeploy:ssl-arm64
+#
+# Solution:
+#   This workflow triggers when ANY branch is deleted and removes all
+#   Docker images that were created for that branch.
+#
+# Example:
+#   Delete branch "feature/cool-thing" on GitHub
+#   → This workflow runs
+#   → Deletes: deeploy:feature-cool-thing, deeploy:feature-cool-thing-amd64, etc.
+#
+# =============================================================================
+
+name: Cleanup branch images
+
+on:
+  delete:
+    branches:
+      - "**"  # Trigger on any branch deletion
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      # Get the deleted branch name and convert / to - (same as ci.yml)
+      - name: Get deleted branch name
+        id: branch
+        run: |
+          BRANCH="${{ github.event.ref }}"
+          TAG="${BRANCH//\//-}"
+          echo "Deleted branch: $BRANCH"
+          echo "Looking for images with tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # Find and delete all images matching this branch
+      # This includes: :branch, :branch-amd64, :branch-arm64
+      - name: Delete branch images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_TAG="${{ steps.branch.outputs.tag }}"
+
+          echo "Finding images for branch: $BRANCH_TAG"
+
+          # Get all package versions, find ones with tags starting with our branch name
+          VERSIONS=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/orgs/deeploy-sh/packages/container/deeploy/versions" \
+            --paginate \
+            --jq '.[] | select(.metadata.container.tags | any(startswith("'"$BRANCH_TAG"'"))) | .id')
+
+          if [ -z "$VERSIONS" ]; then
+            echo "No images found for branch: $BRANCH_TAG"
+            exit 0
+          fi
+
+          # Delete each version
+          for VERSION_ID in $VERSIONS; do
+            echo "Deleting version $VERSION_ID..."
+            gh api \
+              --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              "/orgs/deeploy-sh/packages/container/deeploy/versions/$VERSION_ID" || true
+          done
+
+          echo "Cleanup complete!"

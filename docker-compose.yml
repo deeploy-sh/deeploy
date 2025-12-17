@@ -30,25 +30,71 @@ services:
     restart: unless-stopped
 
   traefik:
-    image: traefik:v3.2
+    image: traefik:v3.6
     container_name: deeploy-traefik
     networks:
       - deeploy
     command:
-      # Docker provider: auto-discover containers with traefik labels
+      #─────────────────────────────────────────────────────────────────────────
+      # DOCKER PROVIDER
+      # Traefik auto-discovers containers and reads their labels for routing
+      #─────────────────────────────────────────────────────────────────────────
+
+      # Enable Docker provider: auto-discover containers with traefik labels
       - "--providers.docker=true"
-      # Don't expose containers unless they have traefik.enable=true label
+      # Security: Don't expose containers unless they have traefik.enable=true
       - "--providers.docker.exposedbydefault=false"
-      # Which network to use when connecting to containers
+      # Network: Which Docker network to use when connecting to containers
       - "--providers.docker.network=deeploy"
+
+      #─────────────────────────────────────────────────────────────────────────
+      # ENTRYPOINTS (Ports where Traefik listens for traffic)
+      #─────────────────────────────────────────────────────────────────────────
+
       # HTTP entrypoint on port 80
+      # Used for: ACME HTTP challenge + redirect to HTTPS
       - "--entrypoints.web.address=:80"
+      # HTTPS entrypoint on port 443
+      # Used for: All actual traffic (encrypted)
+      - "--entrypoints.websecure.address=:443"
+
+      # Auto-redirect: HTTP → HTTPS
+      # When someone visits http://... they get redirected to https://...
+      # This ensures no accidental unencrypted traffic
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+
+      #─────────────────────────────────────────────────────────────────────────
+      # ACME / LET'S ENCRYPT (Automatic SSL Certificates)
+      # ACME = Automatic Certificate Management Environment
+      #─────────────────────────────────────────────────────────────────────────
+
+      # Enable HTTP challenge for certificate verification
+      # How it works:
+      # 1. Traefik asks Let's Encrypt for a certificate
+      # 2. Let's Encrypt visits http://yourdomain/.well-known/acme-challenge/xxx
+      # 3. Traefik responds with a secret token (proves we control the domain)
+      # 4. Let's Encrypt issues the certificate
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      # Which entrypoint to use for the HTTP challenge (must be port 80)
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      # Where to store certificates (persisted via volume)
+      # IMPORTANT: Without persistence, new certs are requested on every restart
+      # Rate limit: Max 50 certificates per week per domain!
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+
     ports:
-      # HTTP traffic - Traefik routes to deployed apps
+      # HTTP traffic (port 80) - used for ACME challenge + redirect to HTTPS
       - "80:80"
+      # HTTPS traffic (port 443) - all actual encrypted traffic
+      - "443:443"
     volumes:
       # Docker socket: Traefik reads container labels to configure routing
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Let's Encrypt certificates: persist across restarts
+      # Without this volume, Traefik would request new certs on every restart
+      # and hit Let's Encrypt rate limits (50 certs/week/domain)
+      - letsencrypt_certs:/letsencrypt
     restart: unless-stopped
 
   deeploy:
@@ -64,6 +110,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_URL: postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,3 +119,6 @@ services:
 
 volumes:
   postgres_data:
+  # Let's Encrypt certificates storage
+  # Persists SSL certs across container restarts to avoid rate limits
+  letsencrypt_certs:
