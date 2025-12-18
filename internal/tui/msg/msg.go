@@ -84,6 +84,12 @@ type PodDomainDeleted struct{}
 type PodEnvVarsLoaded struct{ EnvVars []model.PodEnvVar }
 type PodEnvVarsUpdated struct{}
 
+// --- Server Settings ---
+
+type ServerDomainLoaded struct{ Domain string }
+type ServerDomainSet struct{}
+type ServerDomainDeleted struct{}
+
 // --- Errors ---
 
 type Error struct{ Err error }

@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	AppEnv        string
-	Port          string
-	DatabaseURL   string
-	JWTSecret     string
-	EncryptionKey string
-	CookieSecure  bool
-	BuildDir      string
+	AppEnv           string
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	EncryptionKey    string
+	CookieSecure     bool
+	BuildDir         string
+	TraefikConfigDir string // Directory for Traefik dynamic config files
 }
 
 func Load() *Config {
@@ -28,13 +29,14 @@ func Load() *Config {
 	encryptionKey := requireEnv("ENCRYPTION_KEY", "exactly 32 characters")
 
 	return &Config{
-		AppEnv:        appEnv,
-		Port:          getEnv("PORT", "8090"),
-		DatabaseURL:   databaseURL,
-		JWTSecret:     jwtSecret,
-		EncryptionKey: encryptionKey,
-		CookieSecure:  false, // HTTP allowed, Traefik enforces HTTPS when domain configured
-		BuildDir:      getEnv("BUILD_DIR", "/tmp/deeploy-builds"),
+		AppEnv:           appEnv,
+		Port:             getEnv("PORT", "8090"),
+		DatabaseURL:      databaseURL,
+		JWTSecret:        jwtSecret,
+		EncryptionKey:    encryptionKey,
+		CookieSecure:     false, // HTTP allowed, Traefik enforces HTTPS when domain configured
+		BuildDir:         getEnv("BUILD_DIR", "/tmp/deeploy-builds"),
+		TraefikConfigDir: getEnv("TRAEFIK_CONFIG_DIR", "/traefik/dynamic"),
 	}
 }
 

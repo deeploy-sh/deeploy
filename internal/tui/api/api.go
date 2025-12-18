@@ -553,6 +553,56 @@ func CheckConnection() tea.Cmd {
 	}
 }
 
+// --- Server Settings ---
+
+func GetServerDomain() tea.Cmd {
+	return func() tea.Msg {
+		resp, err := get("/settings/domain")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		var result struct {
+			Domain string `json:"domain"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&result)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.ServerDomainLoaded{Domain: result.Domain}
+	}
+}
+
+func SetServerDomain(domain string) tea.Cmd {
+	return func() tea.Msg {
+		data := struct {
+			Domain string `json:"domain"`
+		}{Domain: domain}
+
+		resp, err := put("/settings/domain", data)
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.ServerDomainSet{}
+	}
+}
+
+func DeleteServerDomain() tea.Cmd {
+	return func() tea.Msg {
+		resp, err := del("/settings/domain")
+		if err != nil {
+			return msg.Error{Err: err}
+		}
+		defer resp.Body.Close()
+
+		return msg.ServerDomainDeleted{}
+	}
+}
+
 // --- Version Check ---
 
 func CheckLatestVersion() tea.Cmd {

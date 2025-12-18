@@ -83,6 +83,14 @@ services:
       # Rate limit: Max 50 certificates per week per domain!
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
 
+      #─────────────────────────────────────────────────────────────────────────
+      # FILE PROVIDER
+      # Traefik watches YAML files for dynamic routing configuration
+      # Used for: Server domain routing (deeploy-app writes config files here)
+      #─────────────────────────────────────────────────────────────────────────
+      - "--providers.file.directory=/traefik/dynamic"
+      - "--providers.file.watch=true"
+
     ports:
       # HTTP traffic (port 80) - used for ACME challenge + redirect to HTTPS
       - "80:80"
@@ -95,6 +103,8 @@ services:
       # Without this volume, Traefik would request new certs on every restart
       # and hit Let's Encrypt rate limits (50 certs/week/domain)
       - letsencrypt_certs:/letsencrypt
+      # Dynamic config: deeploy-app writes, Traefik reads (server domain routing)
+      - /opt/deeploy/traefik:/traefik/dynamic
     restart: unless-stopped
 
   deeploy:
@@ -108,6 +118,8 @@ services:
       # Docker socket: App needs to build images and start/stop containers
       # Without this, the Go Docker SDK can't reach the host's Docker daemon
       - /var/run/docker.sock:/var/run/docker.sock
+      # Dynamic config: App writes Traefik config files here (server domain routing)
+      - /opt/deeploy/traefik:/traefik/dynamic
     environment:
       DATABASE_URL: postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}

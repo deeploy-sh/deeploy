@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	Server string `json:"server"`
-	Token  string `json:"token"`
-	Theme  string `json:"theme,omitempty"`
+	Server   string `json:"server"`
+	ServerIP string `json:"server_ip,omitempty"` // Original IP:port for fallback when domain is removed
+	Token    string `json:"token"`
+	Theme    string `json:"theme,omitempty"`
 }
 
 func Save(cfg *Config) error {

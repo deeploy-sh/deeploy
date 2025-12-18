@@ -25,6 +25,7 @@ func Setup(app *app.App) http.Handler {
 	deployHandler := handlers.NewDeployHandler(app.DeployService)
 	podDomainHandler := handlers.NewPodDomainHandler(app.PodDomainService, app.PodService, app.Cfg.IsDevelopment())
 	podEnvVarHandler := handlers.NewPodEnvVarHandler(app.PodEnvVarService, app.PodService)
+	serverSettingsHandler := handlers.NewServerSettingsHandler(app.TraefikService)
 
 	// Assets
 	setupAssets(mux, app.Cfg.IsDevelopment())
@@ -75,6 +76,11 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("POST /api/git-tokens", auth.Auth(gitTokenHandler.Create))
 	mux.HandleFunc("GET /api/git-tokens", auth.Auth(gitTokenHandler.List))
 	mux.HandleFunc("DELETE /api/git-tokens/{id}", auth.Auth(gitTokenHandler.Delete))
+
+	// Server Settings
+	mux.HandleFunc("GET /api/settings/domain", auth.Auth(serverSettingsHandler.GetServerDomain))
+	mux.HandleFunc("PUT /api/settings/domain", auth.Auth(serverSettingsHandler.SetServerDomain))
+	mux.HandleFunc("DELETE /api/settings/domain", auth.Auth(serverSettingsHandler.DeleteServerDomain))
 
 	// Health (public - used by TUI for connection check + heartbeat)
 	mux.HandleFunc("GET /api/health", healthHandler)
