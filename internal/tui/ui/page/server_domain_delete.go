@@ -63,12 +63,17 @@ func (p serverDomainDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		cfg.ServerIP = "" // Clear fallback
 		config.Save(cfg)
 
-		// Return to dashboard
-		return p, func() tea.Msg {
-			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-			}
-		}
+		// Back to domain page with success message
+		return p, tea.Batch(
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewServerDomain() },
+				}
+			},
+			func() tea.Msg {
+				return msg.ShowStatus{Text: "Domain deleted", Type: msg.StatusSuccess}
+			},
+		)
 
 	case tea.KeyPressMsg:
 		switch tmsg.Code {

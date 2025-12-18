@@ -95,17 +95,17 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		if cfg.ServerIP == "" {
 			cfg.ServerIP = cfg.Server
 		}
+		m.serverIP = cfg.ServerIP
 		cfg.Server = "https://" + m.pendingDomain
 		if err := config.Save(cfg); err != nil {
 			m.err = fmt.Errorf("failed to save config")
 			return m, nil
 		}
-
-		// Return to dashboard
+		// Stay on page, update state, show success
+		m.domain = m.pendingDomain
+		m.domainInput.SetValue("")
 		return m, func() tea.Msg {
-			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-			}
+			return msg.ShowStatus{Text: "Domain saved", Type: msg.StatusSuccess}
 		}
 
 	case msg.Error:
