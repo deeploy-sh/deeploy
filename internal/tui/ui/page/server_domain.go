@@ -8,6 +8,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
@@ -15,21 +16,27 @@ import (
 )
 
 type serverDomain struct {
-	domainInput textinput.Model
-	currentURL  string
-	width       int
-	height      int
-	keyBack     key.Binding
-	keySave     key.Binding
-	err         error
+	domainInput   textinput.Model
+	domain        string // domain from DB (source of truth)
+	serverIP      string // original IP:port for fallback
+	pendingDomain string // domain being saved
+	loading       bool   // waiting for initial load
+	saving        bool   // waiting for API response
+	deleting      bool   // waiting for delete API response
+	width         int
+	height        int
+	keyBack       key.Binding
+	keySave       key.Binding
+	keyDelete     key.Binding
+	err           error
 }
 
 func NewServerDomain() serverDomain {
-	// Load current server URL from config
+	// Load server IP from local config (for fallback)
 	cfg, _ := config.Load()
-	currentURL := ""
+	serverIP := ""
 	if cfg != nil {
-		currentURL = cfg.Server
+		serverIP = cfg.ServerIP
 	}
 
 	// Text input for domain
@@ -41,9 +48,11 @@ func NewServerDomain() serverDomain {
 
 	return serverDomain{
 		domainInput: ti,
-		currentURL:  currentURL,
+		serverIP:    serverIP,
+		loading:     true,
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
+		keyDelete:   key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("ctrl+d", "delete")),
 	}
 }
 
@@ -52,11 +61,16 @@ func (m serverDomain) Breadcrumbs() []string {
 }
 
 func (m serverDomain) HelpKeys() []key.Binding {
-	return []key.Binding{m.keyBack, m.keySave}
+	keys := []key.Binding{m.keyBack, m.keySave}
+	// Only show delete if a domain is configured and we have fallback IP
+	if m.domain != "" && m.serverIP != "" {
+		keys = append(keys, m.keyDelete)
+	}
+	return keys
 }
 
 func (m serverDomain) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, api.GetServerDomain())
 }
 
 func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
@@ -67,7 +81,77 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = tmsg.Width
 		m.height = tmsg.Height
 
+	case msg.ServerDomainLoaded:
+		m.loading = false
+		m.domain = tmsg.Domain
+		return m, nil
+
+	case msg.ServerDomainSet:
+		// API success - save to local config and go back
+		cfg, err := config.Load()
+		if err != nil {
+			m.err = fmt.Errorf("failed to load config")
+			m.saving = false
+			return m, nil
+		}
+
+		// Save original IP for fallback (only if not already set)
+		if cfg.ServerIP == "" {
+			cfg.ServerIP = cfg.Server
+		}
+
+		cfg.Server = "https://" + m.pendingDomain
+		err = config.Save(cfg)
+		if err != nil {
+			m.err = fmt.Errorf("failed to save local config")
+			m.saving = false
+			return m, nil
+		}
+
+		// Return to dashboard
+		return m, func() tea.Msg {
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+			}
+		}
+
+	case msg.ServerDomainDeleted:
+		// API success - revert to original IP
+		cfg, err := config.Load()
+		if err != nil {
+			m.err = fmt.Errorf("failed to load config")
+			m.deleting = false
+			return m, nil
+		}
+
+		cfg.Server = cfg.ServerIP
+		cfg.ServerIP = "" // Clear fallback
+		err = config.Save(cfg)
+		if err != nil {
+			m.err = fmt.Errorf("failed to save local config")
+			m.deleting = false
+			return m, nil
+		}
+
+		// Return to dashboard
+		return m, func() tea.Msg {
+			return msg.ChangePage{
+				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+			}
+		}
+
+	case msg.Error:
+		m.err = tmsg.Err
+		m.loading = false
+		m.saving = false
+		m.deleting = false
+		return m, nil
+
 	case tea.KeyPressMsg:
+		if m.loading || m.saving || m.deleting {
+			return m, nil // ignore input while loading/saving/deleting
+		}
+
 		m.err = nil
 
 		if key.Matches(tmsg, m.keyBack) {
@@ -91,26 +175,21 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			domain = strings.TrimPrefix(domain, "https://")
 			domain = strings.TrimPrefix(domain, "http://")
 
-			// Save to config with https://
-			cfg, err := config.Load()
-			if err != nil {
-				m.err = fmt.Errorf("failed to load config")
+			// Call API to set domain (this writes Traefik config)
+			m.pendingDomain = domain
+			m.saving = true
+			return m, api.SetServerDomain(domain)
+		}
+
+		if key.Matches(tmsg, m.keyDelete) {
+			// Only allow delete if we have a fallback IP
+			if m.serverIP == "" {
+				m.err = fmt.Errorf("no fallback IP available")
 				return m, nil
 			}
 
-			cfg.Server = "https://" + domain
-			err = config.Save(cfg)
-			if err != nil {
-				m.err = fmt.Errorf("failed to save config")
-				return m, nil
-			}
-
-			// Return to dashboard - heartbeat will reconnect automatically
-			return m, func() tea.Msg {
-				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-				}
-			}
+			m.deleting = true
+			return m, api.DeleteServerDomain()
 		}
 	}
 
@@ -133,10 +212,12 @@ func (m serverDomain) View() tea.View {
 	sb.WriteString(titleStyle.Render("Server Domain"))
 	sb.WriteString("\n\n")
 
-	// Current URL
+	// Current domain (from DB)
 	sb.WriteString(labelStyle.Render("Current:"))
-	if m.currentURL != "" {
-		sb.WriteString(m.currentURL)
+	if m.loading {
+		sb.WriteString(mutedStyle.Render("loading..."))
+	} else if m.domain != "" {
+		sb.WriteString("https://" + m.domain)
 	} else {
 		sb.WriteString(mutedStyle.Render("not set"))
 	}
@@ -144,7 +225,9 @@ func (m serverDomain) View() tea.View {
 
 	// Status
 	sb.WriteString(labelStyle.Render("Status:"))
-	if strings.HasPrefix(m.currentURL, "https://") {
+	if m.loading {
+		sb.WriteString(mutedStyle.Render("..."))
+	} else if m.domain != "" {
 		sb.WriteString(styles.SuccessStyle().Render("Encrypted (HTTPS)"))
 	} else {
 		sb.WriteString(styles.WarningStyle().Render("Not encrypted"))
@@ -159,8 +242,8 @@ func (m serverDomain) View() tea.View {
 	sb.WriteString(titleStyle.Render("To enable HTTPS:"))
 	sb.WriteString("\n\n")
 
-	// Extract IP from current URL for the DNS example
-	ip := extractIP(m.currentURL)
+	// Use serverIP for DNS example, fallback to placeholder
+	ip := extractIP(m.serverIP)
 
 	sb.WriteString("1. Create DNS A-Record:\n")
 	sb.WriteString(mutedStyle.Render(fmt.Sprintf("   yourdomain.com → %s", ip)))
@@ -173,8 +256,17 @@ func (m serverDomain) View() tea.View {
 
 	sb.WriteString(mutedStyle.Render("Traefik will automatically get an SSL cert."))
 
-	// Error message
-	if m.err != nil {
+	// Status messages
+	if m.loading {
+		sb.WriteString("\n\n")
+		sb.WriteString(styles.MutedStyle().Render("Loading..."))
+	} else if m.saving {
+		sb.WriteString("\n\n")
+		sb.WriteString(styles.MutedStyle().Render("Saving..."))
+	} else if m.deleting {
+		sb.WriteString("\n\n")
+		sb.WriteString(styles.MutedStyle().Render("Deleting..."))
+	} else if m.err != nil {
 		sb.WriteString("\n\n")
 		sb.WriteString(styles.ErrorStyle().Render("* " + m.err.Error()))
 	}

@@ -27,9 +27,10 @@ else
     curl -fsSL https://get.docker.com | sudo bash
 fi
 
-# Create install directory
+# Create install directory and subdirectories
 INSTALL_DIR="/opt/deeploy"
 mkdir -p "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR/traefik"
 cd "$INSTALL_DIR"
 
 # Download docker-compose.yml from same branch/tag as VERSION
