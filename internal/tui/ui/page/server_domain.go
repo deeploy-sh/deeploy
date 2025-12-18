@@ -91,6 +91,10 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fmt.Errorf("failed to load config")
 			return m, nil
 		}
+		// Save original IP as fallback for delete (only if not already set)
+		if cfg.ServerIP == "" {
+			cfg.ServerIP = cfg.Server
+		}
 		cfg.Server = "https://" + m.pendingDomain
 		if err := config.Save(cfg); err != nil {
 			m.err = fmt.Errorf("failed to save config")

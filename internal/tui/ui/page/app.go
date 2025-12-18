@@ -295,6 +295,18 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return api.CheckLatestVersion()()
 		})
 
+	case msg.ServerDomainSet:
+		m.secureConnection = true
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
+		return m, cmd
+
+	case msg.ServerDomainDeleted:
+		m.secureConnection = false
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
+		return m, cmd
+
 	default:
 		if m.palette != nil {
 			var cmd tea.Cmd
@@ -365,7 +377,7 @@ func (m app) getPaletteItems() []components.PaletteItem {
 			},
 		},
 		{
-			ItemTitle:   "Server Domain",
+			ItemTitle:   "Domain",
 			Description: "Setup HTTPS with custom domain",
 			Category:    "settings",
 			Action: func() tea.Msg {
@@ -421,8 +433,8 @@ func (m app) View() tea.View {
 		status = "● reconnecting"
 		statusStyle = styles.OfflineStyle()
 	} else if !m.secureConnection {
-		// Show warning for insecure HTTP connection
-		status = "⚠ insecure"
+		// Show warning for insecure HTTP connection with hint
+		status = "⚠ insecure (alt+p > Domain)"
 		statusStyle = styles.WarningStyle()
 	} else {
 		status = "● online"
@@ -488,7 +500,10 @@ func (m app) View() tea.View {
 	var helpView string
 	hp, ok := m.currentPage.(HelpProvider)
 	if ok {
-		helpText := components.RenderHelpFooter(hp.HelpKeys())
+		// Add global palette key to page-specific keys
+		keys := hp.HelpKeys()
+		keys = append(keys, key.NewBinding(key.WithKeys("alt+p"), key.WithHelp("alt+p", "palette")))
+		helpText := components.RenderHelpFooter(keys)
 
 		// Add status message if present
 		var statusMsg string
