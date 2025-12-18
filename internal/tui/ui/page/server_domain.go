@@ -20,9 +20,7 @@ type serverDomain struct {
 	domain        string // domain from DB (source of truth)
 	serverIP      string // original IP:port for fallback
 	pendingDomain string // domain being saved
-	loading       bool   // waiting for initial load
-	saving        bool   // waiting for API response
-	deleting      bool   // waiting for delete API response
+	loading       bool
 	width         int
 	height        int
 	keyBack       key.Binding
@@ -32,7 +30,7 @@ type serverDomain struct {
 }
 
 func NewServerDomain() serverDomain {
-	// Load server IP from local config (for fallback)
+	// Load server IP from local config (for fallback when deleting domain)
 	cfg, _ := config.Load()
 	serverIP := ""
 	if cfg != nil {
@@ -62,7 +60,6 @@ func (m serverDomain) Breadcrumbs() []string {
 
 func (m serverDomain) HelpKeys() []key.Binding {
 	keys := []key.Binding{m.keyBack, m.keySave}
-	// Only show delete if a domain is configured and we have fallback IP
 	if m.domain != "" && m.serverIP != "" {
 		keys = append(keys, m.keyDelete)
 	}
@@ -87,11 +84,21 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.ServerDomainSet:
-		// API success - save to local config and go back
+		// API wrote Traefik config - now verify domain is reachable before saving local config
+		return m, api.CheckDomainHealth(m.pendingDomain)
+
+	case msg.DomainHealthResult:
+		if !tmsg.OK {
+			// Health check failed - rollback Traefik config to old domain
+			m.err = fmt.Errorf("domain not reachable - check DNS and try again")
+			return m, api.RollbackServerDomain(m.domain)
+		}
+
+		// Health check passed - save to local config
+		m.loading = false
 		cfg, err := config.Load()
 		if err != nil {
 			m.err = fmt.Errorf("failed to load config")
-			m.saving = false
 			return m, nil
 		}
 
@@ -99,12 +106,9 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		if cfg.ServerIP == "" {
 			cfg.ServerIP = cfg.Server
 		}
-
 		cfg.Server = "https://" + m.pendingDomain
-		err = config.Save(cfg)
-		if err != nil {
-			m.err = fmt.Errorf("failed to save local config")
-			m.saving = false
+		if err := config.Save(cfg); err != nil {
+			m.err = fmt.Errorf("failed to save config")
 			return m, nil
 		}
 
@@ -115,21 +119,25 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	case msg.DomainRollbackDone:
+		// Rollback complete - stay on page with error message
+		m.loading = false
+		return m, nil
+
 	case msg.ServerDomainDeleted:
-		// API success - revert to original IP
+		// API deleted Traefik config - revert local config to original IP
 		cfg, err := config.Load()
 		if err != nil {
 			m.err = fmt.Errorf("failed to load config")
-			m.deleting = false
+			m.loading = false
 			return m, nil
 		}
 
 		cfg.Server = cfg.ServerIP
 		cfg.ServerIP = "" // Clear fallback
-		err = config.Save(cfg)
-		if err != nil {
-			m.err = fmt.Errorf("failed to save local config")
-			m.deleting = false
+		if err := config.Save(cfg); err != nil {
+			m.err = fmt.Errorf("failed to save config")
+			m.loading = false
 			return m, nil
 		}
 
@@ -143,13 +151,11 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	case msg.Error:
 		m.err = tmsg.Err
 		m.loading = false
-		m.saving = false
-		m.deleting = false
 		return m, nil
 
 	case tea.KeyPressMsg:
-		if m.loading || m.saving || m.deleting {
-			return m, nil // ignore input while loading/saving/deleting
+		if m.loading {
+			return m, nil // Ignore input while busy
 		}
 
 		m.err = nil
@@ -164,8 +170,6 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if key.Matches(tmsg, m.keySave) {
 			domain := strings.TrimSpace(m.domainInput.Value())
-
-			// Validate domain
 			if domain == "" {
 				m.err = fmt.Errorf("domain is required")
 				return m, nil
@@ -175,9 +179,9 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			domain = strings.TrimPrefix(domain, "https://")
 			domain = strings.TrimPrefix(domain, "http://")
 
-			// Call API to set domain (this writes Traefik config)
+			// Call API to set domain (writes Traefik config)
 			m.pendingDomain = domain
-			m.saving = true
+			m.loading = true
 			return m, api.SetServerDomain(domain)
 		}
 
@@ -188,7 +192,7 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			m.deleting = true
+			m.loading = true
 			return m, api.DeleteServerDomain()
 		}
 	}
@@ -198,13 +202,8 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m serverDomain) View() tea.View {
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorPrimary())
-
-	labelStyle := lipgloss.NewStyle().
-		Width(10)
-
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
+	labelStyle := lipgloss.NewStyle().Width(10)
 	mutedStyle := styles.MutedStyle()
 
 	var sb strings.Builder
@@ -212,11 +211,9 @@ func (m serverDomain) View() tea.View {
 	sb.WriteString(titleStyle.Render("Server Domain"))
 	sb.WriteString("\n\n")
 
-	// Current domain (from DB)
+	// Current domain
 	sb.WriteString(labelStyle.Render("Current:"))
-	if m.loading {
-		sb.WriteString(mutedStyle.Render("loading..."))
-	} else if m.domain != "" {
+	if m.domain != "" {
 		sb.WriteString("https://" + m.domain)
 	} else {
 		sb.WriteString(mutedStyle.Render("not set"))
@@ -225,26 +222,20 @@ func (m serverDomain) View() tea.View {
 
 	// Status
 	sb.WriteString(labelStyle.Render("Status:"))
-	if m.loading {
-		sb.WriteString(mutedStyle.Render("..."))
-	} else if m.domain != "" {
+	if m.domain != "" {
 		sb.WriteString(styles.SuccessStyle().Render("Encrypted (HTTPS)"))
 	} else {
 		sb.WriteString(styles.WarningStyle().Render("Not encrypted"))
 	}
 	sb.WriteString("\n\n")
 
-	// Separator
 	sb.WriteString(mutedStyle.Render(strings.Repeat("─", 44)))
 	sb.WriteString("\n\n")
 
-	// Instructions
 	sb.WriteString(titleStyle.Render("To enable HTTPS:"))
 	sb.WriteString("\n\n")
 
-	// Use serverIP for DNS example, fallback to placeholder
 	ip := extractIP(m.serverIP)
-
 	sb.WriteString("1. Create DNS A-Record:\n")
 	sb.WriteString(mutedStyle.Render(fmt.Sprintf("   yourdomain.com → %s", ip)))
 	sb.WriteString("\n\n")
@@ -256,35 +247,19 @@ func (m serverDomain) View() tea.View {
 
 	sb.WriteString(mutedStyle.Render("Traefik will automatically get an SSL cert."))
 
-	// Status messages
+	// Status
 	if m.loading {
 		sb.WriteString("\n\n")
 		sb.WriteString(styles.MutedStyle().Render("Loading..."))
-	} else if m.saving {
-		sb.WriteString("\n\n")
-		sb.WriteString(styles.MutedStyle().Render("Saving..."))
-	} else if m.deleting {
-		sb.WriteString("\n\n")
-		sb.WriteString(styles.MutedStyle().Render("Deleting..."))
 	} else if m.err != nil {
 		sb.WriteString("\n\n")
 		sb.WriteString(styles.ErrorStyle().Render("* " + m.err.Error()))
 	}
 
-	cardStyle := styles.Card(styles.CardProps{
-		Width:   50,
-		Padding: []int{1, 2},
-	})
+	cardStyle := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}})
 	card := cardStyle.Render(sb.String())
 
-	centered := lipgloss.Place(
-		m.width,
-		m.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		card,
-	)
-
+	centered := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
 	return tea.NewView(centered)
 }
 

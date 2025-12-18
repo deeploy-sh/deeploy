@@ -89,6 +89,11 @@ type PodEnvVarsUpdated struct{}
 type ServerDomainLoaded struct{ Domain string }
 type ServerDomainSet struct{}
 type ServerDomainDeleted struct{}
+type DomainHealthResult struct {
+	OK  bool
+	Err error
+}
+type DomainRollbackDone struct{}
 
 // --- Errors ---
 
