@@ -603,62 +603,6 @@ func DeleteServerDomain() tea.Cmd {
 	}
 }
 
-// RollbackServerDomain restores the previous domain (or deletes if empty)
-func RollbackServerDomain(previousDomain string) tea.Cmd {
-	return func() tea.Msg {
-		if previousDomain == "" {
-			// No previous domain - delete
-			resp, err := del("/settings/domain")
-			if err != nil {
-				// Ignore errors - rollback is best-effort
-				return msg.DomainRollbackDone{}
-			}
-			resp.Body.Close()
-		} else {
-			// Restore previous domain
-			data := struct {
-				Domain string `json:"domain"`
-			}{Domain: previousDomain}
-			resp, err := put("/settings/domain", data)
-			if err != nil {
-				// Ignore errors - rollback is best-effort
-				return msg.DomainRollbackDone{}
-			}
-			resp.Body.Close()
-		}
-		return msg.DomainRollbackDone{}
-	}
-}
-
-// CheckDomainHealth checks if the server is reachable via the new domain
-func CheckDomainHealth(domain string) tea.Cmd {
-	return func() tea.Msg {
-		cfg, err := config.Load()
-		if err != nil {
-			return msg.DomainHealthResult{OK: false, Err: err}
-		}
-
-		url := "https://" + domain + "/api/health"
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return msg.DomainHealthResult{OK: false, Err: err}
-		}
-		req.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return msg.DomainHealthResult{OK: false, Err: fmt.Errorf("domain not reachable: %w", err)}
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return msg.DomainHealthResult{OK: false, Err: fmt.Errorf("health check failed: %d", resp.StatusCode)}
-		}
-
-		return msg.DomainHealthResult{OK: true}
-	}
-}
-
 // --- Version Check ---
 
 func CheckLatestVersion() tea.Cmd {

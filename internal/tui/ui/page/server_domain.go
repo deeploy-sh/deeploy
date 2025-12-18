@@ -84,60 +84,16 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case msg.ServerDomainSet:
-		// API wrote Traefik config - now verify domain is reachable before saving local config
-		return m, api.CheckDomainHealth(m.pendingDomain)
-
-	case msg.DomainHealthResult:
-		if !tmsg.OK {
-			// Health check failed - rollback Traefik config to old domain
-			m.err = fmt.Errorf("domain not reachable - check DNS and try again")
-			return m, api.RollbackServerDomain(m.domain)
-		}
-
-		// Health check passed - save to local config
+		// Save to local config
 		m.loading = false
 		cfg, err := config.Load()
 		if err != nil {
 			m.err = fmt.Errorf("failed to load config")
 			return m, nil
-		}
-
-		// Save original IP for fallback (only if not already set)
-		if cfg.ServerIP == "" {
-			cfg.ServerIP = cfg.Server
 		}
 		cfg.Server = "https://" + m.pendingDomain
 		if err := config.Save(cfg); err != nil {
 			m.err = fmt.Errorf("failed to save config")
-			return m, nil
-		}
-
-		// Return to dashboard
-		return m, func() tea.Msg {
-			return msg.ChangePage{
-				PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
-			}
-		}
-
-	case msg.DomainRollbackDone:
-		// Rollback complete - stay on page with error message
-		m.loading = false
-		return m, nil
-
-	case msg.ServerDomainDeleted:
-		// API deleted Traefik config - revert local config to original IP
-		cfg, err := config.Load()
-		if err != nil {
-			m.err = fmt.Errorf("failed to load config")
-			m.loading = false
-			return m, nil
-		}
-
-		cfg.Server = cfg.ServerIP
-		cfg.ServerIP = "" // Clear fallback
-		if err := config.Save(cfg); err != nil {
-			m.err = fmt.Errorf("failed to save config")
-			m.loading = false
 			return m, nil
 		}
 
@@ -192,8 +148,12 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			m.loading = true
-			return m, api.DeleteServerDomain()
+			// Navigate to delete confirmation page
+			return m, func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewServerDomainDelete(m.domain) },
+				}
+			}
 		}
 	}
 
