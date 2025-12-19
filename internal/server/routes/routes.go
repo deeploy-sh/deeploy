@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/app"
-	serverAssets "github.com/deeploy-sh/deeploy/internal/server/assets"
 	handlers "github.com/deeploy-sh/deeploy/internal/server/handler"
 	mw "github.com/deeploy-sh/deeploy/internal/server/middleware"
 	sharedAssets "github.com/deeploy-sh/deeploy/internal/shared/assets"
@@ -100,7 +99,7 @@ func setupAssets(mux *http.ServeMux, isDev bool) {
 		})
 	}
 
-	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/server/assets", http.FS(serverAssets.Assets))))
+	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/fonts/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/js/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/img/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))

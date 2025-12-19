@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
-	docsAssets "github.com/deeploy-sh/deeploy/internal/docs/assets"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
 	"github.com/deeploy-sh/deeploy/internal/docs/middleware"
 	"github.com/deeploy-sh/deeploy/internal/docs/ui/pages"
@@ -118,8 +117,8 @@ func setupAssets(mux *http.ServeMux) {
 		})
 	}
 
-	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/docs/assets", http.FS(docsAssets.Assets))))
-	mux.Handle("GET /assets/img/", http.StripPrefix("/assets/", serve("./internal/docs/assets", http.FS(docsAssets.Assets))))
+	mux.Handle("GET /assets/css/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
+	mux.Handle("GET /assets/img/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/fonts/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 	mux.Handle("GET /assets/js/", http.StripPrefix("/assets/", serve("./internal/shared/assets", http.FS(sharedAssets.Assets))))
 }

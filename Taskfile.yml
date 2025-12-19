@@ -32,20 +32,16 @@ tasks:
     desc: VPS server (starts Postgres and Traefik)
     deps: [infra:up]
     cmds:
-      - task --parallel tailwind:server templ:server
+      - task --parallel tailwind templ:server
 
   dev:docs:
     desc: Docs website
     cmds:
-      - task --parallel tailwind:docs templ:docs
+      - task --parallel tailwind templ:docs
 
-  tailwind:server:
+  tailwind:
     cmds:
-      - "{{.TAILWIND_CMD}} -i ./internal/server/assets/css/input.css -o ./internal/server/assets/css/output.css --watch"
-
-  tailwind:docs:
-    cmds:
-      - "{{.TAILWIND_CMD}} -i ./internal/docs/assets/css/input.css -o ./internal/docs/assets/css/output.css --watch"
+      - "{{.TAILWIND_CMD}} -i ./internal/shared/assets/css/input.css -o ./internal/shared/assets/css/output.css --watch"
 
   templ:server:
     cmds:

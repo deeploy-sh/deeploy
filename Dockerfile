@@ -30,7 +30,7 @@ RUN ARCH=$(uname -m) && \
   wget -O tailwindcss "$TAILWIND_URL" && chmod +x tailwindcss
 
 # Generate Tailwind CSS (must happen before go build for embed)
-RUN ./tailwindcss -i ./internal/server/assets/css/input.css -o ./internal/server/assets/css/output.css --minify
+RUN ./tailwindcss -i ./internal/shared/assets/css/input.css -o ./internal/shared/assets/css/output.css --minify
 
 # Build Go binary
 ARG VERSION=dev
