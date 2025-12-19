@@ -169,7 +169,7 @@ func (m ScrollList) Update(msg tea.Msg) (ScrollList, tea.Cmd) {
 		m.filter()
 	}
 
-	// Navigation (vim-style)
+	// Navigation (vim-style + mouse)
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		key := msg.String()
@@ -183,6 +183,13 @@ func (m ScrollList) Update(msg tea.Msg) (ScrollList, tea.Cmd) {
 		case isUp:
 			m.CursorUp()
 		case isDown:
+			m.CursorDown()
+		}
+
+	case tea.MouseWheelMsg:
+		if msg.Button == tea.MouseWheelUp {
+			m.CursorUp()
+		} else if msg.Button == tea.MouseWheelDown {
 			m.CursorDown()
 		}
 	}
