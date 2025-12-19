@@ -26,8 +26,8 @@ RUN ARCH=$(uname -m) && \
   wget -O tailwindcss "$TAILWIND_URL" && \
   chmod +x tailwindcss
 
-# Generate Tailwind CSS output
-RUN ./tailwindcss -i ./internal/docs/assets/css/input.css -o ./internal/docs/assets/css/output.css --minify
+# Generate Tailwind CSS output (must happen before go build for embed)
+RUN ./tailwindcss -i ./internal/shared/assets/css/input.css -o ./internal/shared/assets/css/output.css --minify
 
 # Build the application as a static binary
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/docs
@@ -42,9 +42,8 @@ RUN apk add --no-cache ca-certificates
 # Set environment variable for runtime
 ENV APP_ENV=production
 
-# Copy the binary and CSS output
+# Copy the binary (CSS is embedded)
 COPY --from=build /app/main .
-COPY --from=build /app/internal/docs/assets/css/output.css ./assets/css/output.css
 
 # Expose the port
 EXPOSE 8090
