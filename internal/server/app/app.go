@@ -58,7 +58,7 @@ func New(cfg *config.Config) (*App, error) {
 	// Services
 	userService := service.NewUserService(userRepo)
 	projectService := service.NewProjectService(projectRepo)
-	podService := service.NewPodService(podRepo)
+	podService := service.NewPodService(podRepo, dockerService)
 	podEnvVarService := service.NewPodEnvVarService(podEnvVarRepo, encryptor)
 	podDomainService := service.NewPodDomainService(podDomainRepo)
 	gitTokenService := service.NewGitTokenService(gitTokenRepo, encryptor)

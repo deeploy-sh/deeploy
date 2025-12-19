@@ -1,6 +1,9 @@
 package service
 
 import (
+	"context"
+
+	"github.com/deeploy-sh/deeploy/internal/server/docker"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 )
@@ -16,11 +19,26 @@ type PodServiceInterface interface {
 }
 
 type PodService struct {
-	repo repo.PodRepoInterface
+	repo   repo.PodRepoInterface
+	docker *docker.DockerService
 }
 
-func NewPodService(repo *repo.PodRepo) *PodService {
-	return &PodService{repo: repo}
+func NewPodService(repo *repo.PodRepo, docker *docker.DockerService) *PodService {
+	return &PodService{repo: repo, docker: docker}
+}
+
+// enrichWithContainerState fetches the live Docker container state for a pod.
+// If the container doesn't exist or there's an error, ContainerState remains empty.
+func (s *PodService) enrichWithContainerState(pod *model.Pod) {
+	if pod.ContainerID == nil || *pod.ContainerID == "" {
+		return
+	}
+	state, err := s.docker.GetContainerState(context.Background(), *pod.ContainerID)
+	if err != nil {
+		// Container not found or error - leave ContainerState empty
+		return
+	}
+	pod.ContainerState = state
 }
 
 func (s *PodService) Create(pod *model.Pod) (*model.Pod, error) {
@@ -36,6 +54,7 @@ func (s *PodService) Pod(id string) (*model.Pod, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.enrichWithContainerState(pod)
 	return pod, nil
 }
 
@@ -52,7 +71,6 @@ func (s *PodService) PodsByUser(id string) ([]model.Pod, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return pods, nil
 }
 

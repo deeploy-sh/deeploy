@@ -298,7 +298,11 @@ func (m podDetail) View() tea.View {
 }
 
 func (m podDetail) renderStatus() string {
-	status := m.pod.Status
+	// Prefer live container state over DB status
+	status := m.pod.ContainerState
+	if status == "" {
+		status = m.pod.Status
+	}
 	if status == "" {
 		status = "idle"
 	}
@@ -306,9 +310,9 @@ func (m podDetail) renderStatus() string {
 	switch status {
 	case "running":
 		style = style.Foreground(lipgloss.Color("10"))
-	case "failed":
+	case "failed", "exited", "dead":
 		style = style.Foreground(lipgloss.Color("9"))
-	case "building":
+	case "building", "restarting":
 		style = style.Foreground(lipgloss.Color("11"))
 	default:
 		style = style.Foreground(lipgloss.Color("8"))
