@@ -6,6 +6,7 @@ import (
 
 type CardProps struct {
 	Width   int
+	Height  int
 	Padding []int
 	Accent  bool
 }
@@ -27,6 +28,10 @@ func Card(p CardProps) lipgloss.Style {
 	style := lipgloss.NewStyle().
 		Width(p.Width).
 		Background(ColorBackgroundPanel())
+
+	if p.Height > 0 {
+		style = style.Height(p.Height)
+	}
 
 	if len(p.Padding) > 0 {
 		style = style.Padding(p.Padding...)

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -23,6 +24,9 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
 )
+
+// ansiRegex matches ANSI escape codes (colors, formatting)
+var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
 // NetworkName is the shared network where Traefik lives.
 // New containers join this network so Traefik can route traffic to them.
@@ -137,8 +141,9 @@ func (d *DockerService) BuildImage(ctx context.Context, buildPath, dockerfilePat
 					logCallback("ERROR: " + msg.Error)
 				}
 			} else if msg.Stream != "" {
-				// Remove trailing newline
+				// Remove trailing newline and ANSI color codes
 				stream := strings.TrimSuffix(msg.Stream, "\n")
+				stream = ansiRegex.ReplaceAllString(stream, "")
 				if stream != "" && logCallback != nil {
 					logCallback(stream)
 				}

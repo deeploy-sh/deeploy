@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
@@ -32,11 +31,68 @@ type logsUpdated struct {
 	status string
 }
 
+// logsViewport is a simple scrollable viewport for log lines
+type logsViewport struct {
+	lines  []string
+	width  int
+	height int
+	offset int
+}
+
+func (v *logsViewport) setSize(w, h int) {
+	v.width = w
+	v.height = h
+}
+
+func (v *logsViewport) setLines(lines []string) {
+	v.lines = lines
+}
+
+func (v *logsViewport) scrollUp(n int) {
+	v.offset -= n
+	if v.offset < 0 {
+		v.offset = 0
+	}
+}
+
+func (v *logsViewport) scrollDown(n int) {
+	v.offset += n
+	max := len(v.lines) - v.height
+	if max < 0 {
+		max = 0
+	}
+	if v.offset > max {
+		v.offset = max
+	}
+}
+
+func (v *logsViewport) gotoBottom() {
+	v.offset = len(v.lines) - v.height
+	if v.offset < 0 {
+		v.offset = 0
+	}
+}
+
+func (v *logsViewport) view() string {
+	if v.height <= 0 {
+		return ""
+	}
+
+	lines := make([]string, v.height)
+	for i := 0; i < v.height; i++ {
+		idx := v.offset + i
+		if idx < len(v.lines) {
+			lines[i] = v.lines[idx]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 type podLogs struct {
 	store     msg.Store
 	pod       *model.Pod
 	project   *model.Project
-	viewport  viewport.Model
+	viewport  logsViewport
 	logs      []string
 	status    string
 	keyBack   key.Binding
@@ -62,12 +118,11 @@ func NewPodLogs(s msg.Store, podID string) podLogs {
 		}
 	}
 
-	vp := viewport.New()
 	return podLogs{
-		store:     s,
-		pod:       &pod,
-		project:   &project,
-		viewport:  vp,
+		store:    s,
+		pod:      &pod,
+		project:  &project,
+		viewport: logsViewport{},
 		status:    "building",
 		keyBack:   key.NewBinding(key.WithKeys("esc", "q"), key.WithHelp("esc/q", "back")),
 		keyDeploy: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "redeploy")),
@@ -152,9 +207,23 @@ func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 
-		var cmd tea.Cmd
-		m.viewport, cmd = m.viewport.Update(tmsg)
-		return m, cmd
+		// Keyboard scroll
+		switch tmsg.String() {
+		case "up", "k":
+			m.viewport.scrollUp(1)
+		case "down", "j":
+			m.viewport.scrollDown(1)
+		}
+		return m, nil
+
+	case tea.MouseWheelMsg:
+		// Mouse scroll (3 lines per event)
+		if tmsg.Button == tea.MouseWheelUp {
+			m.viewport.scrollUp(3)
+		} else if tmsg.Button == tea.MouseWheelDown {
+			m.viewport.scrollDown(3)
+		}
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.width = tmsg.Width
@@ -168,15 +237,12 @@ func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		innerWidth := cardWidth - 5
 		// Height: total minus card padding (1 top, 1 bottom), header, help, spacing
 		innerHeight := m.height - 10
-		m.viewport.SetWidth(innerWidth)
-		m.viewport.SetHeight(innerHeight)
+		m.viewport.setSize(innerWidth, innerHeight)
 		m.updateViewport()
 		return m, nil
 	}
 
-	var cmd tea.Cmd
-	m.viewport, cmd = m.viewport.Update(tmsg)
-	return m, cmd
+	return m, nil
 }
 
 func (m podLogs) triggerDeploy() tea.Cmd {
@@ -191,10 +257,9 @@ func (m podLogs) triggerDeploy() tea.Cmd {
 }
 
 func (m *podLogs) updateViewport() {
-	content := strings.Join(m.logs, "\n")
-	m.viewport.SetContent(content)
+	m.viewport.setLines(m.logs)
 	if m.status == "building" {
-		m.viewport.GotoBottom()
+		m.viewport.gotoBottom()
 	}
 }
 
@@ -217,19 +282,22 @@ func (m podLogs) View() tea.View {
 	headerLine := fmt.Sprintf("%s  %s", header, statusText)
 	help := styles.MutedStyle().Render("esc: back  D: redeploy  ↑↓: scroll")
 
-	content := lipgloss.JoinVertical(lipgloss.Left,
-		headerLine,
-		"",
-		m.viewport.View(),
-		"",
-		help,
-	)
-
 	// Card width: responsive, max 120
 	cardWidth := m.width - 8
 	if cardWidth > 120 {
 		cardWidth = 120
 	}
+
+	// Viewport content - just the lines, lipgloss handles overflow
+	logsContent := m.viewport.view()
+
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		headerLine,
+		"",
+		logsContent,
+		"",
+		help,
+	)
 
 	card := styles.Card(styles.CardProps{
 		Width:   cardWidth,
