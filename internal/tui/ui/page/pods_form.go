@@ -102,7 +102,9 @@ func (m podForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg { return msg.ShowStatus{Text: "Pod created", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }} },
+			func() tea.Msg {
+				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }}
+			},
 		)
 
 	case msg.PodUpdated:
@@ -144,11 +146,10 @@ func (m podForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *podForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
-		projectID := m.projectID
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewProjectDetail(s, projectID)
+					return NewPodDetail(s, m.pod.ID)
 				},
 			}
 		}
