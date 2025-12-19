@@ -288,6 +288,15 @@ func (d *DockerService) GetContainerImage(ctx context.Context, containerID strin
 	return info.Config.Image, nil
 }
 
+// GetContainerState returns the current state of a container (running, exited, etc.)
+func (d *DockerService) GetContainerState(ctx context.Context, containerID string) (string, error) {
+	info, err := d.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return "", fmt.Errorf("failed to inspect container: %w", err)
+	}
+	return info.State.Status, nil
+}
+
 // GetLogs returns a reader for container logs.
 func (d *DockerService) GetLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error) {
 	opts := container.LogsOptions{

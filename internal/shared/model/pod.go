@@ -15,6 +15,10 @@ type Pod struct {
 	Status         string    `json:"status" db:"status"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+
+	// ContainerState is the live Docker container state (running, exited, etc.)
+	// Not stored in DB - fetched on demand from Docker
+	ContainerState string `json:"container_state" db:"-"`
 }
 
 type PodEnvVar struct {
