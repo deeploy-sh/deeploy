@@ -424,7 +424,9 @@ func (m app) getPaletteItems() []components.PaletteItem {
 func (m app) View() tea.View {
 	_, ok := m.currentPage.(*bootstrap)
 	if ok {
-		return m.currentPage.View()
+		v := m.currentPage.View()
+		v.MouseMode = tea.MouseModeCellMotion
+		return v
 	}
 
 	var status string
@@ -550,7 +552,9 @@ func (m app) View() tea.View {
 			Z(1)
 
 		canvas := lipgloss.NewCanvas(baseLayer, switcherLayer)
-		return tea.NewView(canvas.Render())
+		v := tea.NewView(canvas.Render())
+		v.MouseMode = tea.MouseModeCellMotion
+		return v
 	}
 
 	if m.palette != nil {
@@ -567,10 +571,13 @@ func (m app) View() tea.View {
 			Z(1)
 
 		canvas := lipgloss.NewCanvas(baseLayer, paletteLayer)
-		return tea.NewView(canvas.Render())
+		v := tea.NewView(canvas.Render())
+		v.MouseMode = tea.MouseModeCellMotion
+		return v
 	}
 
-	x := tea.NewView(base)
-	x.BackgroundColor = styles.ColorBackground()
-	return x
+	v := tea.NewView(base)
+	v.BackgroundColor = styles.ColorBackground()
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
 }
