@@ -11,3 +11,9 @@ type GitToken struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
+
+type GitTokenCreate struct {
+	Name     string `json:"name"`
+	Provider string `json:"provider"`
+	Token    string `json:"token"`
+}

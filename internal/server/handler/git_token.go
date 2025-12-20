@@ -18,21 +18,8 @@ func NewGitTokenHandler(service *service.GitTokenService) *GitTokenHandler {
 	return &GitTokenHandler{service: service}
 }
 
-type createGitTokenRequest struct {
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	Token    string `json:"token"`
-}
-
-type gitTokenResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Provider  string `json:"provider"`
-	CreatedAt string `json:"created_at"`
-}
-
 func (h *GitTokenHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var req createGitTokenRequest
+	var req model.GitTokenCreate
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -61,16 +48,9 @@ func (h *GitTokenHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := gitTokenResponse{
-		ID:        token.ID,
-		Name:      token.Name,
-		Provider:  token.Provider,
-		CreatedAt: token.CreatedAt.Format("2006-01-02T15:04:05Z"),
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(token)
 }
 
 func (h *GitTokenHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -82,18 +62,8 @@ func (h *GitTokenHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]gitTokenResponse, len(tokens))
-	for i, t := range tokens {
-		resp[i] = gitTokenResponse{
-			ID:        t.ID,
-			Name:      t.Name,
-			Provider:  t.Provider,
-			CreatedAt: t.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		}
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(tokens)
 }
 
 func (h *GitTokenHandler) Delete(w http.ResponseWriter, r *http.Request) {
