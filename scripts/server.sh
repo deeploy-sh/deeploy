@@ -13,15 +13,24 @@ fi
 
 # User parameter: branch, tag, or "latest" (default)
 VERSION=${1:-latest}
-echo "Installing deeploy server version: $VERSION"
 
-# Map "latest" to "main" branch (latest is only a Docker tag alias, not a git branch)
+# Resolve "latest" to the actual latest release tag from GitHub
+# For bleeding-edge, use: ./server.sh main
 BRANCH=${VERSION}
-[[ "$VERSION" == "latest" ]] && BRANCH="main"
+if [[ "$VERSION" == "latest" ]]; then
+    echo "Fetching latest stable release..."
+    BRANCH=$(curl -fsSL https://api.github.com/repos/deeploy-sh/deeploy/releases/latest 2>/dev/null | grep '"tag_name"' | cut -d'"' -f4)
+    if [[ -z "$BRANCH" ]]; then
+        echo "Warning: Could not fetch latest release, falling back to main"
+        BRANCH="main"
+    fi
+fi
+
+echo "Installing deeploy server version: $BRANCH"
 
 # Docker tags can't contain slashes - convert feat/example → feat-example
 # (same logic as .github/workflows/ci.yml)
-TAG=${VERSION//\//-}
+TAG=${BRANCH//\//-}
 
 # Check for Docker
 if command -v docker &>/dev/null; then
