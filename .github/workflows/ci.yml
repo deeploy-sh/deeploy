@@ -147,24 +147,3 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-arm64 \
             --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      # Cleanup: Delete all untagged images (sha256 garbage)
-      - name: Cleanup untagged images
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Fetching untagged images..."
-          UNTAGGED=$(gh api orgs/deeploy-sh/packages/container/deeploy/versions \
-            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || true)
-
-          if [ -z "$UNTAGGED" ]; then
-            echo "No untagged images to delete"
-            exit 0
-          fi
-
-          echo "Deleting untagged images..."
-          echo "$UNTAGGED" | while read id; do
-            echo "Deleting version $id..."
-            gh api -X DELETE "orgs/deeploy-sh/packages/container/deeploy/versions/$id" --silent || true
-          done
-          echo "Cleanup complete"
-
