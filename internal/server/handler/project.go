@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
+	"fmt"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
 	"github.com/deeploy-sh/deeploy/internal/server/forms"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
@@ -46,8 +47,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.Create(project)
 	if err != nil {
-		slog.Error("failed to create project", "error", err)
-		http.Error(w, "Failed to create project", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -62,8 +62,7 @@ func (h *ProjectHandler) Project(w http.ResponseWriter, r *http.Request) {
 	project, err := h.service.Project(id)
 
 	if err != nil {
-		slog.Warn("failed to get project", "projectID", id, "error", err)
-		http.Error(w, "Failed to get project", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -76,8 +75,7 @@ func (h *ProjectHandler) ProjectsByUser(w http.ResponseWriter, r *http.Request) 
 
 	projects, err := h.service.ProjectsByUser(userID)
 	if err != nil {
-		slog.Error("failed to get projects by user", "userID", userID, "error", err)
-		http.Error(w, "Failed to get projects", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -90,15 +88,13 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
-		slog.Warn("failed to decode json", "error", err)
-		http.Error(w, "Failed to decode json", http.StatusBadRequest)
+		writeError(w, err)
 		return
 	}
 
 	err = h.service.Update(project)
 	if err != nil {
-		slog.Error("failed to update project", "error", err)
-		http.Error(w, "Failed to update project", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -112,19 +108,17 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// Check if project has pods
 	podCount, err := h.podService.CountByProject(id)
 	if err != nil {
-		slog.Error("failed to count pods for project", "projectID", id, "error", err)
-		http.Error(w, "Could not delete project", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 	if podCount > 0 {
-		http.Error(w, "Cannot delete project with existing pods", http.StatusBadRequest)
+		writeError(w, fmt.Errorf("cannot delete project with existing pods: %w", errs.ErrConflict))
 		return
 	}
 
 	err = h.service.Delete(id)
 	if err != nil {
-		slog.Error("failed to delete project", "projectID", id, "error", err)
-		http.Error(w, "Could not delete project", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 

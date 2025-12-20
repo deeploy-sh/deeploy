@@ -2,8 +2,9 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -41,7 +42,7 @@ func (r *GitTokenRepo) GitToken(id string) (*model.GitToken, error) {
 
 	err := r.db.Get(token, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("git token %s: %w", id, errs.ErrNotFound)
 	}
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (r *GitTokenRepo) Update(token model.GitToken) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("git token not found")
+		return fmt.Errorf("git token %s: %w", token.ID, errs.ErrNotFound)
 	}
 
 	return nil
@@ -97,7 +98,7 @@ func (r *GitTokenRepo) Delete(id string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("git token not found")
+		return fmt.Errorf("git token %s: %w", id, errs.ErrNotFound)
 	}
 
 	return nil

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	tea "charm.land/bubbletea/v2"
@@ -27,9 +26,12 @@ func checkResponse(resp *http.Response) error {
 		return errs.ErrUnauthorized
 	}
 	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		if len(body) > 0 {
-			return errors.New(string(body))
+		// Try to parse JSON error response
+		var apiErr struct {
+			Error string `json:"error"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err == nil && apiErr.Error != "" {
+			return errors.New(apiErr.Error)
 		}
 		return fmt.Errorf("request failed with status %d", resp.StatusCode)
 	}

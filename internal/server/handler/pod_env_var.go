@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/service"
@@ -26,8 +25,7 @@ func (h *PodEnvVarHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	envVars, err := h.service.EnvVarsByPod(podID)
 	if err != nil {
-		slog.Error("failed to get env vars", "podID", podID, "error", err)
-		http.Error(w, "Failed to get env vars", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -65,8 +63,7 @@ func (h *PodEnvVarHandler) BulkUpdate(w http.ResponseWriter, r *http.Request) {
 	// Delete all existing vars for this pod
 	err = h.service.DeleteByPod(podID)
 	if err != nil {
-		slog.Error("failed to delete env vars", "podID", podID, "error", err)
-		http.Error(w, "Failed to update env vars", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -85,8 +82,7 @@ func (h *PodEnvVarHandler) BulkUpdate(w http.ResponseWriter, r *http.Request) {
 
 		_, err := h.service.Create(envVar)
 		if err != nil {
-			slog.Error("failed to create env var", "podID", podID, "key", v.Key, "error", err)
-			http.Error(w, "Failed to create env var", http.StatusInternalServerError)
+			writeError(w, err)
 			return
 		}
 	}

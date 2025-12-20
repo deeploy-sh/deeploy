@@ -2,8 +2,9 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -41,7 +42,7 @@ func (r *ProjectRepo) Project(id string) (*model.Project, error) {
 
 	err := r.db.Get(project, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("project %s: %w", id, errs.ErrNotFound)
 	}
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (r *ProjectRepo) Update(project model.Project) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("Project not found")
+		return fmt.Errorf("project %s: %w", project.ID, errs.ErrNotFound)
 	}
 
 	return nil
@@ -97,7 +98,7 @@ func (r *ProjectRepo) Delete(id string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("Project not found")
+		return fmt.Errorf("project %s: %w", id, errs.ErrNotFound)
 	}
 
 	return nil
