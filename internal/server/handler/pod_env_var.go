@@ -29,31 +29,15 @@ func (h *PodEnvVarHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := make([]model.PodEnvVar, len(envVars))
-	for i, v := range envVars {
-		response[i] = model.PodEnvVar{
-			ID:    v.ID,
-			Key:   v.Key,
-			Value: v.Value,
-		}
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
-
-type bulkUpdateRequest struct {
-	Vars []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"vars"`
+	json.NewEncoder(w).Encode(envVars)
 }
 
 // BulkUpdate replaces all env vars for a pod (delete all + create new)
 func (h *PodEnvVarHandler) BulkUpdate(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
-	var req bulkUpdateRequest
+	var req model.PodEnvVarBulkUpdate
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)

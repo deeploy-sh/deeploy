@@ -30,6 +30,10 @@ type PodEnvVar struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+type PodEnvVarBulkUpdate struct {
+	Vars []PodEnvVar `json:"vars"`
+}
+
 type PodDomain struct {
 	ID         string    `json:"id" db:"id"`
 	PodID      string    `json:"pod_id" db:"pod_id"`

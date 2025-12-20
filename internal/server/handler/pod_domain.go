@@ -44,16 +44,10 @@ func (h *PodDomainHandler) setDomainURL(d *model.PodDomain) {
 	d.URL = scheme + d.Domain
 }
 
-type createDomainRequest struct {
-	Domain     string `json:"domain"`
-	Port       int    `json:"port"`
-	SSLEnabled bool   `json:"ssl_enabled"`
-}
-
 func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
-	var req createDomainRequest
+	var req model.PodDomain
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -166,15 +160,10 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(domain)
 }
 
-type generateDomainRequest struct {
-	Port       int  `json:"port"`
-	SSLEnabled bool `json:"ssl_enabled"`
-}
-
 func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
-	var req generateDomainRequest
+	var req model.PodDomain
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
