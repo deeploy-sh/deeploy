@@ -13,7 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/tui/util"
+	"github.com/deeploy-sh/deeploy/internal/tui/utils"
 )
 
 type auth struct {
@@ -139,7 +139,7 @@ func (m auth) startBrowserauth() tea.Cmd {
 			m.serverURL,
 			port,
 		)
-		util.OpenBrowser(authURL)
+		utils.OpenBrowser(authURL)
 
 		result := <-callback
 		if result.err != nil {
