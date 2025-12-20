@@ -63,10 +63,6 @@ task dev:server
 task dev:tui
 ```
 
-## Contributing
-
-Please read the [contributing guide](CONTRIBUTING.md).
-
 ## License
 
 [Apache 2.0](LICENSE)
