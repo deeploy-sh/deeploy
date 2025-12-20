@@ -14,7 +14,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
-	"github.com/deeploy-sh/deeploy/internal/tui/util"
+	"github.com/deeploy-sh/deeploy/internal/tui/utils"
 )
 
 type podDomainsMode int
@@ -204,7 +204,7 @@ func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(tmsg, m.keyOpen):
 		if item := m.list.SelectedItem(); item != nil {
-			return m, util.OpenBrowserCmd(item.(domainItem).domain.URL)
+			return m, utils.OpenBrowserCmd(item.(domainItem).domain.URL)
 		}
 	}
 
