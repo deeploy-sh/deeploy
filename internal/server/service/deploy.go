@@ -97,7 +97,14 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		return fmt.Errorf("pod has no repo URL configured")
 	}
 
-	// 2. Update status to building
+	// 2. Check domain exists BEFORE starting build (fail fast)
+	domains, _ := s.podDomainRepo.DomainsByPod(podID)
+	if len(domains) == 0 {
+		s.appendBuildLog(podID, "ERROR: no domain configured - add a domain first")
+		return fmt.Errorf("no domain configured for pod")
+	}
+
+	// 3. Update status to building
 	pod.Status = "building"
 	err = s.podRepo.Update(*pod)
 	if err != nil {
@@ -107,7 +114,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	s.appendBuildLog(podID, "=== Starting deployment ===")
 	s.appendBuildLog(podID, fmt.Sprintf("Repo: %s @ %s", *pod.RepoURL, pod.Branch))
 
-	// 3. Get git token if configured
+	// 4. Get git token if configured
 	var gitToken string
 	if pod.GitTokenID != nil {
 		token, err := s.gitTokenService.GitToken(*pod.GitTokenID)
@@ -119,7 +126,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		s.appendBuildLog(podID, "Using configured git token for private repo")
 	}
 
-	// 4. Clone repo
+	// 5. Clone repo
 	s.appendBuildLog(podID, "Cloning repository...")
 	clonePath, err := s.docker.CloneRepo(*pod.RepoURL, pod.Branch, gitToken)
 	if err != nil {
@@ -131,7 +138,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	defer s.docker.Cleanup(clonePath)
 	s.appendBuildLog(podID, "Repository cloned successfully")
 
-	// 5. Build image
+	// 6. Build image
 	s.appendBuildLog(podID, "")
 	s.appendBuildLog(podID, "=== Building Docker image ===")
 	imageName := fmt.Sprintf("deeploy-%s:latest", podID)
@@ -149,16 +156,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	s.appendBuildLog(podID, "")
 	s.appendBuildLog(podID, "=== Docker image built successfully ===")
 
-	// 6. Get all domains (user must add at least one)
-	domains, _ := s.podDomainRepo.DomainsByPod(podID)
-	if len(domains) == 0 {
-		pod.Status = "failed"
-		s.podRepo.Update(*pod)
-		s.appendBuildLog(podID, "ERROR: no domain configured - add a domain first")
-		return fmt.Errorf("no domain configured for pod")
-	}
-
-	// Convert to DomainConfig for docker
+	// 7. Prepare domains and env vars
 	var domainConfigs []docker.DomainConfig
 	for _, d := range domains {
 		domainConfigs = append(domainConfigs, docker.DomainConfig{
@@ -168,7 +166,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		s.appendBuildLog(podID, fmt.Sprintf("Domain: %s (port %d)", d.Domain, d.Port))
 	}
 
-	// 7. Get env vars
+	// Get env vars
 	envVars, err := s.podEnvVarRepo.EnvVarsByPod(podID)
 	if err != nil {
 		pod.Status = "failed"
