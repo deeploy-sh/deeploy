@@ -5,39 +5,15 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
 )
 
-templ CliAuthSuccess(port, token string) {
+templ CliAuthSuccess() {
 	@layouts.AuthLayout() {
 		<div class="flex flex-col items-center gap-4">
 			<div class="flex items-center gap-2">
 				@modules.BlobIcon()
 				<span class="font-bold">deeploy</span>
 			</div>
-			<p id="status" class="text-muted-foreground">Connecting...</p>
-			<p id="hint" class="text-muted-foreground hidden">You can close this window</p>
+			<p class="text-foreground">Connected!</p>
+			<p class="text-muted-foreground">You can close this window</p>
 		</div>
-		@templ.JSONScript("cli-data", map[string]string{
-			"port":  port,
-			"token": token,
-		})
-		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-				const { port, token } = JSON.parse(document.getElementById('cli-data').textContent);
-				const status = document.getElementById('status');
-
-				fetch("http://localhost:" + port + "/callback", {
-					method: 'POST',
-					body: token
-				})
-				.then(() => {
-					status.textContent = 'Connected!';
-					status.classList.remove('text-muted-foreground');
-				})
-				.catch(() => {
-					status.textContent = 'Connection failed';
-					status.classList.remove('text-muted-foreground');
-					status.classList.add('text-destructive');
-				});
-			});
-		</script>
 	}
 }

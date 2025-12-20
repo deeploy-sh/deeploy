@@ -15,11 +15,11 @@ import (
 
 var registerURL = ""
 
-templ Register(errs forms.RegisterErrors, form forms.RegisterForm, isCLI bool, port string) {
-	if !isCLI && port == "" {
+templ Register(errs forms.RegisterErrors, form forms.RegisterForm, isCLI bool, session string) {
+	if !isCLI && session == "" {
 		{{ registerURL = "/register" }}
 	} else {
-		{{ registerURL = fmt.Sprintf("/register?cli=%v&port=%s", isCLI, port) }}
+		{{ registerURL = fmt.Sprintf("/register?cli=%v&session=%s", isCLI, session) }}
 	}
 	@layouts.AuthLayout() {
 		<div class="w-full flex flex-col justify-center items-center gap-4">

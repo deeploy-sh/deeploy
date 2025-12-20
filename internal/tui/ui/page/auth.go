@@ -1,11 +1,14 @@
 package page
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -29,11 +32,6 @@ type auth struct {
 
 func (p auth) HelpKeys() []key.Binding {
 	return []key.Binding{p.keyauthenticate, p.keyQuit}
-}
-
-type authCallback struct {
-	token string
-	err   error
 }
 
 func NewAuth(server string) auth {
@@ -68,7 +66,7 @@ func (m auth) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tmsg.Code == tea.KeyEnter:
 			m.waiting = true
-			return m, m.startBrowserauth()
+			return m, m.startBrowserAuth()
 		}
 	}
 	return m, cmd
@@ -105,56 +103,66 @@ func (p *auth) resetErr() {
 	p.err = ""
 }
 
-func startLocalauthServer() (int, chan authCallback) {
-	callback := make(chan authCallback)
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /callback", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-
-		token, err := io.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		callback <- authCallback{token: string(token)}
-		w.Write([]byte("OK"))
-	})
-
-	listener, _ := net.Listen("tcp", "localhost:0")
-	port := listener.Addr().(*net.TCPAddr).Port
-
-	go http.Serve(listener, mux)
-
-	return port, callback
+// generateSessionID creates a random session ID for CLI auth
+func generateSessionID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
-func (m auth) startBrowserauth() tea.Cmd {
+// startBrowserAuth opens browser and polls for auth completion
+func (m auth) startBrowserAuth() tea.Cmd {
 	return func() tea.Msg {
-		port, callback := startLocalauthServer()
+		sessionID := generateSessionID()
 
-		authURL := fmt.Sprintf(
-			"%s/auth?cli=true&port=%d",
-			m.serverURL,
-			port,
-		)
+		// Open browser with session ID
+		authURL := fmt.Sprintf("%s/auth?cli=true&session=%s", m.serverURL, sessionID)
 		utils.OpenBrowser(authURL)
 
-		result := <-callback
-		if result.err != nil {
-			return msg.AuthError{Err: result.err}
+		// Poll for auth completion
+		pollURL := fmt.Sprintf("%s/api/auth/poll?session=%s", m.serverURL, sessionID)
+		client := &http.Client{Timeout: 10 * time.Second}
+
+		for i := 0; i < 150; i++ { // 5 minutes max (150 * 2s)
+			time.Sleep(2 * time.Second)
+
+			resp, err := client.Get(pollURL)
+			if err != nil {
+				continue // Network error, retry
+			}
+
+			if resp.StatusCode == http.StatusNotFound {
+				resp.Body.Close()
+				return msg.AuthError{Err: errors.New("session expired")}
+			}
+
+			if resp.StatusCode == http.StatusAccepted {
+				resp.Body.Close()
+				continue // Still pending
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				var result struct {
+					Token string `json:"token"`
+				}
+				json.NewDecoder(resp.Body).Decode(&result)
+				resp.Body.Close()
+
+				if result.Token != "" {
+					cfg := config.Config{
+						Server: m.serverURL,
+						Token:  result.Token,
+					}
+					if err := config.Save(&cfg); err != nil {
+						return msg.AuthError{Err: err}
+					}
+					return msg.AuthSuccess{}
+				}
+			}
+
+			resp.Body.Close()
 		}
 
-		cfg := config.Config{
-			Server: m.serverURL,
-			Token:  result.token,
-		}
-		err := config.Save(&cfg)
-		if err != nil {
-			return msg.AuthError{Err: err}
-		}
-
-		return msg.AuthSuccess{}
+		return msg.AuthError{Err: errors.New("authentication timeout")}
 	}
 }

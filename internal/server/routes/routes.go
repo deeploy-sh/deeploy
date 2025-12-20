@@ -37,6 +37,7 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("POST /login", userHandler.Login)
 	mux.HandleFunc("POST /register", userHandler.Register)
 	mux.HandleFunc("GET /logout", userHandler.Logout)
+	mux.HandleFunc("GET /api/auth/poll", userHandler.PollCLISession)
 
 
 	// Projects
