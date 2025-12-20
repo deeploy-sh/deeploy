@@ -138,6 +138,7 @@ func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(tmsg, m.keyDeploy):
 		podID := m.pod.ID
 		return m, tea.Batch(
+			func() tea.Msg { return msg.StartLoading{Text: "Deploying"} },
 			api.DeployPod(podID),
 			func() tea.Msg {
 				return msg.ChangePage{
@@ -149,10 +150,16 @@ func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		)
 
 	case key.Matches(tmsg, m.keyStop):
-		return m, api.StopPod(m.pod.ID)
+		return m, tea.Batch(
+			func() tea.Msg { return msg.StartLoading{Text: "Stopping"} },
+			api.StopPod(m.pod.ID),
+		)
 
 	case key.Matches(tmsg, m.keyRestart):
-		return m, api.RestartPod(m.pod.ID)
+		return m, tea.Batch(
+			func() tea.Msg { return msg.StartLoading{Text: "Restarting"} },
+			api.RestartPod(m.pod.ID),
+		)
 
 	case key.Matches(tmsg, m.keyLogs):
 		podID := m.pod.ID

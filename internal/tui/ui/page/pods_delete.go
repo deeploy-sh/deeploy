@@ -76,7 +76,10 @@ func (p podDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.pod.Title {
 				return p, nil
 			}
-			return p, api.DeletePod(p.pod.ID)
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Deleting pod"} },
+				api.DeletePod(p.pod.ID),
+			)
 		}
 	case tea.WindowSizeMsg:
 		p.width = tmsg.Width

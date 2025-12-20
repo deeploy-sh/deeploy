@@ -135,7 +135,10 @@ func (m podVars) textToEnvVars() []model.PodEnvVar {
 
 func (m *podVars) save() (tea.Model, tea.Cmd) {
 	vars := m.textToEnvVars()
-	return m, api.UpdatePodEnvVars(m.pod.ID, vars)
+	return m, tea.Batch(
+		func() tea.Msg { return msg.StartLoading{Text: "Saving"} },
+		api.UpdatePodEnvVars(m.pod.ID, vars),
+	)
 }
 
 func (m podVars) View() tea.View {

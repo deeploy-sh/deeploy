@@ -88,7 +88,10 @@ func (p serverDomainDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.domain {
 				return p, nil
 			}
-			return p, api.DeleteServerDomain()
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Removing domain"} },
+				api.DeleteServerDomain(),
+			)
 		}
 
 	case tea.WindowSizeMsg:

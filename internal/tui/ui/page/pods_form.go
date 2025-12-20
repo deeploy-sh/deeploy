@@ -210,7 +210,10 @@ func (m *podForm) save() (tea.Model, tea.Cmd) {
 	}
 
 	if m.pod == nil {
-		return m, api.CreatePod(title, m.projectID)
+		return m, tea.Batch(
+			func() tea.Msg { return msg.StartLoading{Text: "Creating pod"} },
+			api.CreatePod(title, m.projectID),
+		)
 	}
 
 	m.pod.Title = title
@@ -232,7 +235,10 @@ func (m *podForm) save() (tea.Model, tea.Cmd) {
 		m.pod.DockerfilePath = "Dockerfile"
 	}
 
-	return m, api.UpdatePod(m.pod)
+	return m, tea.Batch(
+		func() tea.Msg { return msg.StartLoading{Text: "Updating pod"} },
+		api.UpdatePod(m.pod),
+	)
 }
 
 func (m podForm) View() tea.View {

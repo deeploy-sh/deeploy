@@ -142,7 +142,10 @@ func (m serverDomain) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			// Call API to set domain (writes Traefik config)
 			m.pendingDomain = domain
 			m.loading = true
-			return m, api.SetServerDomain(domain)
+			return m, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Setting up HTTPS"} },
+				api.SetServerDomain(domain),
+			)
 		}
 
 		if key.Matches(tmsg, m.keyDelete) {
