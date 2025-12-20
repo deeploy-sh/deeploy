@@ -22,6 +22,12 @@ tasks:
       - docker compose down -v
       - docker compose up -d postgres traefik
 
+  # --- Install ---
+  install:tui:
+    desc: Install TUI as 'deeploy' binary
+    cmds:
+      - go build -o $(go env GOPATH)/bin/deeploy ./cmd/tui
+
   # --- Dev ---
   dev:tui:
     desc: TUI client

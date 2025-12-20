@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
-	"github.com/deeploy-sh/deeploy/internal/server/forms"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
@@ -20,30 +19,27 @@ func NewPodHandler(service *service.PodService) *PodHandler {
 }
 
 func (h *PodHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var form forms.PodForm
+	var pod model.Pod
 
-	err := json.NewDecoder(r.Body).Decode(&form)
+	err := json.NewDecoder(r.Body).Decode(&pod)
 	if err != nil {
 		http.Error(w, "Failed to decode json", http.StatusInternalServerError)
 		return
 	}
 
-	errors := form.Validate()
-	if errors.HasErrors() {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errors)
+	if pod.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
+		return
+	}
+	if pod.ProjectID == "" {
+		http.Error(w, "Project ID is required", http.StatusBadRequest)
 		return
 	}
 
-	pod := &model.Pod{
-		ID:        uuid.New().String(),
-		UserID:    auth.GetUser(r.Context()).ID,
-		ProjectID: form.ProjectID,
-		Title:     form.Title,
-	}
+	pod.ID = uuid.New().String()
+	pod.UserID = auth.GetUser(r.Context()).ID
 
-	_, err = h.service.Create(pod)
+	_, err = h.service.Create(&pod)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -51,7 +47,6 @@ func (h *PodHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pod)
-	return
 }
 
 func (h *PodHandler) Pod(w http.ResponseWriter, r *http.Request) {

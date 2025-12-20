@@ -147,6 +147,15 @@ func (m *podForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		return m, func() tea.Msg {
+			// If creating new pod (m.pod is nil), go back to project detail
+			// Otherwise go back to pod detail
+			if m.pod == nil {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewProjectDetail(s, m.projectID)
+					},
+				}
+			}
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
 					return NewPodDetail(s, m.pod.ID)
@@ -209,35 +218,40 @@ func (m *podForm) save() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if m.pod == nil {
-		return m, tea.Batch(
-			func() tea.Msg { return msg.StartLoading{Text: "Creating pod"} },
-			api.CreatePod(title, m.projectID),
-		)
+	pod := m.pod
+	if pod == nil {
+		pod = &model.Pod{ProjectID: m.projectID}
 	}
 
-	m.pod.Title = title
+	pod.Title = title
 
 	repoURL := strings.TrimSpace(m.repoURLInput.Value())
 	if repoURL != "" {
-		m.pod.RepoURL = &repoURL
+		pod.RepoURL = &repoURL
 	} else {
-		m.pod.RepoURL = nil
+		pod.RepoURL = nil
 	}
 
-	m.pod.Branch = m.branchInput.Value()
-	if m.pod.Branch == "" {
-		m.pod.Branch = "main"
+	pod.Branch = m.branchInput.Value()
+	if pod.Branch == "" {
+		pod.Branch = "main"
 	}
 
-	m.pod.DockerfilePath = m.dockerfileInput.Value()
-	if m.pod.DockerfilePath == "" {
-		m.pod.DockerfilePath = "Dockerfile"
+	pod.DockerfilePath = m.dockerfileInput.Value()
+	if pod.DockerfilePath == "" {
+		pod.DockerfilePath = "Dockerfile"
+	}
+
+	if m.pod == nil {
+		return m, tea.Batch(
+			func() tea.Msg { return msg.StartLoading{Text: "Creating pod"} },
+			api.CreatePod(pod),
+		)
 	}
 
 	return m, tea.Batch(
 		func() tea.Msg { return msg.StartLoading{Text: "Updating pod"} },
-		api.UpdatePod(m.pod),
+		api.UpdatePod(pod),
 	)
 }
 

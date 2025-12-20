@@ -244,17 +244,9 @@ func fetchPods() ([]model.Pod, error) {
 	return pods, nil
 }
 
-func CreatePod(title, projectID string) tea.Cmd {
+func CreatePod(pod *model.Pod) tea.Cmd {
 	return func() tea.Msg {
-		data := struct {
-			Title     string `json:"title"`
-			ProjectID string `json:"project_id"`
-		}{
-			Title:     title,
-			ProjectID: projectID,
-		}
-
-		resp, err := post("/pods", data)
+		resp, err := post("/pods", pod)
 		if err != nil {
 			return msg.Error{Err: err}
 		}
