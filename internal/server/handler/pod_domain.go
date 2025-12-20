@@ -32,6 +32,15 @@ func NewPodDomainHandler(service *service.PodDomainService, podService *service.
 	}
 }
 
+// setDomainURL computes the full URL based on environment
+func (h *PodDomainHandler) setDomainURL(d *model.PodDomain) {
+	scheme := "https://"
+	if h.isDevelopment {
+		scheme = "http://"
+	}
+	d.URL = scheme + d.Domain
+}
+
 type createDomainRequest struct {
 	Domain     string `json:"domain"`
 	Port       int    `json:"port"`
@@ -75,6 +84,7 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setDomainURL(domain)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(domain)
@@ -90,6 +100,9 @@ func (h *PodDomainHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range domains {
+		h.setDomainURL(&domains[i])
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(domains)
 }
@@ -150,6 +163,7 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setDomainURL(&domain)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(domain)
 }
@@ -212,6 +226,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setDomainURL(domain)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(domain)

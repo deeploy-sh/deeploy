@@ -37,6 +37,7 @@ type PodDomain struct {
 	Type       string    `json:"type" db:"type"`
 	Port       int       `json:"port" db:"port"`
 	SSLEnabled bool      `json:"ssl_enabled" db:"ssl_enabled"`
+	URL        string    `json:"url" db:"-"` // computed, not stored
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 }

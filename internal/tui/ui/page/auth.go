@@ -5,8 +5,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os/exec"
-	"runtime"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -15,6 +13,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/config"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
+	"github.com/deeploy-sh/deeploy/internal/tui/util"
 )
 
 type auth struct {
@@ -131,23 +130,6 @@ func startLocalauthServer() (int, chan authCallback) {
 	return port, callback
 }
 
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default:
-		cmd = "xdg-open"
-	}
-
-	return exec.Command(cmd, append(args, url)...).Start()
-}
-
 func (m auth) startBrowserauth() tea.Cmd {
 	return func() tea.Msg {
 		port, callback := startLocalauthServer()
@@ -157,7 +139,7 @@ func (m auth) startBrowserauth() tea.Cmd {
 			m.serverURL,
 			port,
 		)
-		openBrowser(authURL)
+		util.OpenBrowser(authURL)
 
 		result := <-callback
 		if result.err != nil {

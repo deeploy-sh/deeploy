@@ -14,6 +14,7 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/components"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
+	"github.com/deeploy-sh/deeploy/internal/tui/util"
 )
 
 type podDomainsMode int
@@ -37,6 +38,7 @@ type podDomains struct {
 	keyAuto      key.Binding
 	keyEdit      key.Binding
 	keyDelete    key.Binding
+	keyOpen      key.Binding
 	keyBack      key.Binding
 	keySave      key.Binding
 	keyTab       key.Binding
@@ -50,7 +52,7 @@ func (m podDomains) HelpKeys() []key.Binding {
 	if m.mode == modeDomainAdd {
 		return []key.Binding{m.keySave, m.keyTab, m.keyBack}
 	}
-	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyBack}
+	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyOpen, m.keyBack}
 }
 
 func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
@@ -71,6 +73,7 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 		keyAuto:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "generate auto")),
 		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
 		keyDelete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
+		keyOpen:     key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
@@ -96,7 +99,9 @@ func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.domains = nil // trigger loading state
 		return m, tea.Batch(
 			api.FetchPodDomains(m.pod.ID),
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess}
+			},
 		)
 
 	case tea.KeyPressMsg:
@@ -168,6 +173,11 @@ func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 					},
 				}
 			}
+		}
+
+	case key.Matches(tmsg, m.keyOpen):
+		if len(m.domains) > 0 && m.selected < len(m.domains) {
+			return m, util.OpenBrowserCmd(m.domains[m.selected].URL)
 		}
 
 	case tmsg.Code == tea.KeyUp:
@@ -342,7 +352,7 @@ func (m podDomains) renderAddMode() string {
 
 func (m podDomains) centeredCard(content string) string {
 	card := styles.Card(styles.CardProps{
-		Width:   60,
+		Width:   80,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)
