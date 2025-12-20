@@ -19,9 +19,9 @@ VERSION=${1:-latest}
 BRANCH=${VERSION}
 if [[ "$VERSION" == "latest" ]]; then
     echo "Fetching latest stable release..."
-    BRANCH=$(curl -fsSL https://api.github.com/repos/deeploy-sh/deeploy/releases/latest 2>/dev/null | grep '"tag_name"' | cut -d'"' -f4)
+    BRANCH=$(curl -sL https://api.github.com/repos/deeploy-sh/deeploy/releases/latest 2>/dev/null | grep '"tag_name"' | cut -d'"' -f4 || echo "")
     if [[ -z "$BRANCH" ]]; then
-        echo "Warning: Could not fetch latest release, falling back to main"
+        echo "No releases found, using main branch"
         BRANCH="main"
     fi
 fi

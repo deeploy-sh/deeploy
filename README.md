@@ -1,34 +1,10 @@
 # deeploy
 
-Modern Deployment. Terminal First.
+Modern Deployment. Terminal First. Open Source.
 
-## Features
+![deeploy TUI](internal/shared/assets/img/hero.png)
 
-**Deployment**
-
-- Zero-downtime deployments
-- Git-based deployments with private repo support
-- Real-time build logs
-
-**Security**
-
-- Zero-Config SSL - HTTPS automatic for all domains
-- Auto-Provisioned Certificates via Let's Encrypt
-- Secure by Default - HTTP redirects to HTTPS
-- Auto-Renewal - Certificates renewed automatically
-
-**Domains**
-
-- Wildcard DNS via sslip.io - Instant domains without DNS config
-- Custom domains with automatic SSL
-- Multiple domains per pod
-
-**Developer Experience**
-
-- Terminal-first UI (TUI)
-- Self-hosted - Full control over your infrastructure
-
-## Install
+## Quick Start
 
 ### Server (VPS)
 
@@ -40,18 +16,55 @@ curl -fsSL https://deeploy.sh/server.sh | sudo bash
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s main
 
 # Specific version, branch, or tag
-curl -fsSL https://deeploy.sh/server.sh | sudo bash -s v1.0.0
+curl -fsSL https://deeploy.sh/server.sh | sudo bash -s v0.1.0
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s feature/cool-thing
-
-# Uninstall (dev/admin only - removes everything)
-curl -fsSL https://raw.githubusercontent.com/deeploy-sh/deeploy/main/scripts/uninstall.sh | sudo bash
 ```
 
-### TUI (Local)
+### TUI (your machine)
 
 ```bash
+# Stable release (recommended)
 curl -fsSL https://deeploy.sh/tui.sh | bash
+
+# Specific version or tag
+curl -fsSL https://deeploy.sh/tui.sh | bash -s v0.1.0
 ```
+
+## Features
+
+- Zero-downtime deployments
+- Auto SSL via Let's Encrypt
+- Instant domains via sslip.io wildcard DNS
+- Terminal-first UI (TUI)
+- Self-hosted, you own your data
+
+## Requirements
+
+**Server (VPS)**
+- Any Linux VPS (Ubuntu, Debian, etc.)
+- Docker installed (script installs if missing)
+- 1GB+ RAM recommended
+- Ports 80, 443 open
+
+**TUI**
+- macOS or Linux (Windows via WSL)
+- That's it
+
+## Currently Supported
+
+- GitHub repositories (public & private)
+- Docker-based deployments
+- Custom domains + SSL
+- Single-user mode
+
+## Coming in 0.2+
+
+- GitLab & Bitbucket support
+- Multi-user / Teams
+- Webhooks & CI integration
+- Rollback
+- Resource limits
+- And many more...
 
 ## Development
 
@@ -61,6 +74,9 @@ task dev:server
 
 # TUI
 task dev:tui
+
+# Docs
+task dev:docs
 ```
 
 ## License
