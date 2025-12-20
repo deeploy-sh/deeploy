@@ -280,7 +280,6 @@ func (m podLogs) View() tea.View {
 	}
 
 	headerLine := fmt.Sprintf("%s  %s", header, statusText)
-	help := styles.MutedStyle().Render("esc: back  D: redeploy  ↑↓: scroll")
 
 	// Card width: responsive, max 120
 	cardWidth := m.width - 8
@@ -295,8 +294,6 @@ func (m podLogs) View() tea.View {
 		headerLine,
 		"",
 		logsContent,
-		"",
-		help,
 	)
 
 	card := styles.Card(styles.CardProps{
@@ -313,4 +310,12 @@ func (m podLogs) View() tea.View {
 
 func (m podLogs) Breadcrumbs() []string {
 	return []string{"Build Logs", m.pod.Title}
+}
+
+func (m podLogs) HelpKeys() []key.Binding {
+	return []key.Binding{
+		key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+		key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "redeploy")),
+		key.NewBinding(key.WithKeys("up", "down"), key.WithHelp("↑↓", "scroll")),
+	}
 }
