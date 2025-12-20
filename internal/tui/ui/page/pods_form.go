@@ -147,6 +147,15 @@ func (m *podForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		return m, func() tea.Msg {
+			// If creating new pod (m.pod is nil), go back to project detail
+			// Otherwise go back to pod detail
+			if m.pod == nil {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model {
+						return NewProjectDetail(s, m.projectID)
+					},
+				}
+			}
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
 					return NewPodDetail(s, m.pod.ID)
