@@ -62,7 +62,7 @@ func New(cfg *config.Config) (*App, error) {
 	podEnvVarService := service.NewPodEnvVarService(podEnvVarRepo, encryptor)
 	podDomainService := service.NewPodDomainService(podDomainRepo)
 	gitTokenService := service.NewGitTokenService(gitTokenRepo, encryptor)
-	deployService := service.NewDeployService(podRepo, podDomainRepo, podEnvVarRepo, gitTokenRepo, dockerService)
+	deployService := service.NewDeployService(podRepo, podDomainRepo, podEnvVarRepo, gitTokenService, dockerService)
 	traefikService := service.NewTraefikService(serverSettingsRepo, cfg.TraefikConfigDir, cfg.IsDevelopment())
 
 	return &App{

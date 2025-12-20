@@ -11,11 +11,11 @@ import (
 )
 
 type DeployService struct {
-	podRepo       repo.PodRepoInterface
-	podDomainRepo repo.PodDomainRepoInterface
-	podEnvVarRepo repo.PodEnvVarRepoInterface
-	gitTokenRepo  repo.GitTokenRepoInterface
-	docker        *docker.DockerService
+	podRepo         repo.PodRepoInterface
+	podDomainRepo   repo.PodDomainRepoInterface
+	podEnvVarRepo   repo.PodEnvVarRepoInterface
+	gitTokenService GitTokenServiceInterface
+	docker          *docker.DockerService
 
 	// Build logs storage (simple)
 	buildLogsMu sync.RWMutex
@@ -30,17 +30,17 @@ func NewDeployService(
 	podRepo *repo.PodRepo,
 	podDomainRepo *repo.PodDomainRepo,
 	podEnvVarRepo *repo.PodEnvVarRepo,
-	gitTokenRepo *repo.GitTokenRepo,
+	gitTokenService *GitTokenService,
 	docker *docker.DockerService,
 ) *DeployService {
 	return &DeployService{
-		podRepo:       podRepo,
-		podDomainRepo: podDomainRepo,
-		podEnvVarRepo: podEnvVarRepo,
-		gitTokenRepo:  gitTokenRepo,
-		docker:        docker,
-		buildLogs:     make(map[string][]string),
-		deploying:     make(map[string]bool),
+		podRepo:         podRepo,
+		podDomainRepo:   podDomainRepo,
+		podEnvVarRepo:   podEnvVarRepo,
+		gitTokenService: gitTokenService,
+		docker:          docker,
+		buildLogs:       make(map[string][]string),
+		deploying:       make(map[string]bool),
 	}
 }
 
@@ -110,7 +110,7 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 	// 3. Get git token if configured
 	var gitToken string
 	if pod.GitTokenID != nil {
-		token, err := s.gitTokenRepo.GitToken(*pod.GitTokenID)
+		token, err := s.gitTokenService.GitToken(*pod.GitTokenID)
 		if err != nil {
 			s.appendBuildLog(podID, fmt.Sprintf("ERROR: failed to get git token: %v", err))
 			return fmt.Errorf("failed to get git token: %w", err)
