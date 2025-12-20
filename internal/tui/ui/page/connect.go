@@ -1,8 +1,6 @@
 package page
 
 import (
-	"log"
-
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -27,10 +25,9 @@ func (p connect) HelpKeys() []key.Binding {
 }
 
 func NewConnect(err error) connect {
-	log.Println(err)
-	card := styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
-	ti.Placeholder = "https://deeploy.yourdomain.com"
+	ti.Placeholder = "http://your-vps-ip:8090"
 	ti.CharLimit = 100
 	ti.Focus()
 
@@ -85,12 +82,10 @@ func (m connect) View() tea.View {
 		content += styles.ErrorStyle().Render("\n\n* " + m.err.Error())
 	}
 
-	// Helpful hint about HTTPS
 	content += "\n\n"
-	content += styles.MutedStyle().Render("Tip: Use https:// for secure connection.\n")
-	content += styles.MutedStyle().Render("Setup: Point DNS to your VPS, Traefik handles SSL.")
+	content += styles.MutedStyle().Render("First setup? Use IP:8090. Add domain later in settings.")
 
-	card := styles.Card(styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}).Render(content)
+	card := styles.Card(styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)
