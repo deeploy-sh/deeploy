@@ -264,23 +264,24 @@ func (m *podLogs) updateViewport() {
 }
 
 func (m podLogs) View() tea.View {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
+	bg := styles.ColorBackgroundPanel()
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary()).Background(bg)
 	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.pod.Title))
 
 	var statusText string
 	switch m.status {
 	case "building":
-		statusText = lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("● building...")
+		statusText = styles.WarningStyle().Background(bg).Render("● building...")
 	case "running":
-		statusText = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("● running")
+		statusText = styles.SuccessStyle().Background(bg).Render("● running")
 	case "failed":
-		statusText = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("● failed")
+		statusText = styles.ErrorStyle().Background(bg).Render("● failed")
 	default:
-		statusText = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("● " + m.status)
+		statusText = styles.MutedStyle().Background(bg).Render("● " + m.status)
 	}
 
-	headerLine := fmt.Sprintf("%s  %s", header, statusText)
-	help := styles.MutedStyle().Render("esc: back  D: redeploy  ↑↓: scroll")
+	spacer := lipgloss.NewStyle().Background(bg).Render("  ")
+	headerLine := header + spacer + statusText
 
 	// Card width: responsive, max 120
 	cardWidth := m.width - 8
@@ -295,8 +296,6 @@ func (m podLogs) View() tea.View {
 		headerLine,
 		"",
 		logsContent,
-		"",
-		help,
 	)
 
 	card := styles.Card(styles.CardProps{
@@ -313,4 +312,12 @@ func (m podLogs) View() tea.View {
 
 func (m podLogs) Breadcrumbs() []string {
 	return []string{"Build Logs", m.pod.Title}
+}
+
+func (m podLogs) HelpKeys() []key.Binding {
+	return []key.Binding{
+		key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+		key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "redeploy")),
+		key.NewBinding(key.WithKeys("up", "down"), key.WithHelp("↑↓", "scroll")),
+	}
 }
