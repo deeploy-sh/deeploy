@@ -24,11 +24,28 @@ const (
 	modeDomainAdd
 )
 
+// domainItem wraps PodDomain to implement ScrollItem interface
+type domainItem struct {
+	domain model.PodDomain
+}
+
+func (d domainItem) Title() string       { return d.domain.Domain }
+func (d domainItem) FilterValue() string { return d.domain.Domain }
+func (d domainItem) Suffix() string {
+	badges := fmt.Sprintf(":%d", d.domain.Port)
+	if d.domain.Type == "auto" {
+		badges += " auto"
+	}
+	return badges
+}
+
+var podDomainsCard = styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
+
 type podDomains struct {
 	pod          *model.Pod
 	project      *model.Project
 	domains      []model.PodDomain
-	selected     int
+	list         components.ScrollList
 	mode         podDomainsMode
 	domainInput  textinput.Model
 	portInput    textinput.Model
@@ -67,6 +84,7 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 	return podDomains{
 		pod:         pod,
 		project:     project,
+		list:        components.NewScrollList(nil, components.ScrollListConfig{Width: podDomainsCard.InnerWidth(), Height: 8}),
 		domainInput: domainInput,
 		portInput:   portInput,
 		keyAdd:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new custom")),
@@ -77,7 +95,6 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 		keySave:     key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyTab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next field")),
-		// Note: SSL toggle removed - SSL is automatic in production
 	}
 }
 
@@ -89,6 +106,11 @@ func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
 	case msg.PodDomainsLoaded:
 		m.domains = tmsg.Domains
+		items := make([]components.ScrollItem, len(tmsg.Domains))
+		for i, d := range tmsg.Domains {
+			items[i] = domainItem{domain: d}
+		}
+		m.list.SetItems(items)
 		return m, nil
 
 	case msg.PodDomainCreated, msg.PodDomainUpdated:
@@ -109,6 +131,11 @@ func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleAddMode(tmsg)
 		}
 		return m.handleListMode(tmsg)
+
+	case tea.MouseWheelMsg:
+		if m.mode == modeDomainList {
+			m.list, _ = m.list.Update(tmsg)
+		}
 
 	case tea.WindowSizeMsg:
 		m.width = tmsg.Width
@@ -148,8 +175,8 @@ func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, textinput.Blink
 
 	case key.Matches(tmsg, m.keyEdit):
-		if len(m.domains) > 0 && m.selected < len(m.domains) {
-			domain := m.domains[m.selected]
+		if item := m.list.SelectedItem(); item != nil {
+			domain := item.(domainItem).domain
 			pod := m.pod
 			project := m.project
 			return m, func() tea.Msg {
@@ -162,8 +189,8 @@ func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case key.Matches(tmsg, m.keyDelete):
-		if len(m.domains) > 0 && m.selected < len(m.domains) {
-			domain := m.domains[m.selected]
+		if item := m.list.SelectedItem(); item != nil {
+			domain := item.(domainItem).domain
 			pod := m.pod
 			project := m.project
 			return m, func() tea.Msg {
@@ -176,21 +203,13 @@ func (m podDomains) handleListMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case key.Matches(tmsg, m.keyOpen):
-		if len(m.domains) > 0 && m.selected < len(m.domains) {
-			return m, util.OpenBrowserCmd(m.domains[m.selected].URL)
-		}
-
-	case tmsg.Code == tea.KeyUp:
-		if m.selected > 0 {
-			m.selected--
-		}
-
-	case tmsg.Code == tea.KeyDown:
-		if m.selected < len(m.domains)-1 {
-			m.selected++
+		if item := m.list.SelectedItem(); item != nil {
+			return m, util.OpenBrowserCmd(item.(domainItem).domain.URL)
 		}
 	}
 
+	// Let ScrollList handle navigation (up/down/j/k/mouse)
+	m.list, _ = m.list.Update(tmsg)
 	return m, nil
 }
 
@@ -269,43 +288,16 @@ func (m podDomains) View() tea.View {
 }
 
 func (m podDomains) renderListMode() string {
-	var b strings.Builder
-
 	if len(m.domains) == 0 {
+		var b strings.Builder
 		b.WriteString(styles.MutedStyle().Render("No domains configured."))
 		b.WriteString("\n\n")
 		b.WriteString(styles.MutedStyle().Render("Press 'g' to generate an auto domain, or 'n' to add a custom one."))
 		b.WriteString("\n")
 		b.WriteString(styles.MutedStyle().Render("A domain is required before you can deploy."))
-	} else {
-		for i, d := range m.domains {
-			cursor := "  "
-			style := lipgloss.NewStyle()
-			if i == m.selected {
-				cursor = "> "
-				style = style.Foreground(styles.ColorPrimary())
-			}
-
-			// Domain name
-			line := cursor + style.Render(d.Domain)
-
-			// Badges
-			badges := []string{}
-			badges = append(badges, fmt.Sprintf(":%d", d.Port))
-			if d.SSLEnabled {
-				badges = append(badges, "SSL")
-			}
-			if d.Type == "auto" {
-				badges = append(badges, "auto")
-			}
-
-			line += " " + styles.MutedStyle().Render("["+strings.Join(badges, ", ")+"]")
-			b.WriteString(line)
-			b.WriteString("\n")
-		}
+		return b.String()
 	}
-
-	return b.String()
+	return m.list.View()
 }
 
 func (m podDomains) renderAddMode() string {
@@ -351,14 +343,8 @@ func (m podDomains) renderAddMode() string {
 }
 
 func (m podDomains) centeredCard(content string) string {
-	card := styles.Card(styles.CardProps{
-		Width:   80,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(content)
-
-	return lipgloss.Place(m.width, m.height,
-		lipgloss.Center, lipgloss.Center, card)
+	card := styles.Card(podDomainsCard).Render(content)
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
 }
 
 func (m podDomains) Breadcrumbs() []string {
