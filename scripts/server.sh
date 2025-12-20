@@ -19,6 +19,10 @@ echo "Installing deeploy server version: $VERSION"
 BRANCH=${VERSION}
 [[ "$VERSION" == "latest" ]] && BRANCH="main"
 
+# Docker tags can't contain slashes - convert feat/example → feat-example
+# (same logic as .github/workflows/ci.yml)
+TAG=${VERSION//\//-}
+
 # Check for Docker
 if command -v docker &>/dev/null; then
     echo "Docker already installed"
@@ -52,8 +56,8 @@ fi
 
 # Start services (DEEPLOY_VERSION sets the image tag in docker-compose.yml)
 echo "Starting deeploy..."
-DEEPLOY_VERSION=$VERSION docker compose pull
-DEEPLOY_VERSION=$VERSION docker compose up -d --force-recreate
+DEEPLOY_VERSION=$TAG docker compose pull
+DEEPLOY_VERSION=$TAG docker compose up -d --force-recreate
 
 IP=$(hostname -I | awk '{print $1}')
 echo ""
