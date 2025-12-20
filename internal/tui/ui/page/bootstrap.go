@@ -44,8 +44,9 @@ func (m *bootstrap) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *bootstrap) View() tea.View {
 	spinner := m.spinner.View()
 	height := m.height + headerHeight + footerHeight
+	logo := lipgloss.NewStyle().Bold(true).Render("deeploy")
 	if m.offline {
-		return tea.NewView(components.Centered(m.width, height, spinner+" ⚡ deeploy.sh\n\ncan't connect. retrying..."))
+		return tea.NewView(components.Centered(m.width, height, spinner+" "+logo+"\n\ncan't connect. retrying..."))
 	}
-	return tea.NewView(components.Centered(m.width, height, spinner+" ⚡ deeploy.sh"))
+	return tea.NewView(components.Centered(m.width, height, spinner+" "+logo))
 }

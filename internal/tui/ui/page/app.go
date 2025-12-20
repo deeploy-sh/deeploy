@@ -522,13 +522,13 @@ func (m app) View() tea.View {
 
 	status = statusStyle.Render(status) + styles.MutedStyle().Render(versionInfo)
 
-	logo := "⚡ deeploy.sh"
+	logo := lipgloss.NewStyle().Bold(true).Render("deeploy")
 	breadcrumbParts := []string{logo}
 	p, ok := m.currentPage.(PageInfo)
 	if ok {
 		breadcrumbParts = append(breadcrumbParts, p.Breadcrumbs()...)
 	}
-	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render("  >  "))
+	breadcrumbs := strings.Join(breadcrumbParts, styles.MutedStyle().Render(" > "))
 
 	gap := max(m.width-lipgloss.Width(breadcrumbs)-lipgloss.Width(status)-2, 1)
 	headerContent := breadcrumbs + strings.Repeat(" ", gap) + status
@@ -551,9 +551,7 @@ func (m app) View() tea.View {
 	var helpView string
 	hp, ok := m.currentPage.(HelpProvider)
 	if ok {
-		// Add global palette key to page-specific keys
 		keys := hp.HelpKeys()
-		keys = append(keys, key.NewBinding(key.WithKeys("alt+p"), key.WithHelp("alt+p", "palette")))
 		helpText := components.RenderHelpFooter(keys)
 
 		// Add loading spinner or status message
