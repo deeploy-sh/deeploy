@@ -233,11 +233,10 @@ func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		if cardWidth > 120 {
 			cardWidth = 120
 		}
-		// Inner width: card width minus padding (2 on each side) and accent border (1)
-		innerWidth := cardWidth - 5
+		cardProps := styles.CardProps{Width: cardWidth, Padding: []int{1, 2}, Accent: true}
 		// Height: total minus card padding (1 top, 1 bottom), header, help, spacing
 		innerHeight := m.height - 10
-		m.viewport.setSize(innerWidth, innerHeight)
+		m.viewport.setSize(cardProps.InnerWidth(), innerHeight)
 		m.updateViewport()
 		return m, nil
 	}
@@ -281,13 +280,25 @@ func (m podLogs) View() tea.View {
 	}
 
 	spacer := lipgloss.NewStyle().Background(bg).Render("  ")
-	headerLine := header + spacer + statusText
+	headerText := header + spacer + statusText
 
 	// Card width: responsive, max 120
 	cardWidth := m.width - 8
 	if cardWidth > 120 {
 		cardWidth = 120
 	}
+
+	cardProps := styles.CardProps{
+		Width:   cardWidth,
+		Padding: []int{1, 2},
+		Accent:  true,
+	}
+
+	// Extend header to full width with background
+	headerLine := lipgloss.NewStyle().
+		Width(cardProps.InnerWidth()).
+		Background(bg).
+		Render(headerText)
 
 	// Viewport content - just the lines, lipgloss handles overflow
 	logsContent := m.viewport.view()
@@ -298,11 +309,7 @@ func (m podLogs) View() tea.View {
 		logsContent,
 	)
 
-	card := styles.Card(styles.CardProps{
-		Width:   cardWidth,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}).Render(content)
+	card := styles.Card(cardProps).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)
