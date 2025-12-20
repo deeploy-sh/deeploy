@@ -21,20 +21,66 @@ templ Landing() {
 				<!-- Navbar -->
 				@modules.Navbar(stars)
 				<!-- Main Content -->
-				<main class="flex-1 flex flex-col justify-center px-4 py-16 md:px-20 md:py-28 space-y-12 md:space-y-16">
+				<main class="flex-1 flex flex-col justify-center">
 					<!-- Hero -->
-					<div class="space-y-4">
+					<div class="py-12 md:py-16 px-4 md:px-20 space-y-4">
 						<h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
-							Deploy from your terminal. Open source.
+							Modern Deployment. Terminal First. Open Source.
 						</h1>
-						<p class="text-muted-foreground">Built for developers who live in the command line.</p>
+						<p class="text-muted-foreground">The self-hosted alternative to Heroku, Vercel, and Netlify.</p>
+					</div>
+					<!-- Teaser Image -->
+					<div class="border-t border-border">
+						<img src="/assets/img/hero.png" alt="deeploy TUI" class="w-full"/>
+					</div>
+					<!-- Features -->
+					<div class="py-12 md:py-16 px-4 md:px-20 border-t border-border space-y-4">
+						<p class="font-semibold">Features</p>
+						<p class="text-muted-foreground">Zero-downtime · Auto SSL · Instant domains · Self-hosted</p>
+					</div>
+					<!-- Install Commands -->
+					<div class="py-12 md:py-16 px-4 md:px-20 border-t border-border space-y-4">
+						<p class="font-semibold">Get started in 30 seconds</p>
+						<div class="space-y-3">
+							<!-- Server Install -->
+							<div class="relative group">
+								<div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+									<span>Server (VPS)</span>
+								</div>
+								<div class="flex items-center bg-muted/50 border border-border rounded-md overflow-hidden">
+									<code class="flex-1 px-3 py-2 text-sm font-mono">curl -fsSL https://deeploy.sh/server.sh | sudo bash</code>
+									<button
+										onclick="navigator.clipboard.writeText('curl -fsSL https://deeploy.sh/server.sh | sudo bash'); this.textContent='✓'; setTimeout(() => this.textContent='copy', 1500)"
+										class="px-3 py-2 text-sm text-muted-foreground hover:text-foreground border-l border-border transition-colors"
+									>copy</button>
+								</div>
+							</div>
+							<!-- TUI Install -->
+							<div class="relative group">
+								<div class="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+									<span>TUI (your machine)</span>
+								</div>
+								<div class="flex items-center bg-muted/50 border border-border rounded-md overflow-hidden">
+									<code class="flex-1 px-3 py-2 text-sm font-mono">curl -fsSL https://deeploy.sh/tui.sh | bash</code>
+									<button
+										onclick="navigator.clipboard.writeText('curl -fsSL https://deeploy.sh/tui.sh | bash'); this.textContent='✓'; setTimeout(() => this.textContent='copy', 1500)"
+										class="px-3 py-2 text-sm text-muted-foreground hover:text-foreground border-l border-border transition-colors"
+									>copy</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Built with -->
+					<div class="py-12 md:py-16 px-4 md:px-20 border-t border-border space-y-4">
+						<p class="font-semibold">Built with</p>
+						<p class="text-muted-foreground">Go · Bubble Tea · Docker · Traefik · Let's Encrypt · PostgreSQL</p>
 					</div>
 					<!-- Newsletter -->
-					<div class="space-y-4">
+					<div class="py-12 md:py-16 px-4 md:px-20 border-t border-border space-y-4">
 						<div class="space-y-2">
 							<p class="font-semibold">Stay updated</p>
 							<p class="text-muted-foreground">
-								0.1 coming soon — get notified about releases, cloud, and more.
+								Get notified about hosted solution, web UI, and more.
 							</p>
 						</div>
 						<form id="subscribe-form" class="flex flex-col sm:flex-row gap-2 sm:gap-0">
