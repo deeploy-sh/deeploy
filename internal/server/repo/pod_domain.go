@@ -2,8 +2,9 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -43,7 +44,7 @@ func (r *PodDomainRepo) Domain(id string) (*model.PodDomain, error) {
 
 	err := r.db.Get(domain, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("domain %s: %w", id, errs.ErrNotFound)
 	}
 	if err != nil {
 		return nil, err
@@ -58,7 +59,7 @@ func (r *PodDomainRepo) DomainByName(domainName string) (*model.PodDomain, error
 
 	err := r.db.Get(domain, query, domainName)
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("domain %s: %w", domainName, errs.ErrNotFound)
 	}
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func (r *PodDomainRepo) Update(domain model.PodDomain) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("domain not found")
+		return fmt.Errorf("domain %s: %w", domain.ID, errs.ErrNotFound)
 	}
 
 	return nil
@@ -114,7 +115,7 @@ func (r *PodDomainRepo) Delete(id string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("domain not found")
+		return fmt.Errorf("domain %s: %w", id, errs.ErrNotFound)
 	}
 
 	return nil

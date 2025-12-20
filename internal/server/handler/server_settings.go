@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -29,8 +28,7 @@ type setDomainRequest struct {
 func (h *ServerSettingsHandler) GetServerDomain(w http.ResponseWriter, r *http.Request) {
 	domain, err := h.traefik.GetServerDomain()
 	if err != nil {
-		slog.Error("failed to get server domain", "error", err)
-		http.Error(w, "Failed to get domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -57,12 +55,9 @@ func (h *ServerSettingsHandler) SetServerDomain(w http.ResponseWriter, r *http.R
 	}
 
 	if err := h.traefik.SetServerDomain(domain); err != nil {
-		slog.Error("failed to set server domain", "error", err)
-		http.Error(w, "Failed to set domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
-
-	slog.Info("server domain configured", "domain", domain)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(domainResponse{Domain: domain})
@@ -71,11 +66,9 @@ func (h *ServerSettingsHandler) SetServerDomain(w http.ResponseWriter, r *http.R
 // DeleteServerDomain removes the server domain and Traefik config.
 func (h *ServerSettingsHandler) DeleteServerDomain(w http.ResponseWriter, r *http.Request) {
 	if err := h.traefik.DeleteServerDomain(); err != nil {
-		slog.Error("failed to delete server domain", "error", err)
-		http.Error(w, "Failed to delete domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
-	slog.Info("server domain removed")
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -12,9 +12,12 @@ import (
 	"sync"
 
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/google/uuid"
 )
+
+// Note: slog is kept for getPublicIP() logging
 
 type PodDomainHandler struct {
 	service       *service.PodDomainService
@@ -79,8 +82,7 @@ func (h *PodDomainHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.Create(domain)
 	if err != nil {
-		slog.Error("failed to create domain", "error", err)
-		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -95,8 +97,7 @@ func (h *PodDomainHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	domains, err := h.service.DomainsByPod(podID)
 	if err != nil {
-		slog.Error("failed to get domains", "podID", podID, "error", err)
-		http.Error(w, "Failed to get domains", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -112,8 +113,7 @@ func (h *PodDomainHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Delete(domainID)
 	if err != nil {
-		slog.Error("failed to delete domain", "domainID", domainID, "error", err)
-		http.Error(w, "Failed to delete domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -142,8 +142,7 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Get existing domain to preserve type
 	existing, err := h.service.Domain(domainID)
 	if err != nil {
-		slog.Warn("failed to get domain", "domainID", domainID, "error", err)
-		http.Error(w, "Domain not found", http.StatusNotFound)
+		writeError(w, fmt.Errorf("domain %s: %w", domainID, errs.ErrNotFound))
 		return
 	}
 
@@ -158,8 +157,7 @@ func (h *PodDomainHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	err = h.service.Update(domain)
 	if err != nil {
-		slog.Error("failed to update domain", "domainID", domainID, "error", err)
-		http.Error(w, "Failed to update domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -190,8 +188,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	// Get pod to use title for subdomain
 	pod, err := h.podService.Pod(podID)
 	if err != nil {
-		slog.Warn("failed to get pod", "podID", podID, "error", err)
-		http.Error(w, "Pod not found", http.StatusNotFound)
+		writeError(w, fmt.Errorf("pod %s: %w", podID, errs.ErrNotFound))
 		return
 	}
 
@@ -221,8 +218,7 @@ func (h *PodDomainHandler) Generate(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.Create(domain)
 	if err != nil {
-		slog.Error("failed to create domain", "error", err)
-		http.Error(w, "Failed to create domain", http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 

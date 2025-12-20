@@ -9,6 +9,8 @@ import (
 	"github.com/deeploy-sh/deeploy/internal/server/service"
 )
 
+// Note: slog is kept for Deploy() goroutine logging
+
 type DeployHandler struct {
 	service *service.DeployService
 }
@@ -41,8 +43,7 @@ func (h *DeployHandler) Stop(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Stop(r.Context(), podID)
 	if err != nil {
-		slog.Error("failed to stop pod", "podID", podID, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -55,8 +56,7 @@ func (h *DeployHandler) Restart(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Restart(r.Context(), podID)
 	if err != nil {
-		slog.Error("failed to restart pod", "podID", podID, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeError(w, err)
 		return
 	}
 
@@ -68,18 +68,12 @@ func (h *DeployHandler) Logs(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
 
 	logs, status, err := h.service.GetLogs(r.Context(), podID, 100)
-	w.Header().Set("Content-Type", "application/json")
-
 	if err != nil {
-		slog.Warn("failed to get logs", "podID", podID, "error", err)
-		json.NewEncoder(w).Encode(map[string]any{
-			"logs":   []string{},
-			"status": "error",
-			"error":  err.Error(),
-		})
+		writeError(w, err)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"logs":   logs,
 		"status": status,

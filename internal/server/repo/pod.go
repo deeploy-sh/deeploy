@@ -2,8 +2,9 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
+	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -43,7 +44,7 @@ func (r *PodRepo) Pod(id string) (*model.Pod, error) {
 
 	err := r.db.Get(pod, query, id)
 	if err == sql.ErrNoRows {
-		return nil, err
+		return nil, fmt.Errorf("pod %s: %w", id, errs.ErrNotFound)
 	}
 	if err != nil {
 		return nil, err
@@ -107,7 +108,7 @@ func (r *PodRepo) Update(pod model.Pod) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("Pod not found")
+		return fmt.Errorf("pod %s: %w", pod.ID, errs.ErrNotFound)
 	}
 
 	return nil
@@ -126,7 +127,7 @@ func (r *PodRepo) Delete(id string) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("Pod not found")
+		return fmt.Errorf("pod %s: %w", id, errs.ErrNotFound)
 	}
 
 	return nil
