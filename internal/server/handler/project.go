@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/deeploy-sh/deeploy/internal/server/auth"
-	"github.com/deeploy-sh/deeploy/internal/server/forms"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
@@ -23,29 +22,23 @@ func NewProjectHandler(service *service.ProjectService, podService *service.PodS
 }
 
 func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var form forms.ProjectForm
+	var project model.Project
 
-	err := json.NewDecoder(r.Body).Decode(&form)
+	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
 		http.Error(w, "Failed to decode json", http.StatusInternalServerError)
 		return
 	}
 
-	errors := form.Validate()
-	if errors.HasErrors() {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errors)
+	if project.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
 
-	project := &model.Project{
-		ID:     uuid.New().String(),
-		UserID: auth.GetUser(r.Context()).ID,
-		Title:  form.Title,
-	}
+	project.ID = uuid.New().String()
+	project.UserID = auth.GetUser(r.Context()).ID
 
-	_, err = h.service.Create(project)
+	_, err = h.service.Create(&project)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -53,7 +46,6 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
-	return
 }
 
 func (h *ProjectHandler) Project(w http.ResponseWriter, r *http.Request) {
