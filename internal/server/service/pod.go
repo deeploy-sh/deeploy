@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/deeploy-sh/deeploy/internal/server/docker"
 	"github.com/deeploy-sh/deeploy/internal/server/repo"
@@ -87,9 +88,23 @@ func (s *PodService) Update(pod model.Pod) error {
 }
 
 func (s *PodService) Delete(id string) error {
-	err := s.repo.Delete(id)
+	pod, err := s.repo.Pod(id)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	s.cleanupDocker(id, pod.ContainerID)
+
+	return s.repo.Delete(id)
+}
+
+func (s *PodService) cleanupDocker(podID string, containerID *string) {
+	ctx := context.Background()
+
+	if containerID != nil && *containerID != "" {
+		s.docker.StopContainer(ctx, *containerID)
+		s.docker.RemoveContainer(ctx, *containerID)
+	}
+
+	s.docker.RemoveImage(ctx, fmt.Sprintf("deeploy-%s:latest", podID))
 }
