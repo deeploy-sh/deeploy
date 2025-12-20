@@ -71,7 +71,10 @@ func (p gitTokenDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.token.Name {
 				return p, nil
 			}
-			return p, api.DeleteGitToken(p.token.ID)
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Deleting token"} },
+				api.DeleteGitToken(p.token.ID),
+			)
 		}
 
 	case tea.WindowSizeMsg:

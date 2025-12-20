@@ -249,12 +249,18 @@ func (m podDomains) handleAddMode(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 		// SSL is always enabled - it's automatic in production via Let's Encrypt
 		if m.isAuto {
-			return m, api.GenerateAutoDomain(m.pod.ID, port, true)
+			return m, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Generating domain"} },
+				api.GenerateAutoDomain(m.pod.ID, port, true),
+			)
 		}
 
 		domain := strings.TrimSpace(m.domainInput.Value())
 		if domain != "" {
-			return m, api.CreatePodDomain(m.pod.ID, domain, port, true)
+			return m, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Creating domain"} },
+				api.CreatePodDomain(m.pod.ID, domain, port, true),
+			)
 		}
 		return m, nil
 	}

@@ -75,7 +75,10 @@ func (p podDomainsDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.domain.Domain {
 				return p, nil
 			}
-			return p, api.DeletePodDomain(p.pod.ID, p.domain.ID)
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Deleting domain"} },
+				api.DeletePodDomain(p.pod.ID, p.domain.ID),
+			)
 		}
 
 	case tea.WindowSizeMsg:

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/shared/errs"
@@ -44,6 +45,10 @@ type app struct {
 	latestVersion    string // From GitHub API
 	// Security: true if using HTTPS, false if using plain HTTP
 	secureConnection bool
+	// Loading state
+	isLoading   bool
+	loadingText string
+	spinner     spinner.Model
 }
 
 func (m *app) Projects() []model.Project {
@@ -76,9 +81,15 @@ func NewApp() tea.Model {
 		secureConnection = strings.HasPrefix(cfg.Server, "https://")
 	}
 
+	// Initialize spinner for loading state
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(styles.ColorPrimary())
+
 	return &app{
 		currentPage:      NewBootstrap(),
 		secureConnection: secureConnection,
+		spinner:          s,
 	}
 }
 
@@ -142,12 +153,19 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case tea.KeyPressMsg:
-		// Allow palette (alt+p) even when offline so user can change server
-		if m.offline && tmsg.String() != "ctrl+c" && tmsg.String() != "alt+p" {
-			return m, nil
-		}
+		// Allow quit even during loading
 		if tmsg.String() == "ctrl+c" {
 			return m, tea.Quit
+		}
+
+		// Block all input during loading
+		if m.isLoading {
+			return m, nil
+		}
+
+		// Allow palette (alt+p) even when offline so user can change server
+		if m.offline && tmsg.String() != "alt+p" {
+			return m, nil
 		}
 
 		if tmsg.String() == "alt+p" && m.bootstrapped && m.palette == nil {
@@ -241,6 +259,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case msg.Error:
+		m.isLoading = false
 		// If unauthorized, redirect to auth page
 		if tmsg.Err == errs.ErrUnauthorized {
 			return m, func() tea.Msg {
@@ -276,6 +295,23 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusText = ""
 		return m, nil
 
+	case msg.StartLoading:
+		m.isLoading = true
+		m.loadingText = tmsg.Text
+		m.statusText = ""
+		return m, m.spinner.Tick
+
+	case msg.ProjectCreated, msg.ProjectUpdated, msg.ProjectDeleted,
+		msg.PodCreated, msg.PodUpdated, msg.PodDeleted,
+		msg.PodDeployed, msg.PodStopped, msg.PodRestarted,
+		msg.GitTokenCreated, msg.GitTokenDeleted,
+		msg.PodDomainCreated, msg.PodDomainUpdated, msg.PodDomainDeleted,
+		msg.PodEnvVarsUpdated:
+		m.isLoading = false
+		var cmd tea.Cmd
+		m.currentPage, cmd = m.currentPage.Update(tmsg)
+		return m, cmd
+
 	case msg.ThemeSwitcherClose:
 		m.themeSwitcher = nil
 		return m, nil
@@ -296,27 +332,40 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case msg.ServerDomainSet:
+		m.isLoading = false
 		m.secureConnection = true
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 
 	case msg.ServerDomainDeleted:
+		m.isLoading = false
 		m.secureConnection = false
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
 
 	default:
+		var cmds []tea.Cmd
+
+		// Update spinner when loading
+		if m.isLoading {
+			var spinnerCmd tea.Cmd
+			m.spinner, spinnerCmd = m.spinner.Update(tmsg)
+			cmds = append(cmds, spinnerCmd)
+		}
+
 		if m.palette != nil {
 			var cmd tea.Cmd
 			*m.palette, cmd = m.palette.Update(tmsg)
-			return m, cmd
+			cmds = append(cmds, cmd)
+			return m, tea.Batch(cmds...)
 		}
 
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
-		return m, cmd
+		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
 	}
 }
 
@@ -507,9 +556,11 @@ func (m app) View() tea.View {
 		keys = append(keys, key.NewBinding(key.WithKeys("alt+p"), key.WithHelp("alt+p", "palette")))
 		helpText := components.RenderHelpFooter(keys)
 
-		// Add status message if present
+		// Add loading spinner or status message
 		var statusMsg string
-		if m.statusText != "" {
+		if m.isLoading {
+			statusMsg = styles.PrimaryStyle().Render(strings.TrimSpace(m.spinner.View()) + " " + m.loadingText)
+		} else if m.statusText != "" {
 			var statusStyle lipgloss.Style
 			var icon string
 			switch m.statusType {
@@ -528,7 +579,7 @@ func (m app) View() tea.View {
 
 		hs := lipgloss.NewStyle().Padding(0, 1)
 		if statusMsg != "" {
-			footerGap := max(m.width-lipgloss.Width(helpText)-lipgloss.Width(statusMsg)-4, 1)
+			footerGap := max(m.width-lipgloss.Width(helpText)-lipgloss.Width(statusMsg)-2, 1)
 			helpView = hs.Render(helpText + strings.Repeat(" ", footerGap) + statusMsg)
 		} else {
 			helpView = hs.Render(helpText)

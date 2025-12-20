@@ -94,6 +94,12 @@ type ServerDomainDeleted struct{}
 
 type Error struct{ Err error }
 
+// --- Loading State ---
+
+type StartLoading struct {
+	Text string
+}
+
 // --- Status Line ---
 
 type StatusType int

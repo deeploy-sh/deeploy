@@ -86,9 +86,15 @@ func (p projectForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(p.titleInput.Value()) > 0 {
 				if p.project != nil {
 					p.project.Title = p.titleInput.Value()
-					return p, api.UpdateProject(p.project)
+					return p, tea.Batch(
+						func() tea.Msg { return msg.StartLoading{Text: "Updating project"} },
+						api.UpdateProject(p.project),
+					)
 				}
-				return p, api.CreateProject(p.titleInput.Value())
+				return p, tea.Batch(
+					func() tea.Msg { return msg.StartLoading{Text: "Creating project"} },
+					api.CreateProject(p.titleInput.Value()),
+				)
 			}
 		}
 

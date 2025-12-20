@@ -111,7 +111,10 @@ func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// SSL is always enabled - it's automatic in production via Let's Encrypt
-			return p, api.UpdatePodDomain(p.pod.ID, p.domain.ID, domain, port, true)
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Updating domain"} },
+				api.UpdatePodDomain(p.pod.ID, p.domain.ID, domain, port, true),
+			)
 		}
 
 	case tea.WindowSizeMsg:

@@ -85,7 +85,10 @@ func (p projectDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			if p.input.Value() != p.project.Title {
 				return p, nil
 			}
-			return p, api.DeleteProject(p.project.ID)
+			return p, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Deleting project"} },
+				api.DeleteProject(p.project.ID),
+			)
 		}
 	case tea.WindowSizeMsg:
 		p.width = tmsg.Width

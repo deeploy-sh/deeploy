@@ -108,7 +108,10 @@ func (m *gitTokenForm) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd)
 		token := strings.TrimSpace(m.tokenInput.Value())
 		if name != "" && token != "" {
 			provider := detectProvider(token)
-			return m, api.CreateGitToken(name, provider, token)
+			return m, tea.Batch(
+				func() tea.Msg { return msg.StartLoading{Text: "Creating token"} },
+				api.CreateGitToken(name, provider, token),
+			)
 		}
 		return m, nil
 
