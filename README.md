@@ -5,22 +5,26 @@ Modern Deployment. Terminal First.
 ## Features
 
 **Deployment**
+
 - Zero-downtime deployments
 - Git-based deployments with private repo support
 - Real-time build logs
 
 **Security**
+
 - Zero-Config SSL - HTTPS automatic for all domains
 - Auto-Provisioned Certificates via Let's Encrypt
 - Secure by Default - HTTP redirects to HTTPS
 - Auto-Renewal - Certificates renewed automatically
 
 **Domains**
+
 - Wildcard DNS via sslip.io - Instant domains without DNS config
 - Custom domains with automatic SSL
 - Multiple domains per pod
 
 **Developer Experience**
+
 - Terminal-first UI (TUI)
 - Self-hosted - Full control over your infrastructure
 
@@ -29,12 +33,15 @@ Modern Deployment. Terminal First.
 ### Server (VPS)
 
 ```bash
-# Latest
+# Stable release (recommended)
 curl -fsSL https://deeploy.sh/server.sh | sudo bash
 
-# Specific version/branch
+# Bleeding edge
+curl -fsSL https://deeploy.sh/server.sh | sudo bash -s main
+
+# Specific version, branch, or tag
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s v1.0.0
-curl -fsSL https://deeploy.sh/server.sh | sudo bash -s dev
+curl -fsSL https://deeploy.sh/server.sh | sudo bash -s feature/cool-thing
 
 # Uninstall (dev/admin only - removes everything)
 curl -fsSL https://raw.githubusercontent.com/deeploy-sh/deeploy/main/scripts/uninstall.sh | sudo bash

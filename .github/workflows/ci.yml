@@ -10,11 +10,12 @@
 #   - deeploy:main-amd64   (Intel version)
 #   - deeploy:main-arm64   (ARM version)
 #   - deeploy:main         (manifest pointing to both)
-#   - deeploy:latest       (only for main branch)
+#   - deeploy:latest       (only for version tags v*)
 #
 # Why separate builds instead of one multi-platform build?
 #   → Single multi-platform creates untagged sha256 images that pile up as garbage
 #   → Separate builds create tagged images that get overwritten = no garbage
+#   → Cleanup step removes any leftover untagged images after each build
 #
 # =============================================================================
 
@@ -137,12 +138,33 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-arm64 \
             --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}
 
-      # Only main branch gets the "latest" tag
+      # Only version tags get the "latest" tag (stable releases)
       - name: Create latest tag
-        if: github.ref == 'refs/heads/main'
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           docker buildx imagetools create \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-amd64 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-arm64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.name }}-arm64 \
             --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      # Cleanup: Delete all untagged images (sha256 garbage)
+      - name: Cleanup untagged images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching untagged images..."
+          UNTAGGED=$(gh api orgs/deeploy-sh/packages/container/deeploy/versions \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || true)
+
+          if [ -z "$UNTAGGED" ]; then
+            echo "No untagged images to delete"
+            exit 0
+          fi
+
+          echo "Deleting untagged images..."
+          echo "$UNTAGGED" | while read id; do
+            echo "Deleting version $id..."
+            gh api -X DELETE "orgs/deeploy-sh/packages/container/deeploy/versions/$id" --silent || true
+          done
+          echo "Cleanup complete"
 
