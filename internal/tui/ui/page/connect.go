@@ -1,6 +1,8 @@
 package page
 
 import (
+	"strings"
+
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -53,7 +55,7 @@ func (m connect) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.resetErr()
 		switch tmsg.Code {
 		case tea.KeyEnter:
-			input := m.serverInput.Value()
+			input := strings.TrimSpace(m.serverInput.Value())
 			err := utils.ValidateServer(input)
 			if err != nil {
 				m.err = err
