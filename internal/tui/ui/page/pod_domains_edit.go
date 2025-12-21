@@ -66,14 +66,6 @@ func (p podDomainsEdit) Init() tea.Cmd {
 
 func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodDomainUpdated:
-		pod := p.pod
-		project := p.project
-		return p, tea.Batch(
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDomains(pod, project) }} },
-		)
-
 	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(tmsg, p.keyCancel):
@@ -81,7 +73,7 @@ func (p podDomainsEdit) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			project := p.project
 			return p, func() tea.Msg {
 				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewPodDomains(pod, project) },
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDomains(s, pod, project) },
 				}
 			}
 

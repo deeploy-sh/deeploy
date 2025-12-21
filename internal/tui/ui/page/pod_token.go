@@ -56,18 +56,6 @@ func (m podToken) Init() tea.Cmd {
 
 func (m podToken) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodUpdated:
-		podID := m.pod.ID
-		return m, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Token updated", Type: msg.StatusSuccess} },
-			func() tea.Msg {
-				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetail(s, podID)
-				}}
-			},
-		)
-
 	case tea.KeyPressMsg:
 		return m.handleKeyPress(tmsg)
 

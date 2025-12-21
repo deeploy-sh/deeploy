@@ -37,55 +37,48 @@ func (m podDetail) HelpKeys() []key.Binding {
 }
 
 func NewPodDetail(s msg.Store, podID string) podDetail {
-	var pod model.Pod
+	// Get pod from store
+	var pod *model.Pod
+	var project *model.Project
 	for _, p := range s.Pods() {
 		if p.ID == podID {
-			pod = p
+			pod = &p
 			break
 		}
 	}
-
-	var project model.Project
-	for _, pr := range s.Projects() {
-		if pr.ID == pod.ProjectID {
-			project = pr
-			break
+	if pod != nil {
+		for _, pr := range s.Projects() {
+			if pr.ID == pod.ProjectID {
+				project = &pr
+				break
+			}
 		}
 	}
 
 	return podDetail{
-		store:      s,
-		pod:        &pod,
-		project:    &project,
-		keyDeploy:  key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "deploy")),
-		keyStop:    key.NewBinding(key.WithKeys("S"), key.WithHelp("S", "stop")),
-		keyRestart: key.NewBinding(key.WithKeys("R"), key.WithHelp("R", "restart")),
-		keyLogs:    key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
-		keyEdit:    key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
-		keyDomains: key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "domains")),
-		keyVars:    key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "env vars")),
-		keyToken:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "token")),
-		keyBack:    key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+		store:       s,
+		pod:         pod,
+		project:     project,
+		domains:     s.PodDomains(podID),
+		envVarCount: len(s.PodEnvVars(podID)),
+		keyDeploy:   key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "deploy")),
+		keyStop:     key.NewBinding(key.WithKeys("S"), key.WithHelp("S", "stop")),
+		keyRestart:  key.NewBinding(key.WithKeys("R"), key.WithHelp("R", "restart")),
+		keyLogs:     key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "logs")),
+		keyEdit:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
+		keyDomains:  key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "domains")),
+		keyVars:     key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "env vars")),
+		keyToken:    key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "token")),
+		keyBack:     key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
 	}
 }
 
 func (m podDetail) Init() tea.Cmd {
-	return tea.Batch(
-		api.FetchPodDomains(m.pod.ID),
-		api.FetchPodEnvVars(m.pod.ID),
-	)
+	return nil
 }
 
 func (m podDetail) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodDomainsLoaded:
-		m.domains = tmsg.Domains
-		return m, nil
-
-	case msg.PodEnvVarsLoaded:
-		m.envVarCount = len(tmsg.EnvVars)
-		return m, nil
-
 	case msg.PodDeployed:
 		return m, api.LoadData()
 
@@ -124,6 +117,11 @@ func (m podDetail) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	// Still loading - ignore keys
+	if m.pod.Title == "" {
+		return m, nil
+	}
+
 	switch {
 	case key.Matches(tmsg, m.keyBack):
 		projectID := m.project.ID
@@ -188,7 +186,7 @@ func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDomains(pod, project)
+					return NewPodDomains(s, pod, project)
 				},
 			}
 		}
@@ -199,7 +197,7 @@ func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, func() tea.Msg {
 			return msg.ChangePage{
 				PageFactory: func(s msg.Store) tea.Model {
-					return NewPodVars(pod, project)
+					return NewPodVars(s, pod, project)
 				},
 			}
 		}
@@ -220,6 +218,11 @@ func (m podDetail) handleKeyPress(tmsg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m podDetail) View() tea.View {
+	// Still loading
+	if m.pod.Title == "" {
+		return tea.NewView("")
+	}
+
 	var b strings.Builder
 
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary())
@@ -328,5 +331,9 @@ func (m podDetail) renderStatus() string {
 }
 
 func (m podDetail) Breadcrumbs() []string {
-	return []string{"Projects", m.project.Title, "Pods", m.pod.Title}
+	projectTitle := ""
+	if m.project != nil {
+		projectTitle = m.project.Title
+	}
+	return []string{"Projects", projectTitle, "Pods", m.pod.Title}
 }

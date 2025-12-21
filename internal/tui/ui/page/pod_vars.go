@@ -28,7 +28,10 @@ func (m podVars) HelpKeys() []key.Binding {
 	return []key.Binding{m.keySave, m.keyBack}
 }
 
-func NewPodVars(pod *model.Pod, project *model.Project) podVars {
+func NewPodVars(s msg.Store, pod *model.Pod, project *model.Project) podVars {
+	// Get env vars from store
+	envVars := s.PodEnvVars(pod.ID)
+
 	ta := textarea.New()
 	ta.Placeholder = "DATABASE_URL=postgres://..."
 	ta.Prompt = ""
@@ -36,33 +39,26 @@ func NewPodVars(pod *model.Pod, project *model.Project) podVars {
 	ta.SetHeight(10)
 	ta.Focus()
 
-	return podVars{
+	m := podVars{
 		pod:      pod,
 		project:  project,
 		textarea: ta,
+		envVars:  envVars,
 		keySave:  key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save")),
 		keyBack:  key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "cancel")),
 	}
+	ta.SetValue(m.envVarsToText())
+	m.textarea = ta
+
+	return m
 }
 
 func (m podVars) Init() tea.Cmd {
-	return tea.Batch(api.FetchPodEnvVars(m.pod.ID), textarea.Blink)
+	return textarea.Blink
 }
 
 func (m podVars) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodEnvVarsLoaded:
-		m.envVars = tmsg.EnvVars
-		m.textarea.SetValue(m.envVarsToText())
-		return m, nil
-
-	case msg.PodEnvVarsUpdated:
-		podID := m.pod.ID
-		return m, tea.Batch(
-			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) }} },
-		)
-
 	case tea.KeyPressMsg:
 		if key.Matches(tmsg, m.keyBack) {
 			podID := m.pod.ID

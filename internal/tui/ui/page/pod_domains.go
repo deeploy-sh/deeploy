@@ -72,7 +72,7 @@ func (m podDomains) HelpKeys() []key.Binding {
 	return []key.Binding{m.keyAdd, m.keyAuto, m.keyEdit, m.keyDelete, m.keyOpen, m.keyBack}
 }
 
-func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
+func NewPodDomains(s msg.Store, pod *model.Pod, project *model.Project) podDomains {
 	domainInput := components.NewTextInput(40)
 	domainInput.Placeholder = "app.example.com"
 	domainInput.CharLimit = 100
@@ -81,10 +81,18 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 	portInput.Placeholder = "8080"
 	portInput.CharLimit = 5
 
+	// Get domains from store
+	domains := s.PodDomains(pod.ID)
+	items := make([]components.ScrollItem, len(domains))
+	for i, d := range domains {
+		items[i] = domainItem{domain: d}
+	}
+
 	return podDomains{
 		pod:         pod,
 		project:     project,
-		list:        components.NewScrollList(nil, components.ScrollListConfig{Width: podDomainsCard.InnerWidth(), Height: 8}),
+		domains:     domains,
+		list:        components.NewScrollList(items, components.ScrollListConfig{Width: podDomainsCard.InnerWidth(), Height: 8}),
 		domainInput: domainInput,
 		portInput:   portInput,
 		keyAdd:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new custom")),
@@ -99,33 +107,11 @@ func NewPodDomains(pod *model.Pod, project *model.Project) podDomains {
 }
 
 func (m podDomains) Init() tea.Cmd {
-	return tea.Batch(api.FetchPodDomains(m.pod.ID), textinput.Blink)
+	return textinput.Blink
 }
 
 func (m podDomains) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodDomainsLoaded:
-		m.domains = tmsg.Domains
-		items := make([]components.ScrollItem, len(tmsg.Domains))
-		for i, d := range tmsg.Domains {
-			items[i] = domainItem{domain: d}
-		}
-		m.list.SetItems(items)
-		return m, nil
-
-	case msg.PodDomainCreated, msg.PodDomainUpdated:
-		m.mode = modeDomainList
-		m.domainInput.SetValue("")
-		m.portInput.SetValue("")
-		m.isAuto = false
-		m.domains = nil // trigger loading state
-		return m, tea.Batch(
-			api.FetchPodDomains(m.pod.ID),
-			func() tea.Msg {
-				return msg.ShowStatus{Text: "Saved. Restart or deploy to apply.", Type: msg.StatusSuccess}
-			},
-		)
-
 	case tea.KeyPressMsg:
 		if m.mode == modeDomainAdd {
 			return m.handleAddMode(tmsg)

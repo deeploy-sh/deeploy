@@ -64,13 +64,6 @@ func (p projectDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
-	case msg.ProjectDeleted:
-		return p, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Project deleted", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }} },
-		)
-
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:

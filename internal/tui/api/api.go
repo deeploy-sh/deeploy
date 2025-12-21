@@ -162,10 +162,22 @@ func LoadData() tea.Cmd {
 			return msg.Error{Err: errT}
 		}
 
+		// Load all domains and env vars for all pods
+		var podDomains []model.PodDomain
+		var podEnvVars []model.PodEnvVar
+		for _, p := range pods {
+			domains, _ := fetchPodDomains(p.ID)
+			podDomains = append(podDomains, domains...)
+			vars, _ := fetchPodEnvVars(p.ID)
+			podEnvVars = append(podEnvVars, vars...)
+		}
+
 		return msg.DataLoaded{
-			Projects:  projects,
-			Pods:      pods,
-			GitTokens: gitTokens,
+			Projects:   projects,
+			Pods:       pods,
+			GitTokens:  gitTokens,
+			PodDomains: podDomains,
+			PodEnvVars: podEnvVars,
 		}
 	}
 }
@@ -199,7 +211,12 @@ func CreateProject(title string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.ProjectCreated{}
+		var created model.Project
+		if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.ProjectCreated{Project: created}
 	}
 }
 
@@ -211,7 +228,12 @@ func UpdateProject(project *model.Project) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.ProjectUpdated{}
+		var updated model.Project
+		if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.ProjectUpdated{Project: updated}
 	}
 }
 
@@ -223,7 +245,7 @@ func DeleteProject(id string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.ProjectDeleted{}
+		return msg.ProjectDeleted{ProjectID: id}
 	}
 }
 
@@ -252,7 +274,12 @@ func CreatePod(pod *model.Pod) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodCreated{}
+		var created model.Pod
+		if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodCreated{Pod: created}
 	}
 }
 
@@ -264,11 +291,16 @@ func UpdatePod(pod *model.Pod) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodUpdated{}
+		var updated model.Pod
+		if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodUpdated{Pod: updated}
 	}
 }
 
-func DeletePod(id string) tea.Cmd {
+func DeletePod(id, projectID string) tea.Cmd {
 	return func() tea.Msg {
 		resp, err := del("/pods/" + id)
 		if err != nil {
@@ -276,7 +308,7 @@ func DeletePod(id string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodDeleted{}
+		return msg.PodDeleted{PodID: id, ProjectID: projectID}
 	}
 }
 
@@ -373,7 +405,12 @@ func CreateGitToken(name, provider, token string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.GitTokenCreated{}
+		var created model.GitToken
+		if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.GitTokenCreated{Token: created}
 	}
 }
 
@@ -385,28 +422,25 @@ func DeleteGitToken(id string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.GitTokenDeleted{}
+		return msg.GitTokenDeleted{TokenID: id}
 	}
 }
 
 // --- Pod Domains ---
 
-func FetchPodDomains(podID string) tea.Cmd {
-	return func() tea.Msg {
-		resp, err := get("/pods/" + podID + "/domains")
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-		defer resp.Body.Close()
-
-		var domains []model.PodDomain
-		err = json.NewDecoder(resp.Body).Decode(&domains)
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-
-		return msg.PodDomainsLoaded{Domains: domains}
+func fetchPodDomains(podID string) ([]model.PodDomain, error) {
+	resp, err := get("/pods/" + podID + "/domains")
+	if err != nil {
+		return nil, err
 	}
+	defer resp.Body.Close()
+
+	var domains []model.PodDomain
+	err = json.NewDecoder(resp.Body).Decode(&domains)
+	if err != nil {
+		return nil, err
+	}
+	return domains, nil
 }
 
 func CreatePodDomain(podID, domain string, port int, sslEnabled bool) tea.Cmd {
@@ -427,7 +461,12 @@ func CreatePodDomain(podID, domain string, port int, sslEnabled bool) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodDomainCreated{}
+		var created model.PodDomain
+		if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodDomainCreated{Domain: created}
 	}
 }
 
@@ -439,7 +478,7 @@ func DeletePodDomain(podID, domainID string) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodDomainDeleted{}
+		return msg.PodDomainDeleted{DomainID: domainID, PodID: podID}
 	}
 }
 
@@ -457,7 +496,12 @@ func UpdatePodDomain(podID, domainID, domain string, port int, sslEnabled bool) 
 		}
 		defer resp.Body.Close()
 
-		return msg.PodDomainUpdated{}
+		var updated model.PodDomain
+		if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodDomainUpdated{Domain: updated}
 	}
 }
 
@@ -477,28 +521,30 @@ func GenerateAutoDomain(podID string, port int, sslEnabled bool) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodDomainCreated{}
+		var created model.PodDomain
+		if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodDomainCreated{Domain: created}
 	}
 }
 
 // --- Pod Env Vars ---
 
-func FetchPodEnvVars(podID string) tea.Cmd {
-	return func() tea.Msg {
-		resp, err := get("/pods/" + podID + "/vars")
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-		defer resp.Body.Close()
-
-		var envVars []model.PodEnvVar
-		err = json.NewDecoder(resp.Body).Decode(&envVars)
-		if err != nil {
-			return msg.Error{Err: err}
-		}
-
-		return msg.PodEnvVarsLoaded{EnvVars: envVars}
+func fetchPodEnvVars(podID string) ([]model.PodEnvVar, error) {
+	resp, err := get("/pods/" + podID + "/vars")
+	if err != nil {
+		return nil, err
 	}
+	defer resp.Body.Close()
+
+	var envVars []model.PodEnvVar
+	err = json.NewDecoder(resp.Body).Decode(&envVars)
+	if err != nil {
+		return nil, err
+	}
+	return envVars, nil
 }
 
 func UpdatePodEnvVars(podID string, vars []model.PodEnvVar) tea.Cmd {
@@ -513,7 +559,12 @@ func UpdatePodEnvVars(podID string, vars []model.PodEnvVar) tea.Cmd {
 		}
 		defer resp.Body.Close()
 
-		return msg.PodEnvVarsUpdated{}
+		var updated []model.PodEnvVar
+		if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+			return msg.Error{Err: err}
+		}
+
+		return msg.PodEnvVarsUpdated{PodID: podID, EnvVars: updated}
 	}
 }
 
