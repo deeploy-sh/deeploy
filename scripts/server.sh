@@ -69,6 +69,9 @@ DEEPLOY_VERSION=$TAG docker compose pull
 DEEPLOY_VERSION=$TAG docker compose up -d --force-recreate
 
 IP=$(hostname -I | awk '{print $1}')
+URL="http://$IP:8090"
+
 echo ""
-echo "Deeploy is running!"
-echo "  Dashboard: http://$IP:8090"
+echo "✓ deeploy is running"
+echo ""
+echo "  Connect your TUI with $URL"
