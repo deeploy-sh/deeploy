@@ -27,7 +27,7 @@ func (p connect) HelpKeys() []key.Binding {
 }
 
 func NewConnect(err error) connect {
-	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthLG, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = "http://your-vps-ip:8090"
 	ti.CharLimit = 100
@@ -87,7 +87,7 @@ func (m connect) View() tea.View {
 	content += "\n\n"
 	content += styles.MutedStyle().Render("First setup? Use IP:8090. Add domain later in settings.")
 
-	card := styles.Card(styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}).Render(content)
+	card := styles.Card(styles.CardProps{Width: styles.CardWidthLG, Padding: []int{1, 2}, Accent: true}).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)

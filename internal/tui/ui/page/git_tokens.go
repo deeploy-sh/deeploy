@@ -131,7 +131,7 @@ func (m gitTokens) View() tea.View {
 	}
 
 	card := styles.Card(styles.CardProps{
-		Width:   60,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

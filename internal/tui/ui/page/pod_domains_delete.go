@@ -30,7 +30,7 @@ func (p podDomainsDelete) HelpKeys() []key.Binding {
 }
 
 func NewPodDomainsDelete(domain model.PodDomain, pod *model.Pod, project *model.Project) podDomainsDelete {
-	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = domain.Domain
 	ti.Focus()
@@ -116,7 +116,7 @@ func (p podDomainsDelete) View() tea.View {
 	)
 
 	card := styles.Card(styles.CardProps{
-		Width:   50,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)

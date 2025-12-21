@@ -35,7 +35,7 @@ func (m gitTokenForm) HelpKeys() []key.Binding {
 }
 
 func NewGitTokenForm() gitTokenForm {
-	card := styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: true}
 	inputWidth := card.InnerWidth()
 
 	nameInput := components.NewTextInput(inputWidth)
@@ -181,7 +181,7 @@ func (m gitTokenForm) View() tea.View {
 	b.WriteString(styles.MutedStyle().Render("Provider will be auto-detected from token format"))
 
 	card := styles.Card(styles.CardProps{
-		Width:   60,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

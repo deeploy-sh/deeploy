@@ -28,7 +28,7 @@ func (p serverDomainDelete) HelpKeys() []key.Binding {
 }
 
 func NewServerDomainDelete(domain string) serverDomainDelete {
-	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = domain
 	ti.Focus()
@@ -134,7 +134,7 @@ func (p serverDomainDelete) View() tea.View {
 	)
 
 	card := styles.Card(styles.CardProps{
-		Width:   50,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)

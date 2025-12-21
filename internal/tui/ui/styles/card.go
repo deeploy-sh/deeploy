@@ -4,6 +4,13 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 )
 
+// Card width constants for consistent sizing
+const (
+	CardWidthSM = 40 // Delete dialogs, simple confirmations
+	CardWidthMD = 55 // Standard cards, info, settings, forms
+	CardWidthLG = 70 // Complex forms, detail views
+)
+
 type CardProps struct {
 	Width   int
 	Height  int

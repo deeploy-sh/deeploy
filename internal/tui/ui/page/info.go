@@ -136,7 +136,7 @@ func (m info) View() tea.View {
 	}
 
 	cardStyle := styles.Card(styles.CardProps{
-		Width:   50,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 	})
 	card := cardStyle.Render(sb.String())

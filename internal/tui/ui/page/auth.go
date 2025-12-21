@@ -87,7 +87,7 @@ func (p auth) View() tea.View {
 		b.WriteString("Press enter to open browser")
 	}
 
-	card := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: true}).Render(b.String())
+	card := styles.Card(styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: true}).Render(b.String())
 
 	centered := lipgloss.Place(p.width, p.height,
 		lipgloss.Center, lipgloss.Center, card)

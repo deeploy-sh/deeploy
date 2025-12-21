@@ -293,7 +293,7 @@ func (m podDetail) View() tea.View {
 	}
 
 	card := styles.Card(styles.CardProps{
-		Width:   70,
+		Width:   styles.CardWidthLG,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

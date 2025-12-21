@@ -38,7 +38,7 @@ func NewServerDomain() serverDomain {
 	}
 
 	// Text input for domain
-	card := styles.CardProps{Width: 50, Padding: []int{1, 2}, Accent: false}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: false}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = "deeploy.yourdomain.com"
 	ti.CharLimit = 100
@@ -223,7 +223,7 @@ func (m serverDomain) View() tea.View {
 		sb.WriteString(styles.ErrorStyle().Render("* " + m.err.Error()))
 	}
 
-	cardStyle := styles.Card(styles.CardProps{Width: 50, Padding: []int{1, 2}})
+	cardStyle := styles.Card(styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}})
 	card := cardStyle.Render(sb.String())
 
 	centered := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)

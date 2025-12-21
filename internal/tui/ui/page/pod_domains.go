@@ -39,7 +39,7 @@ func (d domainItem) Suffix() string {
 	return badges
 }
 
-var podDomainsCard = styles.CardProps{Width: 60, Padding: []int{1, 2}, Accent: true}
+var podDomainsCard = styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 2}, Accent: true}
 
 type podDomains struct {
 	pod          *model.Pod

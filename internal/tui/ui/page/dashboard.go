@@ -24,7 +24,7 @@ func (m dashboard) HelpKeys() []key.Binding {
 }
 
 func NewDashboard(s msg.Store) dashboard {
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	l := components.NewScrollList(components.ProjectsToItems(s.Projects(), s.Pods()), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
@@ -120,7 +120,7 @@ func (m dashboard) renderEmptyState() string {
 }
 
 func (m dashboard) renderList() string {
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	title := lipgloss.NewStyle().
