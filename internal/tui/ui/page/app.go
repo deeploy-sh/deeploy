@@ -277,6 +277,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.clearStatusAfter(5*time.Second))
 
 	case msg.AuthSuccess:
+		m.bootstrapped = true
 		return m, tea.Batch(
 			api.LoadData(),
 			func() tea.Msg {
