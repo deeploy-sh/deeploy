@@ -48,16 +48,6 @@ func (p gitTokenDelete) Init() tea.Cmd {
 
 func (p gitTokenDelete) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.GitTokenDeleted:
-		return p, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg {
-				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
-				}
-			},
-		)
-
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:

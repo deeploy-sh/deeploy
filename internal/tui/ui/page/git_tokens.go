@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
-	"github.com/deeploy-sh/deeploy/internal/tui/api"
 	"github.com/deeploy-sh/deeploy/internal/tui/msg"
 	"github.com/deeploy-sh/deeploy/internal/tui/ui/styles"
 )
@@ -45,9 +44,6 @@ func (m gitTokens) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	case msg.DataLoaded:
 		m.tokens = tmsg.GitTokens
 		return m, nil
-
-	case msg.GitTokenDeleted:
-		return m, api.LoadData()
 
 	case tea.KeyPressMsg:
 		switch {

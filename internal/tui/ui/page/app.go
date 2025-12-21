@@ -2,6 +2,7 @@ package page
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ type app struct {
 	projects         []model.Project
 	pods             []model.Pod
 	gitTokens        []model.GitToken
+	podDomains       []model.PodDomain
+	podEnvVars       []model.PodEnvVar
 	width            int
 	height           int
 	heartbeatStarted bool
@@ -61,6 +64,26 @@ func (m *app) Pods() []model.Pod {
 
 func (m *app) GitTokens() []model.GitToken {
 	return m.gitTokens
+}
+
+func (m *app) PodDomains(podID string) []model.PodDomain {
+	var result []model.PodDomain
+	for _, d := range m.podDomains {
+		if d.PodID == podID {
+			result = append(result, d)
+		}
+	}
+	return result
+}
+
+func (m *app) PodEnvVars(podID string) []model.PodEnvVar {
+	var result []model.PodEnvVar
+	for _, v := range m.podEnvVars {
+		if v.PodID == podID {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 func (m *app) clearStatusAfter(d time.Duration) tea.Cmd {
@@ -242,6 +265,8 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.projects = tmsg.Projects
 		m.pods = tmsg.Pods
 		m.gitTokens = tmsg.GitTokens
+		m.podDomains = tmsg.PodDomains
+		m.podEnvVars = tmsg.PodEnvVars
 
 		// Forward to current page so it can update its list
 		var cmd tea.Cmd
@@ -302,16 +327,191 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusText = ""
 		return m, m.spinner.Tick
 
-	case msg.ProjectCreated, msg.ProjectUpdated, msg.ProjectDeleted,
-		msg.PodCreated, msg.PodUpdated, msg.PodDeleted,
-		msg.PodDeployed, msg.PodStopped, msg.PodRestarted,
-		msg.GitTokenCreated, msg.GitTokenDeleted,
-		msg.PodDomainCreated, msg.PodDomainUpdated, msg.PodDomainDeleted,
-		msg.PodEnvVarsUpdated:
+	// --- Project CRUD ---
+	case msg.ProjectCreated:
+		m.projects = append(m.projects, tmsg.Project)
+		m.isLoading = false
+		projectID := tmsg.Project.ID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Project created", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) },
+				}
+			},
+		)
+
+	case msg.ProjectUpdated:
+		for i, p := range m.projects {
+			if p.ID == tmsg.Project.ID {
+				m.projects[i] = tmsg.Project
+				break
+			}
+		}
+		m.isLoading = false
+		projectID := tmsg.Project.ID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Project updated", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) },
+				}
+			},
+		)
+
+	case msg.ProjectDeleted:
+		m.projects = slices.DeleteFunc(m.projects, func(p model.Project) bool { return p.ID == tmsg.ProjectID })
+		m.isLoading = false
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Project deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
+				}
+			},
+		)
+
+	// --- Pod CRUD ---
+	case msg.PodCreated:
+		m.pods = append(m.pods, tmsg.Pod)
+		m.isLoading = false
+		podID := tmsg.Pod.ID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod created", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
+
+	case msg.PodUpdated:
+		for i, p := range m.pods {
+			if p.ID == tmsg.Pod.ID {
+				m.pods[i] = tmsg.Pod
+				break
+			}
+		}
+		m.isLoading = false
+		podID := tmsg.Pod.ID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod updated", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
+
+	case msg.PodDeleted:
+		m.pods = slices.DeleteFunc(m.pods, func(p model.Pod) bool { return p.ID == tmsg.PodID })
+		m.isLoading = false
+		projectID := tmsg.ProjectID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Pod deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) },
+				}
+			},
+		)
+
+	// --- Pod Deploy/Stop/Restart (no store update, just clear loading) ---
+	case msg.PodDeployed, msg.PodStopped, msg.PodRestarted:
 		m.isLoading = false
 		var cmd tea.Cmd
 		m.currentPage, cmd = m.currentPage.Update(tmsg)
 		return m, cmd
+
+	// --- Git Token CRUD ---
+	case msg.GitTokenCreated:
+		m.gitTokens = append(m.gitTokens, tmsg.Token)
+		m.isLoading = false
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Token created", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
+				}
+			},
+		)
+
+	case msg.GitTokenDeleted:
+		m.gitTokens = slices.DeleteFunc(m.gitTokens, func(t model.GitToken) bool { return t.ID == tmsg.TokenID })
+		m.isLoading = false
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Token deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
+				}
+			},
+		)
+
+	// --- Pod Domains (no store update, just navigate back to PodDetail) ---
+	case msg.PodDomainCreated:
+		m.podDomains = append(m.podDomains, tmsg.Domain)
+		m.isLoading = false
+		podID := tmsg.Domain.PodID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Domain created", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
+
+	case msg.PodDomainUpdated:
+		for i, d := range m.podDomains {
+			if d.ID == tmsg.Domain.ID {
+				m.podDomains[i] = tmsg.Domain
+				break
+			}
+		}
+		m.isLoading = false
+		podID := tmsg.Domain.PodID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Domain updated", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
+
+	case msg.PodDomainDeleted:
+		m.podDomains = slices.DeleteFunc(m.podDomains, func(d model.PodDomain) bool {
+			return d.ID == tmsg.DomainID
+		})
+		m.isLoading = false
+		podID := tmsg.PodID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Domain deleted", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
+
+	// --- Pod Env Vars ---
+	case msg.PodEnvVarsUpdated:
+		// Remove old env vars for this pod, add new ones
+		m.podEnvVars = slices.DeleteFunc(m.podEnvVars, func(v model.PodEnvVar) bool {
+			return v.PodID == tmsg.PodID
+		})
+		m.podEnvVars = append(m.podEnvVars, tmsg.EnvVars...)
+		m.isLoading = false
+		podID := tmsg.PodID
+		return m, tea.Batch(
+			func() tea.Msg { return msg.ShowStatus{Text: "Saved. Restart to apply.", Type: msg.StatusSuccess} },
+			func() tea.Msg {
+				return msg.ChangePage{
+					PageFactory: func(s msg.Store) tea.Model { return NewPodDetail(s, podID) },
+				}
+			},
+		)
 
 	case msg.ThemeSwitcherClose:
 		m.themeSwitcher = nil

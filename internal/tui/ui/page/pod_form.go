@@ -97,28 +97,6 @@ func (m podForm) Init() tea.Cmd {
 
 func (m podForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.PodCreated:
-		projectID := m.projectID
-		return m, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Pod created", Type: msg.StatusSuccess} },
-			func() tea.Msg {
-				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }}
-			},
-		)
-
-	case msg.PodUpdated:
-		podID := m.pod.ID
-		return m, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Pod saved", Type: msg.StatusSuccess} },
-			func() tea.Msg {
-				return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model {
-					return NewPodDetail(s, podID)
-				}}
-			},
-		)
-
 	case tea.KeyPressMsg:
 		return m.handleKeyPress(tmsg)
 

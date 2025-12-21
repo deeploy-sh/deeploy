@@ -53,21 +53,6 @@ func (p projectForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch tmsg := tmsg.(type) {
-	case msg.ProjectCreated:
-		return p, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Project created", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) }} },
-		)
-
-	case msg.ProjectUpdated:
-		projectID := p.project.ID
-		return p, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg { return msg.ShowStatus{Text: "Project saved", Type: msg.StatusSuccess} },
-			func() tea.Msg { return msg.ChangePage{PageFactory: func(s msg.Store) tea.Model { return NewProjectDetail(s, projectID) }} },
-		)
-
 	case tea.KeyPressMsg:
 		switch tmsg.Code {
 		case tea.KeyEscape:

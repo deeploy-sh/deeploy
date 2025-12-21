@@ -64,16 +64,6 @@ func (m gitTokenForm) Init() tea.Cmd {
 
 func (m gitTokenForm) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch tmsg := tmsg.(type) {
-	case msg.GitTokenCreated:
-		return m, tea.Batch(
-			api.LoadData(),
-			func() tea.Msg {
-				return msg.ChangePage{
-					PageFactory: func(s msg.Store) tea.Model { return NewGitTokens(s.GitTokens()) },
-				}
-			},
-		)
-
 	case tea.KeyPressMsg:
 		return m.handleKeyPress(tmsg)
 
