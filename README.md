@@ -2,7 +2,7 @@
 
 Modern Deployment. Terminal First. Open Source.
 
-<video src="https://github.com/deeploy-sh/deeploy/raw/main/internal/shared/assets/video/hero.mp4" autoplay loop muted playsinline></video>
+![deeploy TUI](internal/shared/assets/img/hero.png)
 
 ## Quick Start
 
