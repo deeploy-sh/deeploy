@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/deeploy-sh/deeploy/internal/server/auth"
 	"github.com/deeploy-sh/deeploy/internal/server/cookie"
 	"github.com/deeploy-sh/deeploy/internal/server/jwt"
-	"github.com/deeploy-sh/deeploy/internal/server/ui/pages"
 	"github.com/deeploy-sh/deeploy/internal/server/service"
+	"github.com/deeploy-sh/deeploy/internal/server/ui/pages"
 )
 
 type AuthMiddleWare struct {
@@ -88,15 +89,14 @@ func RequireAuth(next http.HandlerFunc, redirectTo ...string) http.HandlerFunc {
 func RequireGuest(next http.HandlerFunc, redirectTo ...string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		isCLI := r.URL.Query().Get("cli") == "true"
+		session := r.URL.Query().Get("session")
 
 		token := getToken(r)
 		if token != "" {
-			// CLI flow
-			if isCLI {
-				pages.CliAuthSuccess(
-					r.URL.Query().Get("port"),
-					token,
-				).Render(r.Context(), w)
+			// CLI flow - store token for polling session
+			if isCLI && session != "" {
+				auth.SetSessionToken(session, token)
+				pages.CliAuthSuccess().Render(r.Context(), w)
 				return
 			}
 

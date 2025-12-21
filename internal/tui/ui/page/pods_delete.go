@@ -34,7 +34,7 @@ func (p podDelete) HelpKeys() []key.Binding {
 }
 
 func NewPodDelete(pod *model.Pod) podDelete {
-	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthSM, Padding: []int{1, 2}, Accent: true}
 	ti := components.NewTextInput(card.InnerWidth())
 	ti.Placeholder = pod.Title
 	ti.Focus()
@@ -104,7 +104,7 @@ func (p podDelete) View() tea.View {
 	content := lipgloss.JoinVertical(lipgloss.Left, title, hint, p.input.View())
 
 	card := styles.Card(styles.CardProps{
-		Width:   40,
+		Width:   styles.CardWidthSM,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)

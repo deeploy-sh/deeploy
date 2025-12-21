@@ -26,7 +26,7 @@ func (p projectForm) HelpKeys() []key.Binding {
 }
 
 func NewProjectForm(project *model.Project) projectForm {
-	card := styles.CardProps{Width: 40, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthSM, Padding: []int{1, 2}, Accent: true}
 	titleInput := components.NewTextInput(card.InnerWidth())
 	titleInput.Focus()
 	titleInput.Placeholder = "Title"
@@ -127,7 +127,7 @@ func (p projectForm) View() tea.View {
 	)
 
 	card := styles.Card(styles.CardProps{
-		Width:   40,
+		Width:   styles.CardWidthSM,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(content)

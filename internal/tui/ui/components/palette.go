@@ -44,7 +44,7 @@ func NewPalette(items []PaletteItem) Palette {
 		scrollItems[i] = item
 	}
 
-	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	list := NewScrollList(scrollItems, ScrollListConfig{
 		Width:       card.InnerWidth(),
 		Height:      10,
@@ -52,7 +52,7 @@ func NewPalette(items []PaletteItem) Palette {
 		Placeholder: "Type to search...",
 	})
 
-	return Palette{list: list, width: 60}
+	return Palette{list: list, width: styles.CardWidthMD}
 }
 
 func (m Palette) Init() tea.Cmd {
@@ -83,7 +83,7 @@ func (m *Palette) SetSize(width, height int) {
 }
 
 func (m Palette) View() string {
-	card := styles.CardProps{Width: 60, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	// Title

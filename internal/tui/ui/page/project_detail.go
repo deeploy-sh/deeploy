@@ -43,7 +43,7 @@ func NewProjectDetail(s msg.Store, projectID string) projectDetail {
 		}
 	}
 
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	l := components.NewScrollList(components.PodsToItems(pods), components.ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
@@ -146,7 +146,7 @@ func (m projectDetail) renderContent() string {
 		return m.renderEmptyState()
 	}
 
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}, Accent: true}
 	w := card.InnerWidth()
 
 	title := lipgloss.NewStyle().

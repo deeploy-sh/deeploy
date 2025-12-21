@@ -37,7 +37,7 @@ func NewThemeSwitcher() ThemeSwitcher {
 		items[i] = themeItem{name: t, isActive: t == currentTheme}
 	}
 
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}}
 	l := NewScrollList(items, ScrollListConfig{
 		Width:  card.InnerWidth(),
 		Height: 15,
@@ -111,7 +111,7 @@ func (m ThemeSwitcher) Update(tmsg tea.Msg) (ThemeSwitcher, tea.Cmd) {
 }
 
 func (m ThemeSwitcher) View() string {
-	card := styles.CardProps{Width: 50, Padding: []int{1, 1}}
+	card := styles.CardProps{Width: styles.CardWidthMD, Padding: []int{1, 1}}
 	w := card.InnerWidth()
 
 	title := lipgloss.NewStyle().

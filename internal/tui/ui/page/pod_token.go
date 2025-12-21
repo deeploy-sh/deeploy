@@ -165,7 +165,7 @@ func (m podToken) View() tea.View {
 	b.WriteString(styles.MutedStyle().Render("Manage tokens: Alt+P > Git Tokens"))
 
 	card := styles.Card(styles.CardProps{
-		Width:   50,
+		Width:   styles.CardWidthMD,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

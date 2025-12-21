@@ -44,7 +44,7 @@ func (m podForm) HelpKeys() []key.Binding {
 }
 
 func NewPodForm(projectID string, pod *model.Pod) podForm {
-	card := styles.CardProps{Width: 70, Padding: []int{1, 2}, Accent: true}
+	card := styles.CardProps{Width: styles.CardWidthLG, Padding: []int{1, 2}, Accent: true}
 	inputWidth := card.InnerWidth()
 
 	titleInput := components.NewTextInput(inputWidth)
@@ -309,7 +309,7 @@ func (m podForm) View() tea.View {
 	b.WriteString(m.dockerfileInput.View())
 
 	card := styles.Card(styles.CardProps{
-		Width:   70,
+		Width:   styles.CardWidthLG,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

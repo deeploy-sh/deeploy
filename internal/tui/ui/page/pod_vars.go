@@ -156,7 +156,7 @@ func (m podVars) View() tea.View {
 	b.WriteString(styles.MutedStyle().Render("Values are encrypted at rest."))
 
 	card := styles.Card(styles.CardProps{
-		Width:   70,
+		Width:   styles.CardWidthLG,
 		Padding: []int{1, 2},
 		Accent:  true,
 	}).Render(b.String())

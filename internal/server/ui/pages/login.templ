@@ -15,11 +15,11 @@ import (
 
 var loginURL = ""
 
-templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, port string) {
-	if !isCLI && port == "" {
+templ Login(errs forms.LoginErrors, form forms.LoginForm, isCLI bool, session string) {
+	if !isCLI && session == "" {
 		{{ loginURL = "/login" }}
 	} else {
-		{{ loginURL = fmt.Sprintf("/login?cli=%v&port=%s", isCLI, port) }}
+		{{ loginURL = fmt.Sprintf("/login?cli=%v&session=%s", isCLI, session) }}
 	}
 	@layouts.AuthLayout() {
 		<div class="w-full flex flex-col justify-center items-center gap-4">
