@@ -3,14 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/a-h/templ"
+	docsContent "github.com/deeploy-sh/deeploy/content/docs"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
+	"github.com/deeploy-sh/deeploy/internal/docs/handler"
 	"github.com/deeploy-sh/deeploy/internal/docs/middleware"
+	"github.com/deeploy-sh/deeploy/internal/docs/service"
 	"github.com/deeploy-sh/deeploy/internal/docs/ui/pages"
 	"github.com/deeploy-sh/deeploy/scripts"
 	sharedAssets "github.com/deeploy-sh/deeploy/internal/shared/assets"
@@ -19,9 +23,26 @@ import (
 
 func main() {
 	config.LoadConfig()
+
+	// Initialize docs service
+	docsService, err := service.NewDocsService(docsContent.Content, "https://deeploy.sh")
+	if err != nil {
+		log.Fatal("Failed to initialize docs service:", err)
+	}
+
+	docsHandler := handler.NewDocsHandler(docsService)
+
 	mux := http.NewServeMux()
 	setupAssets(mux)
 	mux.Handle("GET /", templ.Handler(pages.Landing()))
+
+	// Documentation routes
+	mux.HandleFunc("GET /docs", docsHandler.DocPage)
+	mux.HandleFunc("GET /docs/{slug...}", docsHandler.DocPage)
+
+	// SEO routes
+	mux.HandleFunc("GET /sitemap.xml", docsHandler.Sitemap)
+	mux.HandleFunc("GET /robots.txt", docsHandler.Robots)
 
 	// Serve install scripts
 	mux.Handle("GET /server.sh", serveScript("server.sh"))
@@ -31,7 +52,14 @@ func main() {
 	mux.HandleFunc("POST /api/subscribe", handleSubscribe)
 
 	fmt.Println("Server is running on http://localhost:8090")
-	http.ListenAndServe(":8090", middleware.GitHubStarsMiddleware(mux))
+
+	// Middleware chain: Nonce -> Security -> GitHubStars -> Handler
+	handler := middleware.NonceMiddleware(
+		middleware.SecurityHeaders(
+			middleware.GitHubStarsMiddleware(mux),
+		),
+	)
+	http.ListenAndServe(":8090", handler)
 }
 
 func serveScript(name string) http.Handler {

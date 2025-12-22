@@ -1,0 +1,130 @@
+package blocks
+
+templ HighlightScripts() {
+	// Highlight.js with theme switching
+	<link
+		id="highlight-theme"
+		href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css"
+		rel="stylesheet"
+	/>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+	<script nonce={ templ.GetNonce(ctx) }>
+	(function() {
+		// SVG icons
+		const clipboardSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+		const checkSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+		// Update theme
+		function updateTheme() {
+			const isDark = document.documentElement.classList.contains('dark');
+			const link = document.getElementById('highlight-theme');
+			if (link) {
+				link.href = isDark
+					? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+					: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css';
+			}
+		}
+
+		// Add copy button to code block
+		function addCopyButton(pre) {
+			// Skip if already processed
+			if (pre.hasAttribute('data-has-copy-button')) return;
+			pre.setAttribute('data-has-copy-button', 'true');
+
+			// Add relative positioning to pre for button placement
+			pre.classList.add('relative');
+
+			// Create copy button with Tailwind classes (same as templui component)
+			const button = document.createElement('button');
+			button.setAttribute('data-tui-code-copy-button', '');
+			button.setAttribute('type', 'button');
+			button.className = 'absolute top-2 right-2 size-9 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 transition-colors';
+
+			// Create spans for icons
+			const checkSpan = document.createElement('span');
+			checkSpan.className = 'hidden';
+			checkSpan.setAttribute('data-tui-code-icon-check', '');
+			checkSpan.innerHTML = checkSVG;
+
+			const clipboardSpan = document.createElement('span');
+			clipboardSpan.setAttribute('data-tui-code-icon-clipboard', '');
+			clipboardSpan.innerHTML = clipboardSVG;
+
+			button.appendChild(checkSpan);
+			button.appendChild(clipboardSpan);
+
+			// Copy functionality
+			button.addEventListener('click', async () => {
+				const code = pre.querySelector('code');
+				const text = code ? code.textContent : pre.textContent;
+
+				try {
+					await navigator.clipboard.writeText(text);
+					// Show check icon
+					clipboardSpan.classList.add('hidden');
+					checkSpan.classList.remove('hidden');
+					setTimeout(() => {
+						checkSpan.classList.add('hidden');
+						clipboardSpan.classList.remove('hidden');
+					}, 2000);
+				} catch (err) {
+					console.error('Failed to copy:', err);
+				}
+			});
+
+			pre.appendChild(button);
+		}
+
+		// Process code blocks
+		function processCodeBlocks() {
+			// Highlight all unhighlighted code blocks
+			document.querySelectorAll('pre code:not(.hljs)').forEach(block => {
+				if (window.hljs) {
+					hljs.highlightElement(block);
+				}
+			});
+
+			// Add copy buttons to all pre blocks
+			document.querySelectorAll('pre').forEach(pre => {
+				addCopyButton(pre);
+			});
+		}
+
+		// Single observer for everything
+		const observer = new MutationObserver((mutations) => {
+			// Check for theme changes
+			const themeChanged = mutations.some(m =>
+				m.type === 'attributes' &&
+				m.attributeName === 'class' &&
+				m.target === document.documentElement
+			);
+
+			if (themeChanged) {
+				updateTheme();
+			}
+
+			// Process any new code blocks
+			processCodeBlocks();
+		});
+
+		// Start observing
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['class'],
+			childList: true,
+			subtree: true
+		});
+
+		// Initial setup
+		updateTheme();
+
+		// Initial processing after DOM is ready
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', processCodeBlocks);
+		} else {
+			processCodeBlocks();
+		}
+	})();
+	</script>
+}

@@ -1,0 +1,260 @@
+package pages
+
+import (
+	"github.com/deeploy-sh/deeploy/internal/docs/ctxkeys"
+	"github.com/deeploy-sh/deeploy/internal/docs/service"
+	"github.com/deeploy-sh/deeploy/internal/docs/ui/blocks"
+	"github.com/deeploy-sh/deeploy/internal/docs/ui/layouts"
+	"github.com/deeploy-sh/deeploy/internal/docs/ui/modules"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/breadcrumb"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/button"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/collapsible"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/icon"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/sidebar"
+	sharedModules "github.com/deeploy-sh/deeploy/internal/shared/ui/modules"
+)
+
+templ Doc(currentDoc *service.Doc, tree *service.Doc, prev, next *service.Doc) {
+	@layouts.BaseLayout(layouts.SEOProps{Title: currentDoc.Title, Description: currentDoc.Description, Path: currentDoc.Slug}) {
+		@sidebar.Layout() {
+			@sidebar.Sidebar() {
+				@sidebar.Header() {
+					@sidebar.Menu() {
+						@sidebar.MenuItem() {
+							@sidebar.MenuButton(sidebar.MenuButtonProps{
+								Size: sidebar.MenuButtonSizeLg,
+								Href: "/",
+							}) {
+								@sharedModules.BlobIcon()
+								<div class="flex flex-col">
+									<span class="text-sm font-bold">deeploy</span>
+									<span class="text-xs text-muted-foreground">Documentation</span>
+								</div>
+							}
+						}
+					}
+				}
+				@sidebar.Content() {
+					@sidebar.Group() {
+						@renderDocsNav(tree, currentDoc)
+					}
+				}
+				@sidebar.Footer() {
+					@sidebar.Menu() {
+						@sidebar.MenuItem() {
+							@sidebar.MenuButton(sidebar.MenuButtonProps{
+								Href: "https://github.com/deeploy-sh/deeploy",
+							}) {
+								@sharedModules.GitHubIcon()
+								<span>GitHub</span>
+							}
+						}
+					}
+				}
+			}
+			@sidebar.Inset() {
+				<header class="sticky top-0 z-10 border-b bg-background">
+					<div class="flex h-14 items-center px-6">
+						<div class="flex items-center gap-4">
+							@sidebar.Trigger()
+							@breadcrumb.Breadcrumb() {
+								@breadcrumb.List() {
+									@breadcrumb.Item() {
+										@breadcrumb.Link(breadcrumb.LinkProps{Href: "/"}) {
+											Home
+										}
+									}
+									@breadcrumb.Item() {
+										@breadcrumb.Separator()
+										if currentDoc.Slug != "" {
+											@breadcrumb.Link(breadcrumb.LinkProps{Href: "/docs"}) {
+												Docs
+											}
+										} else {
+											@breadcrumb.Page() {
+												Docs
+											}
+										}
+									}
+									if currentDoc.Slug != "" {
+										@breadcrumb.Item() {
+											@breadcrumb.Separator()
+											@breadcrumb.Page() {
+												{ currentDoc.Title }
+											}
+										}
+									}
+								}
+							}
+						</div>
+						<div class="ml-auto flex items-center gap-4">
+							@sharedModules.ThemeSwitcher()
+						</div>
+					</div>
+				</header>
+				<div id="docs-content-wrapper">
+					@DocContent(currentDoc, prev, next)
+				</div>
+				<div class="border-t border-border">
+					@modules.FooterCopyright()
+				</div>
+			}
+		}
+		<script nonce={ templ.GetNonce(ctx) }>
+			document.body.addEventListener('htmx:afterSettle', () => {
+				const currentPath = window.location.pathname;
+				document.querySelectorAll('[data-tui-sidebar="menu-button"]').forEach(button => {
+					const href = button.getAttribute('href');
+					if (href) {
+						if (href === currentPath) {
+							button.setAttribute('data-tui-sidebar-active', 'true');
+						} else {
+							button.removeAttribute('data-tui-sidebar-active');
+						}
+					}
+				});
+				document.querySelectorAll('[data-tui-sidebar="menu-sub-button"]').forEach(button => {
+					const href = button.getAttribute('href');
+					if (href) {
+						if (href === currentPath) {
+							button.setAttribute('data-tui-sidebar-active', 'true');
+						} else {
+							button.removeAttribute('data-tui-sidebar-active');
+						}
+					}
+				});
+			});
+			document.body.addEventListener('htmx:afterSwap', (e) => {
+				if (e.detail.target.id === 'docs-content-wrapper') {
+					window.scrollTo(0, 0);
+				}
+			});
+		</script>
+	}
+}
+
+templ DocContent(doc *service.Doc, prev, next *service.Doc) {
+	<div class="flex-1" id="docs-content">
+		<article class="container max-w-4xl px-6 py-12">
+			<div class="mb-8">
+				<h1 class="text-4xl font-bold mb-2">{ doc.Title }</h1>
+				if doc.Description != "" {
+					<p class="text-xl text-muted-foreground">{ doc.Description }</p>
+				}
+			</div>
+			@blocks.ContentWithProse(string(doc.Content))
+			<div class="mt-12 pt-8 border-t flex justify-between">
+				if prev != nil {
+					@button.Button(button.Props{
+						Href:    prev.Path,
+						Variant: button.VariantOutline,
+						Attributes: templ.Attributes{
+							"hx-get":      prev.Path,
+							"hx-target":   "#docs-content-wrapper",
+							"hx-push-url": "true",
+							"hx-swap":     "innerHTML",
+						},
+					}) {
+						← { prev.Title }
+					}
+				} else {
+					<div></div>
+				}
+				if next != nil {
+					@button.Button(button.Props{
+						Href:    next.Path,
+						Variant: button.VariantOutline,
+						Attributes: templ.Attributes{
+							"hx-get":      next.Path,
+							"hx-target":   "#docs-content-wrapper",
+							"hx-push-url": "true",
+							"hx-swap":     "innerHTML",
+						},
+					}) {
+						{ next.Title } →
+					}
+				}
+			</div>
+		</article>
+	</div>
+}
+
+func nodeContainsCurrentDoc(node *service.Doc, currentDoc *service.Doc) bool {
+	if node.Slug == currentDoc.Slug {
+		return true
+	}
+	for _, child := range node.Children {
+		if nodeContainsCurrentDoc(child, currentDoc) {
+			return true
+		}
+	}
+	return false
+}
+
+templ renderDocsNav(node *service.Doc, currentDoc *service.Doc) {
+	@sidebar.Menu() {
+		for _, child := range node.Children {
+			@renderDocMenuItem(child, currentDoc)
+		}
+	}
+}
+
+templ renderDocMenuItem(node *service.Doc, currentDoc *service.Doc) {
+	@sidebar.MenuItem() {
+		if len(node.Children) > 0 {
+			@collapsible.Collapsible(collapsible.Props{
+				Open:  nodeContainsCurrentDoc(node, currentDoc),
+				Class: "group/collapsible w-full",
+			}) {
+				@collapsible.Trigger() {
+					@sidebar.MenuButton(sidebar.MenuButtonProps{
+						Tooltip: node.Title,
+					}) {
+						<span>{ node.Title }</span>
+						@icon.ChevronRight(icon.Props{
+							Class: "ml-auto size-4 transition-transform group-data-[tui-collapsible-state=open]/collapsible:rotate-90",
+						})
+					}
+				}
+				@collapsible.Content() {
+					@sidebar.MenuSub() {
+						for _, child := range node.Children {
+							if len(child.Children) > 0 {
+								@renderDocMenuItem(child, currentDoc)
+							} else {
+								@sidebar.MenuSubItem() {
+									@sidebar.MenuSubButton(sidebar.MenuSubButtonProps{
+										Href:     child.Path,
+										IsActive: ctxkeys.URLPath(ctx) == child.Path,
+										Attributes: templ.Attributes{
+											"hx-get":      child.Path,
+											"hx-target":   "#docs-content-wrapper",
+											"hx-push-url": "true",
+											"hx-swap":     "innerHTML",
+										},
+									}) {
+										{ child.Title }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} else {
+			@sidebar.MenuButton(sidebar.MenuButtonProps{
+				Href:     node.Path,
+				IsActive: ctxkeys.URLPath(ctx) == node.Path,
+				Tooltip:  node.Title,
+				Attributes: templ.Attributes{
+					"hx-get":      node.Path,
+					"hx-target":   "#docs-content-wrapper",
+					"hx-push-url": "true",
+					"hx-swap":     "innerHTML",
+				},
+			}) {
+				<span>{ node.Title }</span>
+			}
+		}
+	}
+}
