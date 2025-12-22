@@ -13,11 +13,17 @@ templ Navbar(stars int) {
 		</a>
 		<div class="flex items-center gap-4 md:gap-6">
 			<a
+				href="/docs"
+				class="text-muted-foreground hover:text-foreground transition-colors"
+			>
+				Docs
+			</a>
+			<a
 				href="https://github.com/deeploy-sh/deeploy"
 				target="_blank"
 				class="text-muted-foreground hover:text-foreground transition-colors"
 			>
-				GitHub [{ utils.FormatStars(stars) }]
+				GitHub { utils.FormatStars(stars) }
 			</a>
 			@modules.ThemeSwitcher()
 		</div>

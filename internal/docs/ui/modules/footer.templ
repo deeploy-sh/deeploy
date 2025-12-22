@@ -5,11 +5,17 @@ import "github.com/deeploy-sh/deeploy/internal/shared/utils"
 templ FooterLinks(stars int) {
 	<footer class="border-y border-border flex text-muted-foreground">
 		<a
-			href="https://github.com/deeploy-sh/deeploy"
-			target="_blank"
+			href="/docs"
 			class="flex-1 px-4 py-4 md:px-20 md:py-6 text-center hover:text-foreground transition-colors"
 		>
-			GitHub [{ utils.FormatStars(stars) }]
+			Docs
+		</a>
+		<a
+			href="https://github.com/deeploy-sh/deeploy"
+			target="_blank"
+			class="flex-1 px-4 py-4 md:px-20 md:py-6 text-center border-l border-border hover:text-foreground transition-colors"
+		>
+			GitHub { utils.FormatStars(stars) }
 		</a>
 		<a
 			href="https://x.com/axadrn"

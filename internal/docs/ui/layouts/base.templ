@@ -3,55 +3,97 @@ package layouts
 import (
 	"fmt"
 	"github.com/deeploy-sh/deeploy/internal/docs/config"
+	"github.com/deeploy-sh/deeploy/internal/docs/ui/blocks"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/collapsible"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/dialog"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/popover"
+	"github.com/deeploy-sh/deeploy/internal/shared/ui/components/sidebar"
 	"time"
 )
 
-templ BaseLayout() {
+type SEOProps struct {
+	Title       string
+	Description string
+	Path        string
+}
+
+templ seo(props SEOProps) {
+	{{
+		baseURL := "https://deeploy.sh"
+		appName := "deeploy"
+		defaultTitle := "Modern Deployment. Terminal First. Open Source."
+		defaultDesc := "The self-hosted alternative to Heroku, Vercel, and Netlify. Terminal-first and open source."
+
+		title := defaultTitle
+		desc := defaultDesc
+		path := ""
+		ogType := "website"
+
+		if props.Title != "" {
+			title = props.Title + " - " + appName + " docs"
+			desc = props.Description
+			path = "/docs/" + props.Path
+			ogType = "article"
+		} else {
+			title = appName + " - " + defaultTitle
+		}
+
+		fullURL := baseURL + path
+	}}
+	<title>{ title }</title>
+	<meta name="description" content={ desc }/>
+	<meta name="author" content={ appName }/>
+	<meta name="robots" content="index, follow"/>
+	<link rel="canonical" href={ fullURL }/>
+	<!-- Open Graph -->
+	<meta property="og:title" content={ title }/>
+	<meta property="og:description" content={ desc }/>
+	<meta property="og:type" content={ ogType }/>
+	<meta property="og:url" content={ fullURL }/>
+	<meta property="og:site_name" content={ appName }/>
+	<meta property="og:image" content={ baseURL + "/assets/img/og.png" }/>
+	<meta property="og:image:width" content="1200"/>
+	<meta property="og:image:height" content="630"/>
+	<meta property="og:image:alt" content={ title }/>
+	<!-- Twitter Card -->
+	<meta name="twitter:card" content="summary_large_image"/>
+	<meta name="twitter:title" content={ title }/>
+	<meta name="twitter:description" content={ desc }/>
+	<meta name="twitter:image" content={ baseURL + "/assets/img/og.png" }/>
+	<meta name="twitter:image:alt" content={ title }/>
+	<!-- Theme Color -->
+	<meta name="theme-color" content="#09090B"/>
+}
+
+templ BaseLayout(props ...SEOProps) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>deeploy - Modern Deployment. Terminal First. Open Source.</title>
-			<meta name="description" content="The self-hosted alternative to Heroku, Vercel, and Netlify. Terminal-first and open source."/>
-			<meta name="author" content="deeploy"/>
-			<meta name="robots" content="index, follow"/>
-			<link rel="canonical" href="https://deeploy.sh"/>
-			<!-- Open Graph -->
-			<meta property="og:title" content="deeploy - Modern Deployment. Terminal First. Open Source."/>
-			<meta property="og:description" content="The self-hosted alternative to Heroku, Vercel, and Netlify. Terminal-first and open source."/>
-			<meta property="og:type" content="website"/>
-			<meta property="og:url" content="https://deeploy.sh"/>
-			<meta property="og:site_name" content="deeploy"/>
-			<meta property="og:image" content="https://deeploy.sh/assets/img/og.png"/>
-			<meta property="og:image:width" content="1200"/>
-			<meta property="og:image:height" content="630"/>
-			<meta property="og:image:alt" content="deeploy - Modern Deployment. Terminal First. Open Source."/>
-			<!-- Twitter Card -->
-			<meta name="twitter:card" content="summary_large_image"/>
-			<meta name="twitter:title" content="deeploy - Modern Deployment. Terminal First. Open Source."/>
-			<meta name="twitter:description" content="The self-hosted alternative to Heroku, Vercel, and Netlify. Terminal-first and open source."/>
-			<meta name="twitter:image" content="https://deeploy.sh/assets/img/og.png"/>
-			<meta name="twitter:image:alt" content="deeploy - Modern Deployment. Terminal First. Open Source."/>
-			<!-- Theme Color -->
-			<meta name="theme-color" content="#09090B"/>
+			if len(props) > 0 {
+				@seo(props[0])
+			} else {
+				@seo(SEOProps{})
+			}
 			<!-- Favicon -->
 			<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg"/>
-			// Preload fonts to prevent flickering
+			// Preload fonts
 			<link rel="preload" href="/assets/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
 			<link rel="preload" href="/assets/fonts/jetbrains-mono/JetBrainsMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
 			// Tailwind CSS
 			<link href={ templ.SafeURL("/assets/css/output.css?v=" + fmt.Sprint(time.Now().Unix())) } rel="stylesheet"/>
-			// Theme initialization - must run before body renders to prevent flash
+			// Theme initialization
 			<script nonce={ templ.GetNonce(ctx) }>
 				(function() {
 					const pref = localStorage.getItem('themePreference');
-					// Default to dark, only go light if explicitly set
 					if (pref !== 'light') {
 						document.documentElement.classList.add('dark');
 					}
 				})();
 			</script>
+			// HTMX
+			<script src="https://unpkg.com/htmx.org@2.0.4" nonce={ templ.GetNonce(ctx) }></script>
 			// Plausible
 			if config.AppConfig.IsProduction() {
 				<script defer data-domain="deeploy.sh" src="https://plausible.axeladrian.com/js/script.js" nonce={ templ.GetNonce(ctx) }></script>
@@ -59,6 +101,11 @@ templ BaseLayout() {
 		</head>
 		<body class="font-mono antialiased">
 			{ children... }
+			@sidebar.Script()
+			@collapsible.Script()
+			@popover.Script()
+			@dialog.Script()
+			@blocks.HighlightScripts()
 		</body>
 	</html>
 }
