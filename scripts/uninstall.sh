@@ -21,7 +21,7 @@ echo "  - Deeploy stack (postgres, traefik, app)"
 echo "  - All images"
 echo "  - Database data"
 echo ""
-read -p "Are you sure? (y/N) " -n 1 -r
+read -p "Are you sure? (y/N) " -n 1 -r < /dev/tty
 echo ""
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
