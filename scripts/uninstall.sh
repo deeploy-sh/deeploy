@@ -38,10 +38,10 @@ docker ps -a --filter "name=deeploy-" --format "{{.ID}}" | xargs -r docker rm -f
 echo "Removing deeploy images..."
 # Remove all images with deeploy- prefix (built pod images)
 docker images --filter "reference=deeploy-*" --format "{{.ID}}" | xargs -r docker rmi -f 2>/dev/null || true
-# Remove stack images
+# Remove stack images (fails silently if still used by other containers)
 docker rmi -f ghcr.io/deeploy-sh/deeploy 2>/dev/null || true
-docker rmi -f postgres:16-alpine 2>/dev/null || true
-docker rmi -f traefik:v3.2 2>/dev/null || true
+docker rmi -f postgres 2>/dev/null || true
+docker rmi -f traefik 2>/dev/null || true
 
 echo "Removing docker volumes..."
 docker volume rm deeploy_postgres_data 2>/dev/null || true

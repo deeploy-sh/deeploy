@@ -8,7 +8,9 @@
 # - Deeploy app disabled (we run via "go run" instead)
 
 services:
+  # PostgreSQL - only starts with: docker compose --profile postgres up
   postgres:
+    profiles: [postgres]
     ports:
       - "127.0.0.1:5432:5432"  # Localhost only for TablePlus etc.
 

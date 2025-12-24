@@ -13,6 +13,7 @@ order: 1
 - Instant domains via sslip.io wildcard DNS
 - Terminal-first UI (TUI)
 - Self-hosted, you own your data
+- SQLite by default, PostgreSQL optional
 
 ## Currently Supported
 
