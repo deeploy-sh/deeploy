@@ -35,6 +35,15 @@ curl -fsSL https://deeploy.sh/server.sh | sudo bash -s main
 curl -fsSL https://deeploy.sh/server.sh | sudo bash -s v0.1.0
 ```
 
+### Database
+
+SQLite is used by default - zero configuration needed.
+
+For PostgreSQL (advanced users):
+```bash
+curl -fsSL https://deeploy.sh/server.sh | sudo bash -s -- --postgres
+```
+
 ## Install TUI
 
 On your local machine:
