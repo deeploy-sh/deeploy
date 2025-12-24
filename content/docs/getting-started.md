@@ -62,3 +62,15 @@ curl -fsSL https://deeploy.sh/tui.sh | bash -s v0.1.0
 ## Next Steps
 
 Run `deeploy` to launch the TUI and connect to your server.
+
+## Uninstall
+
+```bash
+curl -fsSL https://deeploy.sh/uninstall.sh | sudo bash
+```
+
+Removes:
+- All deployed pods
+- Deeploy containers and images
+- Database and volumes
+- `/opt/deeploy` directory
