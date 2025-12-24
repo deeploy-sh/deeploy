@@ -125,8 +125,6 @@ services:
       # SQLite database file (only used when DB_DRIVER=sqlite)
       - /opt/deeploy/data:/data
     environment:
-      DB_DRIVER: ${DB_DRIVER}
-      DB_CONNECTION: ${DB_CONNECTION}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     restart: unless-stopped
