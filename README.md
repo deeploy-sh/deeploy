@@ -20,6 +20,16 @@ curl -fsSL https://deeploy.sh/tui.sh | bash
 
 [deeploy.sh/docs](https://deeploy.sh/docs)
 
+## Development
+
+```bash
+task dev:server   # Server (SQLite default)
+task dev:tui      # TUI client
+task dev:docs     # Docs website
+```
+
+For PostgreSQL, set `DB_DRIVER=pgx` in `.env`.
+
 ## License
 
 [Apache 2.0](LICENSE)
