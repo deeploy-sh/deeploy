@@ -11,8 +11,20 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# User parameter: branch, tag, or "latest" (default)
-VERSION=${1:-latest}
+# Parse arguments
+USE_POSTGRES=false
+VERSION="latest"
+
+for arg in "$@"; do
+    case $arg in
+        --postgres)
+            USE_POSTGRES=true
+            ;;
+        *)
+            VERSION="$arg"
+            ;;
+    esac
+done
 
 # Resolve "latest" to the actual latest release tag from GitHub
 # For bleeding-edge, use: ./server.sh main
@@ -44,6 +56,7 @@ fi
 INSTALL_DIR="/opt/deeploy"
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/traefik"
+mkdir -p "$INSTALL_DIR/data"
 cd "$INSTALL_DIR"
 
 # Download docker-compose.yml from same branch/tag as VERSION
@@ -51,27 +64,47 @@ echo "Downloading docker-compose.yml..."
 curl -fsSL "https://raw.githubusercontent.com/deeploy-sh/deeploy/${BRANCH}/docker-compose.yml" \
   -o docker-compose.yml
 
-# Generate secrets (only on first install)
+# Generate secrets and config (only on first install)
 if [[ ! -f .env ]]; then
     echo "Generating secrets..."
     JWT_SECRET=$(openssl rand -base64 32)
     ENCRYPTION_KEY=$(openssl rand -hex 16)  # 16 bytes = 32 hex chars
+
+    # Database config
+    if [[ "$USE_POSTGRES" == "true" ]]; then
+        DB_DRIVER="pgx"
+        DB_CONNECTION="postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable"
+        echo "Using PostgreSQL database"
+    else
+        DB_DRIVER="sqlite"
+        DB_CONNECTION="/data/deeploy.db?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)"
+        echo "Using SQLite database (default)"
+    fi
+
     cat > .env <<EOF
 JWT_SECRET=$JWT_SECRET
 ENCRYPTION_KEY=$ENCRYPTION_KEY
+DB_DRIVER=$DB_DRIVER
+DB_CONNECTION=$DB_CONNECTION
 EOF
     chmod 600 .env
 fi
 
-# Start services (DEEPLOY_VERSION sets the image tag in docker-compose.yml)
+# Start services
 echo "Starting deeploy..."
 DEEPLOY_VERSION=$TAG docker compose pull
-DEEPLOY_VERSION=$TAG docker compose up -d --force-recreate
+
+if [[ "$USE_POSTGRES" == "true" ]]; then
+    COMPOSE_PROFILES=postgres DEEPLOY_VERSION=$TAG docker compose up -d --force-recreate
+else
+    DEEPLOY_VERSION=$TAG docker compose up -d --force-recreate
+fi
 
 IP=$(hostname -I | awk '{print $1}')
 URL="http://$IP:8090"
 
 echo ""
-echo "✓ deeploy is running"
+echo "deeploy is running"
 echo ""
 echo "  Connect your TUI with $URL"
+echo ""

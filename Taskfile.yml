@@ -7,20 +7,24 @@ vars:
 tasks:
   # --- Infrastructure ---
   infra:up:
-    desc: Start Postgres and Traefik
+    desc: Start Traefik (for domain testing)
     cmds:
-      - docker compose up -d postgres traefik
+      - docker compose up -d traefik
+
+  infra:postgres:
+    desc: Start PostgreSQL (for DB_DRIVER=pgx)
+    cmds:
+      - docker compose --profile postgres up -d postgres
 
   infra:down:
     desc: Stop all infrastructure
     cmds:
-      - docker compose down
+      - docker compose --profile postgres down
 
   infra:reset:
     desc: Reset infrastructure (delete volumes and restart)
     cmds:
-      - docker compose down -v
-      - docker compose up -d postgres traefik
+      - docker compose --profile postgres down -v
 
   # --- Install ---
   install:tui:
@@ -35,9 +39,14 @@ tasks:
       - DEBUG=1 go run ./cmd/tui
 
   dev:server:
-    desc: VPS server (starts Postgres and Traefik)
-    deps: [infra:up]
+    desc: Start dev server (DB via .env - SQLite default, Postgres if DB_DRIVER=pgx)
     cmds:
+      - |
+        if grep -q "DB_DRIVER=pgx" .env 2>/dev/null; then
+          echo "DB_DRIVER=pgx detected, starting PostgreSQL..."
+          docker compose --profile postgres up -d postgres
+          sleep 2
+        fi
       - task --parallel tailwind templ:server
 
   dev:docs:

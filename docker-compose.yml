@@ -11,7 +11,9 @@ networks:
     name: deeploy
 
 services:
+  # PostgreSQL - Optional, only starts with --profile postgres
   postgres:
+    profiles: [postgres]
     image: postgres:16-alpine
     container_name: deeploy-postgres
     networks:
@@ -120,13 +122,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Dynamic config: App writes Traefik config files here (server domain routing)
       - /opt/deeploy/traefik:/traefik/dynamic
+      # SQLite database file (only used when DB_DRIVER=sqlite)
+      - /opt/deeploy/data:/data
     environment:
-      DATABASE_URL: postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable
+      DB_DRIVER: ${DB_DRIVER}
+      DB_CONNECTION: ${DB_CONNECTION}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:

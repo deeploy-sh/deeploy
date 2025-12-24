@@ -25,7 +25,7 @@ type App struct {
 }
 
 func New(cfg *config.Config) (*App, error) {
-	database, err := db.Init(cfg.DatabaseURL)
+	database, err := db.Init(cfg.DBDriver, cfg.DBConnection)
 	if err != nil {
 		return nil, err
 	}
