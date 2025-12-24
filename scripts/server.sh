@@ -70,23 +70,20 @@ if [[ ! -f .env ]]; then
     JWT_SECRET=$(openssl rand -base64 32)
     ENCRYPTION_KEY=$(openssl rand -hex 16)  # 16 bytes = 32 hex chars
 
-    # Database config
-    if [[ "$USE_POSTGRES" == "true" ]]; then
-        DB_DRIVER="pgx"
-        DB_CONNECTION="postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable"
-        echo "Using PostgreSQL database"
-    else
-        DB_DRIVER="sqlite"
-        DB_CONNECTION="/data/deeploy.db?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)"
-        echo "Using SQLite database (default)"
-    fi
-
     cat > .env <<EOF
 JWT_SECRET=$JWT_SECRET
 ENCRYPTION_KEY=$ENCRYPTION_KEY
-DB_DRIVER=$DB_DRIVER
-DB_CONNECTION=$DB_CONNECTION
 EOF
+
+    # PostgreSQL needs explicit config (SQLite auto-detects path via /.dockerenv)
+    if [[ "$USE_POSTGRES" == "true" ]]; then
+        echo "DB_DRIVER=pgx" >> .env
+        echo "DB_CONNECTION=postgres://deeploy:deeploy@deeploy-postgres:5432/deeploy?sslmode=disable" >> .env
+        echo "Using PostgreSQL database"
+    else
+        echo "Using SQLite database (default)"
+    fi
+
     chmod 600 .env
 fi
 
