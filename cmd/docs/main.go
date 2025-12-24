@@ -47,6 +47,7 @@ func main() {
 	// Serve install scripts
 	mux.Handle("GET /server.sh", serveScript("server.sh"))
 	mux.Handle("GET /tui.sh", serveScript("tui.sh"))
+	mux.Handle("GET /uninstall.sh", serveScript("uninstall.sh"))
 
 	// Newsletter subscribe endpoint
 	mux.HandleFunc("POST /api/subscribe", handleSubscribe)
