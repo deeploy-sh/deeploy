@@ -7,11 +7,13 @@ Modern Deployment. Terminal First. Open Source.
 ## Quick Start
 
 **Server (VPS)**
+
 ```bash
 curl -fsSL https://deeploy.sh/server.sh | sudo bash
 ```
 
 **TUI (your machine)**
+
 ```bash
 curl -fsSL https://deeploy.sh/tui.sh | bash
 ```
@@ -23,12 +25,17 @@ curl -fsSL https://deeploy.sh/tui.sh | bash
 ## Development
 
 ```bash
-task dev:server   # Server (SQLite default)
-task dev:tui      # TUI client
-task dev:docs     # Docs website
+task dev:server             # Server (SQLite as default)
+task dev:server:postgres    # Server (PostgreSQL - confirgure .env)
+task dev:tui                # TUI client
+task dev:docs               # Docs website
 ```
 
 For PostgreSQL, set `DB_DRIVER=pgx` in `.env`.
+
+```bash
+
+```
 
 ## License
 

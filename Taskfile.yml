@@ -39,15 +39,14 @@ tasks:
       - DEBUG=1 go run ./cmd/tui
 
   dev:server:
-    desc: Start dev server (DB via .env - SQLite default, Postgres if DB_DRIVER=pgx)
+    desc: Start dev server (SQLite as default)
     cmds:
-      - |
-        if grep -q "DB_DRIVER=pgx" .env 2>/dev/null; then
-          echo "DB_DRIVER=pgx detected, starting PostgreSQL..."
-          docker compose --profile postgres up -d postgres
-          sleep 2
-        fi
       - task --parallel tailwind templ:server
+
+  dev:server:postgres:
+    desc: Start dev server (PostgreSQL - configure .env)
+    cmds:
+      - task --parallel tailwind templ:server infra:postgres
 
   dev:docs:
     desc: Docs website
