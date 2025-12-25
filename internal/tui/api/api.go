@@ -665,7 +665,8 @@ func CheckLatestVersion() tea.Cmd {
 		var release struct {
 			TagName string `json:"tag_name"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&release)
+		if err != nil {
 			return msg.LatestVersionResult{Error: err}
 		}
 

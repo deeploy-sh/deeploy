@@ -305,6 +305,7 @@ func (m app) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bootstrapped = true
 		return m, tea.Batch(
 			api.LoadData(),
+			api.CheckConnection(),
 			func() tea.Msg {
 				return msg.ChangePage{
 					PageFactory: func(s msg.Store) tea.Model { return NewDashboard(s) },
