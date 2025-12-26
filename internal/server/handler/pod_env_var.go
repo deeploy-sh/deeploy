@@ -71,5 +71,11 @@ func (h *PodEnvVarHandler) BulkUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	envVars, err := h.service.EnvVarsByPod(podID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(envVars)
 }
