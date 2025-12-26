@@ -73,6 +73,10 @@ func (v *logsViewport) gotoBottom() {
 	}
 }
 
+func (v *logsViewport) isAtBottom() bool {
+	return v.offset >= len(v.lines)-v.height
+}
+
 func (v *logsViewport) view() string {
 	if v.height <= 0 {
 		return ""
@@ -253,8 +257,9 @@ func (m podLogs) triggerDeploy() tea.Cmd {
 }
 
 func (m *podLogs) updateViewport() {
+	wasAtBottom := m.viewport.isAtBottom()
 	m.viewport.setLines(m.logs)
-	if m.status == "building" {
+	if wasAtBottom {
 		m.viewport.gotoBottom()
 	}
 }
