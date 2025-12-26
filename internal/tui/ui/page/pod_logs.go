@@ -99,6 +99,7 @@ type podLogs struct {
 	keyDeploy key.Binding
 	width     int
 	height    int
+	cardProps styles.CardProps
 }
 
 func NewPodLogs(s msg.Store, podID string) podLogs {
@@ -119,10 +120,10 @@ func NewPodLogs(s msg.Store, podID string) podLogs {
 	}
 
 	return podLogs{
-		store:    s,
-		pod:      &pod,
-		project:  &project,
-		viewport: logsViewport{},
+		store:     s,
+		pod:       &pod,
+		project:   &project,
+		viewport:  logsViewport{},
 		status:    "building",
 		keyBack:   key.NewBinding(key.WithKeys("esc", "q"), key.WithHelp("esc/q", "back")),
 		keyDeploy: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "redeploy")),
@@ -228,15 +229,11 @@ func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = tmsg.Width
 		m.height = tmsg.Height
-		// Card width: responsive, max 120
-		cardWidth := m.width - 8
-		if cardWidth > 120 {
-			cardWidth = 120
-		}
-		cardProps := styles.CardProps{Width: cardWidth, Padding: []int{1, 2}, Accent: true}
-		// Height: total minus card padding (1 top, 1 bottom), header, help, spacing
-		innerHeight := m.height - 10
-		m.viewport.setSize(cardProps.InnerWidth(), innerHeight)
+
+		m.cardProps = styles.CardProps{Width: m.width, Height: m.height, Padding: []int{1, 1}}
+
+		const logsHeaderHeight = 2 // header + empty line
+		m.viewport.setSize(m.cardProps.InnerWidth(), m.cardProps.InnerHeight()-logsHeaderHeight)
 		m.updateViewport()
 		return m, nil
 	}
@@ -263,6 +260,10 @@ func (m *podLogs) updateViewport() {
 }
 
 func (m podLogs) View() tea.View {
+	if m.height == 0 {
+		return tea.NewView("Loading...")
+	}
+
 	bg := styles.ColorBackgroundPanel()
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary()).Background(bg)
 	header := titleStyle.Render(fmt.Sprintf("Build Logs: %s", m.pod.Title))
@@ -282,21 +283,9 @@ func (m podLogs) View() tea.View {
 	spacer := lipgloss.NewStyle().Background(bg).Render("  ")
 	headerText := header + spacer + statusText
 
-	// Card width: responsive, max 120
-	cardWidth := m.width - 8
-	if cardWidth > 120 {
-		cardWidth = 120
-	}
-
-	cardProps := styles.CardProps{
-		Width:   cardWidth,
-		Padding: []int{1, 2},
-		Accent:  true,
-	}
-
 	// Extend header to full width with background
 	headerLine := lipgloss.NewStyle().
-		Width(cardProps.InnerWidth()).
+		Width(m.cardProps.InnerWidth()).
 		Background(bg).
 		Render(headerText)
 
@@ -309,7 +298,7 @@ func (m podLogs) View() tea.View {
 		logsContent,
 	)
 
-	card := styles.Card(cardProps).Render(content)
+	card := styles.Card(m.cardProps).Render(content)
 
 	centered := lipgloss.Place(m.width, m.height,
 		lipgloss.Center, lipgloss.Center, card)
