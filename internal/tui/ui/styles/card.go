@@ -45,7 +45,7 @@ func Card(p CardProps) lipgloss.Style {
 		Background(ColorBackgroundPanel())
 
 	if p.Height > 0 {
-		style = style.Height(p.Height).MaxHeight(p.Height)
+		style = style.MaxHeight(p.Height)
 	}
 
 	if len(p.Padding) > 0 {

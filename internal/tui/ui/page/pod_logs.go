@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	lipgloss "charm.land/lipgloss/v2"
 	"github.com/deeploy-sh/deeploy/internal/shared/model"
@@ -31,74 +32,15 @@ type logsUpdated struct {
 	status string
 }
 
-// logsViewport is a simple scrollable viewport for log lines
-type logsViewport struct {
-	lines  []string
-	width  int
-	height int
-	offset int
-}
-
-func (v *logsViewport) setSize(w, h int) {
-	v.width = w
-	v.height = h
-}
-
-func (v *logsViewport) setLines(lines []string) {
-	v.lines = lines
-}
-
-func (v *logsViewport) scrollUp(n int) {
-	v.offset -= n
-	if v.offset < 0 {
-		v.offset = 0
-	}
-}
-
-func (v *logsViewport) scrollDown(n int) {
-	v.offset += n
-	max := len(v.lines) - v.height
-	if max < 0 {
-		max = 0
-	}
-	if v.offset > max {
-		v.offset = max
-	}
-}
-
-func (v *logsViewport) gotoBottom() {
-	v.offset = len(v.lines) - v.height
-	if v.offset < 0 {
-		v.offset = 0
-	}
-}
-
-func (v *logsViewport) isAtBottom() bool {
-	return v.offset >= len(v.lines)-v.height
-}
-
-func (v *logsViewport) view() string {
-	if v.height <= 0 {
-		return ""
-	}
-
-	lines := make([]string, v.height)
-	for i := 0; i < v.height; i++ {
-		idx := v.offset + i
-		if idx < len(v.lines) {
-			lines[i] = v.lines[idx]
-		}
-	}
-	return strings.Join(lines, "\n")
-}
-
+// podLogs displays streaming build/container logs with auto-scroll.
+// Uses bubbles/viewport for proper scrolling and dimension constraints.
 type podLogs struct {
 	store     msg.Store
 	pod       *model.Pod
 	project   *model.Project
-	viewport  logsViewport
-	logs      []string
-	status    string
+	viewport  viewport.Model // handles scrolling, truncation, rendering
+	logs      []string       // raw log lines from API
+	status    string         // building, running, failed
 	keyBack   key.Binding
 	keyDeploy key.Binding
 	width     int
@@ -127,7 +69,7 @@ func NewPodLogs(s msg.Store, podID string) podLogs {
 		store:     s,
 		pod:       &pod,
 		project:   &project,
-		viewport:  logsViewport{},
+		viewport:  viewport.New(),
 		status:    "building",
 		keyBack:   key.NewBinding(key.WithKeys("esc", "q"), key.WithHelp("esc/q", "back")),
 		keyDeploy: key.NewBinding(key.WithKeys("D"), key.WithHelp("D", "redeploy")),
@@ -178,6 +120,8 @@ func (m podLogs) fetchLogs() tea.Cmd {
 }
 
 func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch tmsg := tmsg.(type) {
 	case pollLogsMsg:
 		// Keep polling while building
@@ -212,32 +156,24 @@ func (m podLogs) Update(tmsg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 
-		// Keyboard scroll
-		switch tmsg.String() {
-		case "up", "k":
-			m.viewport.scrollUp(1)
-		case "down", "j":
-			m.viewport.scrollDown(1)
-		}
-		return m, nil
+		// viewport handles up/down/pgup/pgdown/home/end natively
+		m.viewport, cmd = m.viewport.Update(tmsg)
+		return m, cmd
 
 	case tea.MouseWheelMsg:
-		// Mouse scroll (3 lines per event)
-		if tmsg.Button == tea.MouseWheelUp {
-			m.viewport.scrollUp(3)
-		} else if tmsg.Button == tea.MouseWheelDown {
-			m.viewport.scrollDown(3)
-		}
-		return m, nil
+		// viewport handles mouse scroll natively
+		m.viewport, cmd = m.viewport.Update(tmsg)
+		return m, cmd
 
 	case tea.WindowSizeMsg:
 		m.width = tmsg.Width
 		m.height = tmsg.Height
+		m.cardProps = styles.CardProps{Width: m.width, Padding: []int{1, 1}}
 
-		m.cardProps = styles.CardProps{Width: m.width, Height: m.height, Padding: []int{1, 1}}
-
-		const logsHeaderHeight = 2 // header + empty line
-		m.viewport.setSize(m.cardProps.InnerWidth(), m.cardProps.InnerHeight()-logsHeaderHeight)
+		// viewport height = available - card padding (2) - header area (2)
+		viewportHeight := m.height - 4
+		m.viewport.SetWidth(m.cardProps.InnerWidth())
+		m.viewport.SetHeight(viewportHeight)
 		m.updateViewport()
 		return m, nil
 	}
@@ -256,11 +192,14 @@ func (m podLogs) triggerDeploy() tea.Cmd {
 	}
 }
 
+// updateViewport syncs logs to viewport with "follow mode":
+// - If user was at bottom, stay at bottom (follow new logs)
+// - If user scrolled up, stay there (let them read)
 func (m *podLogs) updateViewport() {
-	wasAtBottom := m.viewport.isAtBottom()
-	m.viewport.setLines(m.logs)
+	wasAtBottom := m.viewport.AtBottom()
+	m.viewport.SetContent(strings.Join(m.logs, "\n"))
 	if wasAtBottom {
-		m.viewport.gotoBottom()
+		m.viewport.GotoBottom()
 	}
 }
 
@@ -294,8 +233,8 @@ func (m podLogs) View() tea.View {
 		Background(bg).
 		Render(headerText)
 
-	// Viewport content - just the lines, lipgloss handles overflow
-	logsContent := m.viewport.view()
+	// Viewport content
+	logsContent := m.viewport.View()
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		headerLine,
@@ -305,8 +244,7 @@ func (m podLogs) View() tea.View {
 
 	card := styles.Card(m.cardProps).Render(content)
 
-	centered := lipgloss.Place(m.width, m.height,
-		lipgloss.Center, lipgloss.Center, card)
+	centered := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
 
 	return tea.NewView(centered)
 }
