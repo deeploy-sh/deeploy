@@ -2,13 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Bubble Tea CLI",
+      "name": "Debug Server",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/server/main.go"
+    },
+    {
+      "name": "Attach TUI (port 43000)",
       "type": "go",
       "request": "attach",
       "mode": "remote",
-      "port": 43000,
       "host": "127.0.0.1",
-      "program": "${workspaceFolder}/cmd/tui/main.go"
+      "port": 43000
     }
   ]
 }

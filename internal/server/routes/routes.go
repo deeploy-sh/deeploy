@@ -39,7 +39,6 @@ func Setup(app *app.App) http.Handler {
 	mux.HandleFunc("GET /logout", userHandler.Logout)
 	mux.HandleFunc("GET /api/auth/poll", userHandler.PollCLISession)
 
-
 	// Projects
 	mux.HandleFunc("POST /api/projects", auth.Auth(projectHandler.Create))
 	mux.HandleFunc("GET /api/projects", auth.Auth(projectHandler.ProjectsByUser))
@@ -122,4 +121,3 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-

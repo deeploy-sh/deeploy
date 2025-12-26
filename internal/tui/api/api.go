@@ -560,7 +560,8 @@ func UpdatePodEnvVars(podID string, vars []model.PodEnvVar) tea.Cmd {
 		defer resp.Body.Close()
 
 		var updated []model.PodEnvVar
-		if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&updated)
+		if err != nil {
 			return msg.Error{Err: err}
 		}
 

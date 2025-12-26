@@ -38,6 +38,16 @@ tasks:
     cmds:
       - DEBUG=1 go run ./cmd/tui
 
+  dev:tui:debug:
+    desc: Debug TUI (start, then attach in Neovim with <leader>dc, stop with task dev:tui:debug:stop)
+    cmds:
+      - tmux new-window -n debug 'dlv debug ./cmd/tui --headless --listen=:43000'
+
+  dev:tui:debug:stop:
+    desc: Stop TUI debug session
+    cmds:
+      - tmux kill-window -t debug
+
   dev:server:
     desc: Start dev server (SQLite as default)
     cmds:
