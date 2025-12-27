@@ -30,6 +30,14 @@ func (p CardProps) InnerWidth() int {
 	return inner
 }
 
+func (p CardProps) InnerHeight() int {
+	inner := p.Height
+	if len(p.Padding) > 1 {
+		inner -= p.Padding[0] * 2 // vertical padding (top + bottom)
+	}
+	return inner
+}
+
 // Card creates a card style with panel background and optional left accent border.
 func Card(p CardProps) lipgloss.Style {
 	style := lipgloss.NewStyle().
@@ -37,7 +45,7 @@ func Card(p CardProps) lipgloss.Style {
 		Background(ColorBackgroundPanel())
 
 	if p.Height > 0 {
-		style = style.Height(p.Height)
+		style = style.MaxHeight(p.Height)
 	}
 
 	if len(p.Padding) > 0 {
