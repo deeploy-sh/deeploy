@@ -11,11 +11,11 @@ import (
 )
 
 type DeployService struct {
-	podRepo         repo.PodRepoInterface
-	podDomainRepo   repo.PodDomainRepoInterface
-	podEnvVarRepo   repo.PodEnvVarRepoInterface
-	gitTokenService GitTokenServiceInterface
-	docker          *docker.DockerService
+	podRepo          repo.PodRepoInterface
+	podDomainRepo    repo.PodDomainRepoInterface
+	podEnvVarService PodEnvVarServiceInterface
+	gitTokenService  GitTokenServiceInterface
+	docker           *docker.DockerService
 
 	// Build logs storage (simple)
 	buildLogsMu sync.RWMutex
@@ -29,18 +29,18 @@ type DeployService struct {
 func NewDeployService(
 	podRepo *repo.PodRepo,
 	podDomainRepo *repo.PodDomainRepo,
-	podEnvVarRepo *repo.PodEnvVarRepo,
+	podEnvVarService PodEnvVarServiceInterface,
 	gitTokenService *GitTokenService,
 	docker *docker.DockerService,
 ) *DeployService {
 	return &DeployService{
-		podRepo:         podRepo,
-		podDomainRepo:   podDomainRepo,
-		podEnvVarRepo:   podEnvVarRepo,
-		gitTokenService: gitTokenService,
-		docker:          docker,
-		buildLogs:       make(map[string][]string),
-		deploying:       make(map[string]bool),
+		podRepo:          podRepo,
+		podDomainRepo:    podDomainRepo,
+		podEnvVarService: podEnvVarService,
+		gitTokenService:  gitTokenService,
+		docker:           docker,
+		buildLogs:        make(map[string][]string),
+		deploying:        make(map[string]bool),
 	}
 }
 
@@ -166,8 +166,8 @@ func (s *DeployService) Deploy(ctx context.Context, podID string) error {
 		s.appendBuildLog(podID, fmt.Sprintf("Domain: %s (port %d)", d.Domain, d.Port))
 	}
 
-	// Get env vars
-	envVars, err := s.podEnvVarRepo.EnvVarsByPod(podID)
+	// Get env vars (decrypted via service)
+	envVars, err := s.podEnvVarService.EnvVarsByPod(podID)
 	if err != nil {
 		pod.Status = "failed"
 		s.podRepo.Update(*pod)
@@ -324,8 +324,8 @@ func (s *DeployService) Restart(ctx context.Context, podID string) error {
 		})
 	}
 
-	// 4. Get env vars
-	envVars, err := s.podEnvVarRepo.EnvVarsByPod(podID)
+	// 4. Get env vars (decrypted via service)
+	envVars, err := s.podEnvVarService.EnvVarsByPod(podID)
 	if err != nil {
 		return fmt.Errorf("failed to get env vars: %w", err)
 	}
